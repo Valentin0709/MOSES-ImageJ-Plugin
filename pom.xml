@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+		http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.scijava</groupId>
+		<artifactId>pom-scijava</artifactId>
+		<version>26.0.0</version>
+		<relativePath />
+	</parent>
+
+	<groupId>to.be.completed</groupId>
+	<artifactId>MOSES</artifactId>
+	<version>1.0</version>
+
+	<name>MOSES</name>
+	<description>[To be completed]</description>
+	<url>[To be completed]</url>
+	<inceptionYear>2020</inceptionYear>
+	<organization>
+		<name>[To be completed]</name>
+		<url>[To be completed]</url>
+	</organization>
+	
+	<licenses>
+		<license>
+			<name>[To be completed]</name>
+			<url>[To be completed]</url>
+			<distribution>[To be completed]</distribution>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<id>[To be completed]</id>
+			<name>[To be completed]</name>
+			<url>[To be completed]</url>
+		</developer>
+	</developers>
+	
+	<contributors>
+		<contributor>
+			<name>[To be completed]</name>
+		</contributor>
+	</contributors>
+
+	<mailingLists>
+		<mailingList>
+			<name>Image.sc Forum</name>
+			<archive>https://forum.image.sc/tags/imagej</archive>
+		</mailingList>
+	</mailingLists>
+
+	<scm>
+		<connection>scm:git:git://github.com/[MY-ORG]/[MY-REPO]</connection>
+		<developerConnection>scm:git:git@github.com:[MY-ORG]/[MY-REPO]</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/[MY-ORG]/[MY-REPO]</url>
+	</scm>
+
+	
+	<issueManagement>
+		<system>GitHub Issues</system>
+		<url>[To be completed]</url>
+	</issueManagement>
+	
+	<ciManagement>
+		<system>[To be completed]</system>
+	</ciManagement>
+
+	<properties>
+		<main-class>MOSES</main-class>
+		<license.licenseName>[To be completed]</license.licenseName>
+		<license.copyrightOwners>[To be completed]</license.copyrightOwners>
+		<license.projectName>[To be completed]</license.projectName>
+	</properties>
+
+	<repositories>
+		<repository>
+			<id>scijava.public</id>
+			<url>https://maven.scijava.org/content/groups/public</url>
+		</repository>
+	</repositories>
+
+	<dependencies>
+		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej</artifactId>
+		</dependency>
+	</dependencies>
+</project>
