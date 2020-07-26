@@ -1,10 +1,10 @@
 import org.scijava.ui.UIService;
+import ij.IJ;
 import io.scif.services.DatasetIOService;
+import org.scijava.log.LogService;
 import net.imagej.Dataset;
 import net.imagej.display.ImageDisplayService;
-
 import java.io.File;
-import java.io.IOException;
 import javax.swing.*; 
 import java.awt.event.*;
 import java.awt.*;
@@ -13,6 +13,7 @@ public class Frame1 extends JFrame {
 	private UIService ui;
 	private DatasetIOService datasetIOService;
 	private ImageDisplayService imageDisplayService;
+	private LogService logService;
 	
 	public Frame1() {
 		super("MOSES");
@@ -37,15 +38,8 @@ public class Frame1 extends JFrame {
 			  //if no image has been opened, ask the client to select an image to proceed
 			  
 			  if(image == null) {
-					  File file = ui.chooseFile(null, "open");
-					  Dataset dataset;
-					  try {
-								dataset = datasetIOService.open(file.getPath());
-								ui.show(dataset);
-					   }
-					   catch (IOException e1) {
-								e1.printStackTrace();
-					   }
+				  	String filePath = IJ.getFilePath("Select TIFF stack");
+				  	IJ.open(filePath);
 			  }
 		  }
 		});
@@ -56,15 +50,19 @@ public class Frame1 extends JFrame {
 		if(!isVisible()) setVisible(true);
 	}
 	
-	public void setUi(final UIService ui) {
+	public void setUi(UIService ui) {
 		this.ui = ui;
 	}
 	
-	public void setDatasetIOService(final DatasetIOService datasetIOService) {
+	public void setIDatasetIOService(DatasetIOService datasetIOService) {
 		this.datasetIOService = datasetIOService;
 	}
 	
-	public void setImageDisplayService(final ImageDisplayService imageDisplayService) {
+	public void setImageDisplayService(ImageDisplayService imageDisplayService) {
 		this.imageDisplayService = imageDisplayService;
+	}
+	
+	public void setLogService(LogService logService) {
+		this.logService = logService;
 	}
 }

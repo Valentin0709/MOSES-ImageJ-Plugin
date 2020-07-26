@@ -1,6 +1,5 @@
 import net.imagej.ImageJ;
 import net.imagej.display.ImageDisplayService;
-import net.imglib2.img.Img;
 import javax.swing.SwingUtilities;
 import org.scijava.command.Command;
 import org.scijava.log.LogService;
@@ -16,13 +15,13 @@ public class MOSES implements Command {
 	private UIService ui;
 	
 	@Parameter
-	private DatasetIOService datasetIOService; 
+	private DatasetIOService datasetIOService ; 
 	
 	@Parameter
 	private ImageDisplayService imageDisplayService;
 		
 	@Parameter
-	private LogService log;
+	private LogService logService;
 	
 	private static Frame1 mainFrame = null;
 	
@@ -34,10 +33,10 @@ public class MOSES implements Command {
 			}
 
 			mainFrame.setUi(ui);
-			mainFrame.setDatasetIOService(datasetIOService);
+			mainFrame.setIDatasetIOService(datasetIOService);
 			mainFrame.setImageDisplayService(imageDisplayService);
 			
-			mainFrame.Show();
+			mainFrame.Show();	
 		});
 		
 	}
@@ -45,7 +44,8 @@ public class MOSES implements Command {
 	public static void main(final String... args) {
 		final ImageJ ij = new ImageJ();
 		ij.launch(args);
-
+		
 		ij.command().run(MOSES.class, true);
+
 	}
 }
