@@ -33,7 +33,6 @@ public class MOSES implements Command {
 			}
 
 			mainFrame.setUi(ui);
-			mainFrame.setIDatasetIOService(datasetIOService);
 			mainFrame.setImageDisplayService(imageDisplayService);
 			
 			mainFrame.Show();	
