@@ -2,11 +2,13 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.List;
 
+import javax.imageio.ImageIO;
 import javax.swing.GroupLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.GroupLayout.Alignment;
+import javax.swing.ImageIcon;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import org.scijava.ui.UIService;
 
@@ -15,6 +17,7 @@ import net.imagej.display.ImageDisplayService;
 import javax.swing.JButton;
 import java.awt.Color;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
@@ -45,7 +48,8 @@ public class ComputeTracksPanel2 extends JPanel {
 	
 	public ComputeTracksPanel2(MainFrame parentFrame) {
 		
-this.parentFrame = parentFrame;
+		
+		this.parentFrame = parentFrame;
 		
 		//set size
 		
@@ -69,6 +73,20 @@ this.parentFrame = parentFrame;
 		saveCheckBox.setBackground(new Color(252, 252, 252));
 		saveCheckBox.setSelected(true);
 		
+		//loading label
+		
+	/*	BufferedImage myPicture = null;
+		try {
+			myPicture = ImageIO.read(new File("src/main/resources/loading.gif"));
+
+		}
+		catch (IOException e1) {
+			IJ.handleException(e1);
+		}*/
+		JLabel loadingLabel = new JLabel(new ImageIcon("C:\\Users\\Vali\\Desktop\\MOSES Plugin\\src\\main\\resorurces\\loading.gif"));
+		loadingLabel.setBackground(new Color(252, 252, 252));
+		loadingLabel.setVisible(false);
+		
 		//next button - generates tracks
 		
 		JButton btnNext = new JButton("Next");
@@ -88,6 +106,9 @@ this.parentFrame = parentFrame;
 					Globals.saveDirectory = IJ.getDirectory("Choose save directory");
 					IJ.log(Globals.saveDirectory);
 				}
+				
+				loadingLabel.setVisible(true);
+				revalidate();
 				
 				Thread thread = new Thread() {
 					  
@@ -162,6 +183,9 @@ this.parentFrame = parentFrame;
 					thread.join();
 				} 
 				catch (InterruptedException e1) {IJ.handleException(e1);}
+				
+				loadingLabel.setVisible(false);
+				revalidate();
 			}
 		});
 		
@@ -305,31 +329,9 @@ this.parentFrame = parentFrame;
 						.addComponent(titleLabel, GroupLayout.PREFERRED_SIZE, 497, GroupLayout.PREFERRED_SIZE)
 						.addGroup(groupLayout.createSequentialGroup()
 							.addContainerGap()
-							.addComponent(cancelButton, GroupLayout.PREFERRED_SIZE, 140, GroupLayout.PREFERRED_SIZE)
-							.addGap(40)
-							.addComponent(backButton, GroupLayout.PREFERRED_SIZE, 140, GroupLayout.PREFERRED_SIZE)
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(btnNext, GroupLayout.PREFERRED_SIZE, 140, GroupLayout.PREFERRED_SIZE))
-						.addGroup(groupLayout.createSequentialGroup()
-							.addContainerGap()
 							.addComponent(lblLevels, GroupLayout.PREFERRED_SIZE, 81, GroupLayout.PREFERRED_SIZE)
 							.addPreferredGap(ComponentPlacement.RELATED)
 							.addComponent(levelsField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-						.addGroup(groupLayout.createSequentialGroup()
-							.addContainerGap()
-							.addComponent(lblWindowSize, GroupLayout.PREFERRED_SIZE, 81, GroupLayout.PREFERRED_SIZE)
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(winSizeField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-						.addGroup(groupLayout.createSequentialGroup()
-							.addContainerGap()
-							.addComponent(lblIterations, GroupLayout.PREFERRED_SIZE, 81, GroupLayout.PREFERRED_SIZE)
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(iterationsField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-						.addGroup(groupLayout.createSequentialGroup()
-							.addContainerGap()
-							.addComponent(lblPolyN, GroupLayout.PREFERRED_SIZE, 81, GroupLayout.PREFERRED_SIZE)
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(polynField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 						.addGroup(groupLayout.createSequentialGroup()
 							.addContainerGap()
 							.addComponent(lblPolySigma, GroupLayout.PREFERRED_SIZE, 81, GroupLayout.PREFERRED_SIZE)
@@ -348,56 +350,78 @@ this.parentFrame = parentFrame;
 									.addPreferredGap(ComponentPlacement.RELATED)
 									.addComponent(flagsField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)))
 							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-								.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-									.addGroup(groupLayout.createSequentialGroup()
-										.addGap(18)
-										.addComponent(saveCheckBox, GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)
-										.addPreferredGap(ComponentPlacement.RELATED))
-									.addGroup(Alignment.TRAILING, groupLayout.createSequentialGroup()
-										.addPreferredGap(ComponentPlacement.RELATED)
+								.addGroup(groupLayout.createSequentialGroup()
+									.addGap(29)
+									.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING)
 										.addComponent(lblNumberOfSuperpixels, GroupLayout.PREFERRED_SIZE, 216, GroupLayout.PREFERRED_SIZE)
-										.addGap(18)))
-								.addGroup(Alignment.TRAILING, groupLayout.createSequentialGroup()
+										.addGroup(groupLayout.createSequentialGroup()
+											.addComponent(numberSuperpixelsField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+											.addGap(56))))
+								.addGroup(groupLayout.createSequentialGroup()
+									.addGap(18)
+									.addComponent(saveCheckBox, GroupLayout.DEFAULT_SIZE, 255, Short.MAX_VALUE))))
+						.addGroup(groupLayout.createSequentialGroup()
+							.addContainerGap()
+							.addComponent(cancelButton, GroupLayout.PREFERRED_SIZE, 140, GroupLayout.PREFERRED_SIZE)
+							.addGap(40)
+							.addComponent(backButton, GroupLayout.PREFERRED_SIZE, 140, GroupLayout.PREFERRED_SIZE)
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(btnNext, GroupLayout.PREFERRED_SIZE, 140, GroupLayout.PREFERRED_SIZE))
+						.addGroup(groupLayout.createSequentialGroup()
+							.addContainerGap()
+							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+								.addGroup(groupLayout.createSequentialGroup()
+									.addComponent(lblWindowSize, GroupLayout.PREFERRED_SIZE, 81, GroupLayout.PREFERRED_SIZE)
 									.addPreferredGap(ComponentPlacement.RELATED)
-									.addComponent(numberSuperpixelsField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-									.addGap(74)))))
-					.addGap(3))
+									.addComponent(winSizeField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+								.addGroup(groupLayout.createSequentialGroup()
+									.addComponent(lblIterations, GroupLayout.PREFERRED_SIZE, 81, GroupLayout.PREFERRED_SIZE)
+									.addPreferredGap(ComponentPlacement.RELATED)
+									.addComponent(iterationsField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+								.addGroup(groupLayout.createSequentialGroup()
+									.addComponent(lblPolyN, GroupLayout.PREFERRED_SIZE, 81, GroupLayout.PREFERRED_SIZE)
+									.addPreferredGap(ComponentPlacement.RELATED)
+									.addComponent(polynField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)))
+							.addGap(25)
+							.addComponent(loadingLabel, GroupLayout.PREFERRED_SIZE, 267, GroupLayout.PREFERRED_SIZE)))
+					.addContainerGap())
 		);
 		groupLayout.setVerticalGroup(
 			groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
 					.addComponent(titleLabel, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
 					.addGap(28)
-					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-						.addGroup(groupLayout.createSequentialGroup()
-							.addGap(45)
-							.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-								.addComponent(lblScaleFactor, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
-								.addComponent(scaleFactorField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-								.addComponent(lblLevels, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
-								.addComponent(levelsField, GroupLayout.PREFERRED_SIZE, 18, GroupLayout.PREFERRED_SIZE)))
+					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
 						.addGroup(groupLayout.createSequentialGroup()
 							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-								.addComponent(lblOpticalFlowParameter, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
 								.addGroup(groupLayout.createSequentialGroup()
+									.addGap(45)
+									.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+										.addComponent(lblScaleFactor, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
+										.addComponent(scaleFactorField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 									.addPreferredGap(ComponentPlacement.RELATED)
-									.addComponent(lblNumberOfSuperpixels, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)))
+									.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+										.addComponent(lblLevels, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
+										.addComponent(levelsField, GroupLayout.PREFERRED_SIZE, 18, GroupLayout.PREFERRED_SIZE)))
+								.addComponent(lblOpticalFlowParameter, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE))
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+								.addComponent(lblWindowSize, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
+								.addComponent(winSizeField, GroupLayout.PREFERRED_SIZE, 18, GroupLayout.PREFERRED_SIZE))
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+								.addComponent(lblIterations, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
+								.addComponent(iterationsField, GroupLayout.PREFERRED_SIZE, 18, GroupLayout.PREFERRED_SIZE))
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+								.addComponent(lblPolyN, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
+								.addComponent(polynField, GroupLayout.PREFERRED_SIZE, 18, GroupLayout.PREFERRED_SIZE)))
+						.addGroup(groupLayout.createSequentialGroup()
+							.addComponent(lblNumberOfSuperpixels, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
 							.addGap(12)
-							.addComponent(numberSuperpixelsField, GroupLayout.PREFERRED_SIZE, 18, GroupLayout.PREFERRED_SIZE)))
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-						.addComponent(lblWindowSize, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
-						.addComponent(winSizeField, GroupLayout.PREFERRED_SIZE, 18, GroupLayout.PREFERRED_SIZE))
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-						.addComponent(lblIterations, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
-						.addComponent(iterationsField, GroupLayout.PREFERRED_SIZE, 18, GroupLayout.PREFERRED_SIZE))
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-						.addComponent(lblPolyN, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
-						.addComponent(polynField, GroupLayout.PREFERRED_SIZE, 18, GroupLayout.PREFERRED_SIZE))
+							.addComponent(numberSuperpixelsField, GroupLayout.PREFERRED_SIZE, 18, GroupLayout.PREFERRED_SIZE)
+							.addGap(78)
+							.addComponent(loadingLabel, 0, 0, Short.MAX_VALUE)))
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
 						.addComponent(lblPolySigma, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
@@ -407,12 +431,12 @@ this.parentFrame = parentFrame;
 						.addComponent(flagsLabel, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
 						.addComponent(flagsField, GroupLayout.PREFERRED_SIZE, 18, GroupLayout.PREFERRED_SIZE)
 						.addComponent(saveCheckBox, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-					.addPreferredGap(ComponentPlacement.RELATED, 20, Short.MAX_VALUE)
+					.addGap(18)
 					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
 						.addComponent(cancelButton, GroupLayout.PREFERRED_SIZE, 37, GroupLayout.PREFERRED_SIZE)
 						.addComponent(btnNext, GroupLayout.PREFERRED_SIZE, 37, GroupLayout.PREFERRED_SIZE)
 						.addComponent(backButton, GroupLayout.PREFERRED_SIZE, 37, GroupLayout.PREFERRED_SIZE))
-					.addGap(22))
+					.addGap(124))
 		);
 		setLayout(groupLayout);
 	}
