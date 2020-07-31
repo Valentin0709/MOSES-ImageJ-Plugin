@@ -1,18 +1,26 @@
 import java.awt.Color;
 
 public class Globals {
-	public static int frameHight = 400, frameWidth = 500;
-	public static Color color1 = new Color(252, 252, 252), color2 = new Color(13, 59, 102);
+	public static int frameHight = 500, frameWidth = 500;
 	
-	public static String getExtension(String filePath) {   //returns file extension from path
+	//globals for cell tracking
+	public static String fileName, filePath, saveDirectory;
+	public static int frames, width, height, channels, numberSuperpixels, levels, winSize, iterations, polyn, flags;
+	public static double pyr_scale, polysigma;
+	
+	//method that returns file extension from file path
+	
+	public static String getExtension(String filePath) {  
 		String fileName = filePath.substring(filePath.lastIndexOf("\\"));
 		String extension = fileName.substring(fileName.lastIndexOf("."));
 		
 		return extension;
 	}
 	
-	public static String getName(String filePath) {   //returns file name from path
-		String fileName = filePath.substring(filePath.lastIndexOf("\\"));
+	//method that returns file name from file path
+	
+	public static String getName(String filePath) {  
+		String fileName = filePath.substring(filePath.lastIndexOf("\\") + 1);
 		
 		return fileName;
 	}

@@ -2,40 +2,39 @@ import net.imagej.ImageJ;
 import net.imagej.display.ImageDisplayService;
 import javax.swing.SwingUtilities;
 import org.scijava.command.Command;
-import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.UIService;
-import io.scif.services.DatasetIOService;
 
 @Plugin(type = Command.class, headless = true, menuPath = "Plugins>Tracking>MOSES")
 public class MOSES implements Command {
 	
 	@Parameter
-	private UIService ui;
-	
-	@Parameter
-	private DatasetIOService datasetIOService ; 
-	
-	@Parameter
-	private ImageDisplayService imageDisplayService;
+	public UIService ui;
 		
 	@Parameter
-	private LogService logService;
-	
-	private static Frame1 mainFrame = null;
+	public ImageDisplayService imageDisplayService;
+			
+	public MainFrame mainFrame = new MainFrame();
 	
 	@Override
 	public void run() {
+		
+		//set services
+		
+		mainFrame.setServices(ui, imageDisplayService);
+		
+		//display menu panel
+		
+		mainFrame.empty();
+		mainFrame.add(mainFrame.menuPanel);
+		mainFrame.validate();
+				
 		SwingUtilities.invokeLater(() -> {
-			if (mainFrame == null) {
-				mainFrame = new Frame1();
-			}
-
-			mainFrame.setUi(ui);
-			mainFrame.setImageDisplayService(imageDisplayService);
 			
-			mainFrame.Show();	
+			//check if menu window has already been opened
+			
+			if (!mainFrame.isVisible()) mainFrame.display();
 		});
 		
 	}
