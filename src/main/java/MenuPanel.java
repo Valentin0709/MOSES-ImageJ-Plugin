@@ -20,6 +20,11 @@ import org.scijava.ui.UIService;
 import ij.IJ;
 import ij.ImagePlus;
 import net.imagej.display.ImageDisplayService;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import net.miginfocom.swing.MigLayout;
+import javax.swing.SwingConstants;
 
 public class MenuPanel extends JPanel{
 	public UIService ui;
@@ -37,17 +42,21 @@ public class MenuPanel extends JPanel{
 		//set background color
 		
 		this.setBackground(new Color(252, 252, 252));
-						
+		setLayout(null);
+		
 		//title label
 				
 		JLabel titleLabel = new JLabel("Motion Sensing Superpixels", JLabel.CENTER);
+		titleLabel.setBounds(0, 0, 500, 36);
 		titleLabel.setFont(new Font("Arial Black", Font.BOLD, 25));
 		titleLabel.setVerticalTextPosition(JLabel.CENTER);
 		titleLabel.setHorizontalTextPosition(JLabel.CENTER);
-				
+		add(titleLabel);
+		
 		//compute superpixel tracks button
-				
+		
 		JButton superpixelTracksButton = new JButton("Compute superpixel tracks");
+		superpixelTracksButton.setBounds(87, 123, 327, 59);
 		superpixelTracksButton.setFont(new Font("Arial", Font.BOLD, 20));
 		superpixelTracksButton.setForeground(Color.WHITE);
 		superpixelTracksButton.setVerticalTextPosition(AbstractButton.CENTER);
@@ -59,25 +68,18 @@ public class MenuPanel extends JPanel{
 		  {			  
 			  String filePath = null;    //path to the current active image
 			   			  
-			  JFrame Dialog = new JFrame();
+			  JFrame dialog = new JFrame();
 			  if(imageDisplayService.getActiveDataset() == null) {	//checks if any files are opened
 				  
 				  	  //display dialog box
 				  
 					  Object[] options = {"Cancel", "Import now"};
-					  int n = JOptionPane.showOptionDialog(Dialog, "No file selected. Please import a TIFF stack to continue.", "MOSES", 
+					  int n = JOptionPane.showOptionDialog(dialog, "No file selected. Please import a TIFF stack to continue.", "MOSES", 
 							  JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
 					  
 					  //display import file window
 					  
-					  if(n == 1) {
-						  File file = ui.chooseFile(null, "open");
-						  filePath = file.getPath();
-						  
-					  	  ui.show(new ImagePlus(filePath));
-					  	  
-					  	  IJ.log("Imported " + Globals.getName(filePath));
-					  }
+					  if(n == 1) Globals.openFile(ui);
 			  }
 			  else {
 				  
@@ -89,19 +91,12 @@ public class MenuPanel extends JPanel{
 					  //display dialog box
 					  
 					  Object[] options = {"Cancel", "Import now"};
-					  int n = JOptionPane.showOptionDialog(Dialog, "Current selected image has an invalid file format. Please import a TIFF stack to continue.", "MOSES", 
+					  int n = JOptionPane.showOptionDialog(dialog, "Current selected image has an invalid file format. Please import a TIFF stack to continue.", "MOSES", 
 							  JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
 					  
 					  //display import file window
 					  
-					  if(n == 1) {						  
-						  File file = ui.chooseFile(null, "open");
-						  filePath = file.getPath();
-						  
-					  	  ui.show(new ImagePlus(filePath));  
-					  	  
-					      IJ.log("Imported " + Globals.getName(filePath));
-					  }
+					  if(n == 1) Globals.openFile(ui);
 				  }
 				  else {
 					  
@@ -175,39 +170,24 @@ public class MenuPanel extends JPanel{
 						//display computeTracksPanel1 and close current panel
 						
 						parentFrame.empty();
-						parentFrame.add(parentFrame.computeTracksPanel1);
+						parentFrame.getContentPane().add(parentFrame.computeTracksPanel1);
 						parentFrame.computeTracksPanel1.updateFields();
 						parentFrame.validate();						  
 				  }
 			  }
 		  }
 		});
-				
-		//Layout
-				
-		GroupLayout gl_mainPanel = new GroupLayout(this);
-		gl_mainPanel.setHorizontalGroup(
-			gl_mainPanel.createParallelGroup(Alignment.LEADING)
-				.addComponent(titleLabel, GroupLayout.DEFAULT_SIZE, 500, Short.MAX_VALUE)
-				.addGroup(gl_mainPanel.createSequentialGroup()
-					.addGap(97)
-					.addComponent(superpixelTracksButton, GroupLayout.PREFERRED_SIZE, 307, GroupLayout.PREFERRED_SIZE)
-					.addContainerGap(96, Short.MAX_VALUE))
-		);
-		gl_mainPanel.setVerticalGroup(
-			gl_mainPanel.createParallelGroup(Alignment.LEADING)
-				.addGroup(gl_mainPanel.createSequentialGroup()
-					.addComponent(titleLabel, GroupLayout.PREFERRED_SIZE, 39, GroupLayout.PREFERRED_SIZE)
-					.addGap(47)
-					.addComponent(superpixelTracksButton, GroupLayout.PREFERRED_SIZE, 51, GroupLayout.PREFERRED_SIZE)
-					.addContainerGap(263, Short.MAX_VALUE))
-		);
-		this.setLayout(gl_mainPanel);
+		add(superpixelTracksButton);
+		
+		JLabel lblNewLabel = new JLabel("Extract and visualize superpixel motion tracks from a TIFF file");
+		lblNewLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		lblNewLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
+		lblNewLabel.setBounds(12, 72, 476, 43);
+		add(lblNewLabel);
 	}
 	
 	public void setServices(UIService ui, ImageDisplayService imageDisplayService) {
 		this.ui = ui;
 		this.imageDisplayService = imageDisplayService;
 	}
-
 }
