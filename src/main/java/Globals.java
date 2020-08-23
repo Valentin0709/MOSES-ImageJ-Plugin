@@ -1,8 +1,13 @@
+import java.awt.Component;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import org.scijava.ui.UIService;
 
@@ -16,9 +21,11 @@ public class Globals {
 
 	// globals for cell tracking
 	public static String fileName, filePath, saveDirectory;
-	public static int frames, width, height, channels, numberSuperpixels, levels, winSize, iterations, polyn, flags;
-	public static double pyr_scale, polysigma;
-	public static int[] activeChannels = new int[10];
+	public static String scriptPath = System.getProperty("java.io.tmpdir") + "MOSESscript.py";
+	public static int frames, width, height, channels, numberSuperpixels, levels, winSize, iterations, polyn, flags,
+			numberSelectedChannels;
+	public static double pyr_scale, polysigma, downsizeFactor;
+	static ArrayList<Integer> selectedChannels = new ArrayList<Integer>();
 
 	// method that returns file extension from file path
 
@@ -37,21 +44,58 @@ public class Globals {
 		return fileName;
 	}
 
+	public static String getNameWithoutExtension(String filePath) {
+		String fileName = filePath.substring(filePath.lastIndexOf("\\") + 1, filePath.lastIndexOf("."));
+
+		return fileName;
+	}
+
 	// method that imports a file from the 'open file' window provided by the
 	// UIService
 
-	public static void openFile(UIService ui) {
+	public static boolean openFile(UIService ui, ArrayList<String> extensions) {
+		// set look and feel
+
+		try {
+			UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+				| UnsupportedLookAndFeelException e) {
+			e.printStackTrace();
+		}
+
 		File file = null;
 		file = ui.chooseFile(null, "open");
 
 		// check if a file was selected
 		if (file != null) {
-			filePath = file.getPath();
-			ImagePlus image = new ImagePlus(filePath);
-			// currentImage = image.crop("1-1").getBufferedImage();
-			ui.show(image);
-			IJ.log("Imported " + Globals.getName(filePath));
+			boolean validExtension = checkExtension(file.getPath(), extensions);
+
+			if (validExtension) {
+				filePath = file.getPath();
+				fileName = Globals.getName(filePath);
+
+				ImagePlus image = new ImagePlus(filePath);
+				ui.show(image);
+				IJ.log("Imported " + Globals.getName(filePath));
+				return true;
+			} else
+				return false;
+		} else
+			return false;
+	}
+
+	public static boolean checkExtension(String filePathh, ArrayList<String> extensions) {
+		boolean validExtension = false;
+		for (int i = 0; i < extensions.size(); i++) {
+			String ext = extensions.get(i);
+			if (Globals.getExtension(filePathh).equals(ext)) {
+				validExtension = true;
+				break;
+			}
 		}
+
+		return validExtension;
+
 	}
 
 	public static void checkInstallationStatus() {
@@ -101,4 +145,60 @@ public class Globals {
 		}
 	}
 
+	public static void moveComponent(Component component2, int x, int y) {
+		component2.setBounds(component2.getBounds().x + x, component2.getBounds().y + y, component2.getWidth(),
+				component2.getHeight());
+	}
+
+	public static char color(int index) {
+		if (index == 0)
+			return 'r';
+		if (index == 1)
+			return 'b';
+		if (index == 2)
+			return 'g';
+		if (index == 3)
+			return 'c';
+		if (index == 4)
+			return 'm';
+		if (index == 5)
+			return 'y';
+		if (index == 5)
+			return 'w';
+		return 'k';
+
+	}
+
+	public static void runScript(String pythonScript, ArrayList<String> command) {
+		File file = new File(scriptPath);
+		try {
+			file.createNewFile();
+		} catch (IOException e) {
+			IJ.handleException(e);
+		}
+
+		try {
+			FileWriter writer = new FileWriter(file);
+			writer.write(pythonScript);
+			writer.close();
+		} catch (IOException e) {
+			IJ.handleException(e);
+		}
+
+		ProcessBuilder pb = new ProcessBuilder(command);
+
+		IJ.log("Parameters: " + command);
+		IJ.log(pythonScript);
+
+		try {
+			Process p = pb.start();
+			p.waitFor();
+
+		} catch (IOException | InterruptedException e) {
+			IJ.handleException(e);
+		}
+
+		file.delete();
+
+	}
 }

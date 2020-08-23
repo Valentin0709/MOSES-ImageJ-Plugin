@@ -7,55 +7,39 @@ import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.GeneralPath;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JDialog;
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-
-import org.scijava.ui.UIService;
 
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.gui.ShapeRoi;
-import ij.plugin.FolderOpener;
-import net.imagej.display.ImageDisplayService;
 
 public class ComputeTracksPanel2 extends JPanel {
-	protected static final int Thread = 0;
-	public UIService ui;
-	public ImageDisplayService imageDisplayService;
 	public MainFrame parentFrame;
-	private JTextField textField;
 	public ComputeTracksPanel2 self = this;
 
 	public ComputeTracksPanel2(MainFrame parentFrame) {
 
+		// set look and feel
+
 		try {
-			UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
+			UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
 		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
-				| UnsupportedLookAndFeelException e1) {
-			e1.printStackTrace();
+				| UnsupportedLookAndFeelException e) {
+			e.printStackTrace();
 		}
+
+		// set parent frame
 
 		this.parentFrame = parentFrame;
 
@@ -75,116 +59,61 @@ public class ComputeTracksPanel2 extends JPanel {
 		titleLabel.setHorizontalTextPosition(SwingConstants.CENTER);
 		titleLabel.setFont(new Font("Arial Black", Font.BOLD, 25));
 
-		// save tracks checkbox
-
-		JCheckBox saveCheckBox = new JCheckBox("<html> Save the computed tracks in MATLAB format </html>");
-		saveCheckBox.setHorizontalAlignment(SwingConstants.CENTER);
-		saveCheckBox.setBounds(258, 348, 252, 52);
-		saveCheckBox.setFont(new Font("Roboto", Font.PLAIN, 14));
-		saveCheckBox.setBackground(new Color(252, 252, 252));
-		saveCheckBox.setSelected(true);
-
 		// collect parameters labels
 
-		JLabel lblOpticalFlowParameter = new JLabel("Optical flow parameter", SwingConstants.CENTER);
-		lblOpticalFlowParameter.setBounds(10, 140, 230, 39);
-		lblOpticalFlowParameter.setVerticalTextPosition(SwingConstants.CENTER);
-		lblOpticalFlowParameter.setHorizontalTextPosition(SwingConstants.CENTER);
-		lblOpticalFlowParameter.setFont(new Font("Arial", Font.BOLD, 18));
+		JLabel opticalFlowParameterLabel = new JLabel("Optical flow parameter", SwingConstants.CENTER);
+		opticalFlowParameterLabel.setBounds(0, 0, 230, 39);
+		opticalFlowParameterLabel.setVerticalTextPosition(SwingConstants.CENTER);
+		opticalFlowParameterLabel.setHorizontalTextPosition(SwingConstants.CENTER);
+		opticalFlowParameterLabel.setFont(new Font("Arial", Font.BOLD, 18));
 
 		JLabel scaleFactorLabel = new JLabel("Scale factor:", SwingConstants.LEFT);
-		scaleFactorLabel.setBounds(20, 190, 90, 20);
+		scaleFactorLabel.setBounds(10, 50, 90, 20);
 		scaleFactorLabel.setVerticalTextPosition(SwingConstants.CENTER);
 		scaleFactorLabel.setHorizontalTextPosition(SwingConstants.CENTER);
 		scaleFactorLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
 
 		JLabel levelsLabel = new JLabel("Levels:", SwingConstants.LEFT);
-		levelsLabel.setBounds(20, 220, 90, 20);
+		levelsLabel.setBounds(10, 80, 90, 20);
 		levelsLabel.setVerticalTextPosition(SwingConstants.CENTER);
 		levelsLabel.setHorizontalTextPosition(SwingConstants.CENTER);
 		levelsLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
 
 		JLabel windowSizeLabel = new JLabel("Window size:", SwingConstants.LEFT);
-		windowSizeLabel.setBounds(20, 250, 90, 20);
+		windowSizeLabel.setBounds(10, 110, 90, 20);
 		windowSizeLabel.setVerticalTextPosition(SwingConstants.CENTER);
 		windowSizeLabel.setHorizontalTextPosition(SwingConstants.CENTER);
 		windowSizeLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
 
 		JLabel iterationsLabel = new JLabel("Iterations:", SwingConstants.LEFT);
-		iterationsLabel.setBounds(20, 280, 90, 20);
+		iterationsLabel.setBounds(10, 140, 90, 20);
 		iterationsLabel.setVerticalTextPosition(SwingConstants.CENTER);
 		iterationsLabel.setHorizontalTextPosition(SwingConstants.CENTER);
 		iterationsLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
 
 		JLabel polyNLabel = new JLabel("Poly n:", SwingConstants.LEFT);
-		polyNLabel.setBounds(20, 310, 90, 20);
+		polyNLabel.setBounds(10, 170, 90, 20);
 		polyNLabel.setVerticalTextPosition(SwingConstants.CENTER);
 		polyNLabel.setHorizontalTextPosition(SwingConstants.CENTER);
 		polyNLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
 
 		JLabel polySigmaLabel = new JLabel("Poly sigma:", SwingConstants.LEFT);
-		polySigmaLabel.setBounds(20, 340, 90, 20);
+		polySigmaLabel.setBounds(10, 200, 90, 20);
 		polySigmaLabel.setVerticalTextPosition(SwingConstants.CENTER);
 		polySigmaLabel.setHorizontalTextPosition(SwingConstants.CENTER);
 		polySigmaLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
 
-		JLabel superpixelsPanel = new JLabel("Number of superpixels", SwingConstants.CENTER);
-		superpixelsPanel.setBounds(260, 140, 230, 39);
-		superpixelsPanel.setVerticalTextPosition(SwingConstants.CENTER);
-		superpixelsPanel.setHorizontalTextPosition(SwingConstants.CENTER);
-		superpixelsPanel.setFont(new Font("Arial", Font.BOLD, 18));
+		JLabel numberSuperpixelsLabel = new JLabel("Number of superpixels", SwingConstants.CENTER);
+		numberSuperpixelsLabel.setBounds(0, 0, 230, 39);
+		numberSuperpixelsLabel.setVerticalTextPosition(SwingConstants.CENTER);
+		numberSuperpixelsLabel.setHorizontalTextPosition(SwingConstants.CENTER);
+		numberSuperpixelsLabel.setFont(new Font("Arial", Font.BOLD, 18));
 
 		JLabel flagsLabel = new JLabel("Flags:", SwingConstants.LEFT);
-		flagsLabel.setBounds(20, 370, 90, 20);
+		flagsLabel.setBounds(10, 230, 90, 20);
 		flagsLabel.setVerticalTextPosition(SwingConstants.CENTER);
 		flagsLabel.setHorizontalTextPosition(SwingConstants.CENTER);
 		flagsLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
-
-		// cancel button
-
-		JButton cancelButton = new JButton("Cancel");
-		cancelButton.setBounds(10, 430, 140, 30);
-		cancelButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// display menuPanel and close current panel
-
-				parentFrame.empty();
-				parentFrame.getContentPane().add(parentFrame.menuPanel);
-				parentFrame.validate();
-			}
-		});
-		cancelButton.setVerticalTextPosition(SwingConstants.CENTER);
-		cancelButton.setHorizontalTextPosition(SwingConstants.CENTER);
-		cancelButton.setForeground(Color.WHITE);
-		cancelButton.setFont(new Font("Arial", Font.BOLD, 15));
-		cancelButton.setBackground(new Color(13, 59, 102));
-
-		// back button - return to previous panel
-
-		JButton backButton = new JButton("Back");
-		backButton.setBounds(200, 430, 140, 30);
-		backButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// display menuPanel and close current panel
-
-				parentFrame.empty();
-				parentFrame.getContentPane().add(parentFrame.computeTracksPanel1);
-				parentFrame.computeTracksPanel1.updateFields();
-				parentFrame.validate();
-			}
-		});
-		backButton.setVerticalTextPosition(SwingConstants.CENTER);
-		backButton.setHorizontalTextPosition(SwingConstants.CENTER);
-		backButton.setForeground(Color.WHITE);
-		backButton.setFont(new Font("Arial", Font.BOLD, 15));
-		backButton.setBackground(new Color(13, 59, 102));
-
-		JPanel numberSuperpixelsPanel = new JPanel();
-		numberSuperpixelsPanel.setLayout(null);
-		numberSuperpixelsPanel.setBounds(260, 140, 230, 90);
-		add(numberSuperpixelsPanel);
 
 		// collect parameters fields
 
@@ -211,8 +140,8 @@ public class ComputeTracksPanel2 extends JPanel {
 
 		scaleFactorField.setHorizontalAlignment(SwingConstants.CENTER);
 		scaleFactorField.setFont(new Font("Roboto", Font.PLAIN, 15));
-		scaleFactorField.setText("0.5");
-		scaleFactorField.setBounds(135, 190, 60, 20);
+		scaleFactorField.setText(String.valueOf(Globals.pyr_scale));
+		scaleFactorField.setBounds(125, 50, 60, 20);
 
 		JFormattedTextField levelsField = new JFormattedTextField(integerFormat) {
 			@Override
@@ -229,10 +158,10 @@ public class ComputeTracksPanel2 extends JPanel {
 				super.processFocusEvent(e);
 			}
 		};
-		levelsField.setText("3");
+		levelsField.setText(String.valueOf(Globals.levels));
 		levelsField.setHorizontalAlignment(SwingConstants.CENTER);
 		levelsField.setFont(new Font("Roboto", Font.PLAIN, 15));
-		levelsField.setBounds(135, 220, 60, 20);
+		levelsField.setBounds(125, 80, 60, 20);
 
 		JFormattedTextField windowSizeField = new JFormattedTextField(integerFormat) {
 			@Override
@@ -249,10 +178,10 @@ public class ComputeTracksPanel2 extends JPanel {
 				super.processFocusEvent(e);
 			}
 		};
-		windowSizeField.setText("15");
+		windowSizeField.setText(String.valueOf(Globals.winSize));
 		windowSizeField.setHorizontalAlignment(SwingConstants.CENTER);
 		windowSizeField.setFont(new Font("Roboto", Font.PLAIN, 15));
-		windowSizeField.setBounds(135, 250, 60, 20);
+		windowSizeField.setBounds(125, 110, 60, 20);
 
 		JFormattedTextField iterationsField = new JFormattedTextField(integerFormat) {
 			@Override
@@ -269,10 +198,10 @@ public class ComputeTracksPanel2 extends JPanel {
 				super.processFocusEvent(e);
 			}
 		};
-		iterationsField.setText("3");
+		iterationsField.setText(String.valueOf(Globals.iterations));
 		iterationsField.setHorizontalAlignment(SwingConstants.CENTER);
 		iterationsField.setFont(new Font("Roboto", Font.PLAIN, 15));
-		iterationsField.setBounds(135, 280, 60, 20);
+		iterationsField.setBounds(125, 140, 60, 20);
 
 		JFormattedTextField polyNField = new JFormattedTextField(integerFormat) {
 			@Override
@@ -289,10 +218,10 @@ public class ComputeTracksPanel2 extends JPanel {
 				super.processFocusEvent(e);
 			}
 		};
-		polyNField.setText("5");
+		polyNField.setText(String.valueOf(Globals.polyn));
 		polyNField.setHorizontalAlignment(SwingConstants.CENTER);
 		polyNField.setFont(new Font("Roboto", Font.PLAIN, 15));
-		polyNField.setBounds(135, 308, 60, 20);
+		polyNField.setBounds(125, 170, 60, 20);
 
 		JFormattedTextField polySigmaField = new JFormattedTextField(decimalFormat) {
 			@Override
@@ -309,10 +238,10 @@ public class ComputeTracksPanel2 extends JPanel {
 				super.processFocusEvent(e);
 			}
 		};
-		polySigmaField.setText("1.2");
+		polySigmaField.setText(String.valueOf(Globals.polysigma));
 		polySigmaField.setHorizontalAlignment(SwingConstants.CENTER);
 		polySigmaField.setFont(new Font("Roboto", Font.PLAIN, 15));
-		polySigmaField.setBounds(135, 340, 60, 20);
+		polySigmaField.setBounds(125, 200, 60, 20);
 
 		JFormattedTextField flagsField = new JFormattedTextField(integerFormat) {
 			@Override
@@ -329,10 +258,10 @@ public class ComputeTracksPanel2 extends JPanel {
 				super.processFocusEvent(e);
 			}
 		};
-		flagsField.setText("0");
+		flagsField.setText(String.valueOf(Globals.flags));
 		flagsField.setHorizontalAlignment(SwingConstants.CENTER);
 		flagsField.setFont(new Font("Roboto", Font.PLAIN, 15));
-		flagsField.setBounds(135, 370, 60, 20);
+		flagsField.setBounds(125, 230, 60, 20);
 
 		JFormattedTextField numberSuperpixelsField = new JFormattedTextField(integerFormat) {
 			@Override
@@ -349,10 +278,88 @@ public class ComputeTracksPanel2 extends JPanel {
 				super.processFocusEvent(e);
 			}
 		};
-		numberSuperpixelsField.setBounds(325, 190, 100, 20);
-		numberSuperpixelsField.setText("1000");
+		numberSuperpixelsField.setBounds(65, 50, 100, 20);
+		numberSuperpixelsField.setText(String.valueOf(Globals.numberSuperpixels));
 		numberSuperpixelsField.setHorizontalAlignment(SwingConstants.CENTER);
 		numberSuperpixelsField.setFont(new Font("Roboto", Font.PLAIN, 15));
+
+		JFormattedTextField downsizeFactorField = new JFormattedTextField(decimalFormat) {
+			@Override
+			protected void processFocusEvent(final FocusEvent e) {
+				if (e.isTemporary()) {
+					return;
+				}
+
+				if (e.getID() == FocusEvent.FOCUS_LOST) {
+					if (getText() == null || getText().isEmpty()) {
+						setValue(0);
+					}
+				}
+				super.processFocusEvent(e);
+			}
+		};
+		downsizeFactorField.setText(String.valueOf(Globals.downsizeFactor));
+		downsizeFactorField.setHorizontalAlignment(SwingConstants.CENTER);
+		downsizeFactorField.setFont(new Font("Roboto", Font.PLAIN, 15));
+		downsizeFactorField.setBounds(65, 50, 100, 20);
+
+		JLabel downsizeFactorLabel = new JLabel("Downsize factor", SwingConstants.CENTER);
+		downsizeFactorLabel.setVerticalTextPosition(SwingConstants.CENTER);
+		downsizeFactorLabel.setHorizontalTextPosition(SwingConstants.CENTER);
+		downsizeFactorLabel.setFont(new Font("Arial", Font.BOLD, 18));
+		downsizeFactorLabel.setBounds(0, 0, 230, 39);
+
+		// cancel button
+
+		JButton cancelButton = new JButton("Cancel");
+		cancelButton.setBounds(10, 430, 140, 30);
+		cancelButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// display menuPanel and close current panel
+
+				parentFrame.empty();
+				parentFrame.menuPanel = new MenuPanel(parentFrame);
+				parentFrame.getContentPane().add(parentFrame.menuPanel);
+				parentFrame.validate();
+			}
+		});
+		cancelButton.setVerticalTextPosition(SwingConstants.CENTER);
+		cancelButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		cancelButton.setForeground(Color.WHITE);
+		cancelButton.setFont(new Font("Arial", Font.BOLD, 15));
+		cancelButton.setBackground(new Color(13, 59, 102));
+
+		// back button - return to previous panel
+
+		JButton backButton = new JButton("Back");
+		backButton.setBounds(200, 430, 140, 30);
+		backButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Globals.pyr_scale = Double.parseDouble(scaleFactorField.getText());
+				Globals.levels = Integer.parseInt(levelsField.getText());
+				Globals.winSize = Integer.parseInt(windowSizeField.getText());
+				Globals.iterations = Integer.parseInt(iterationsField.getText());
+				Globals.polyn = Integer.parseInt(polyNField.getText());
+				Globals.polysigma = Double.parseDouble(polySigmaField.getText());
+				Globals.flags = Integer.parseInt(flagsField.getText());
+				Globals.numberSuperpixels = Integer.parseInt(numberSuperpixelsField.getText());
+				Globals.downsizeFactor = Double.parseDouble(downsizeFactorField.getText());
+
+				// display menuPanel and close current panel
+
+				parentFrame.empty();
+				parentFrame.computeTracksPanel1 = new ComputeTracksPanel1(parentFrame);
+				parentFrame.getContentPane().add(parentFrame.computeTracksPanel1);
+				parentFrame.validate();
+			}
+		});
+		backButton.setVerticalTextPosition(SwingConstants.CENTER);
+		backButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		backButton.setForeground(Color.WHITE);
+		backButton.setFont(new Font("Arial", Font.BOLD, 15));
+		backButton.setBackground(new Color(13, 59, 102));
 
 		// next button - generates tracks
 
@@ -369,148 +376,14 @@ public class ComputeTracksPanel2 extends JPanel {
 				Globals.polysigma = Double.parseDouble(polySigmaField.getText());
 				Globals.flags = Integer.parseInt(flagsField.getText());
 				Globals.numberSuperpixels = Integer.parseInt(numberSuperpixelsField.getText());
+				Globals.downsizeFactor = Double.parseDouble(downsizeFactorField.getText());
 
-				if (saveCheckBox.isEnabled()) {
-					Globals.saveDirectory = IJ.getDirectory("Choose save directory");
-					IJ.log(Globals.saveDirectory);
-				}
+				// display next panel and close current panel
 
-				JProgressBar progressBar = new JProgressBar(JProgressBar.HORIZONTAL);
-				progressBar.setIndeterminate(true);
-				progressBar.setVisible(true);
-				progressBar.setBounds(0, 0, 300, 60);
-
-				JDialog loadingDialog = new JDialog((JFrame) null, "Please wait");
-				loadingDialog.setSize(300, 60);
-				loadingDialog.setResizable(false);
-				loadingDialog.setLocationRelativeTo(self);
-				loadingDialog.setVisible(true);
-
-				JPanel loadingDialogPanel = new JPanel();
-				loadingDialog.getContentPane().add(loadingDialogPanel);
-				loadingDialogPanel.setSize(300, 60);
-				loadingDialogPanel.setLayout(null);
-				loadingDialogPanel.add(progressBar);
-
-				class MyWorker extends SwingWorker<String, Void> {
-					protected String doInBackground() {
-
-						Thread thread = new Thread() {
-
-							@Override
-							public void run() {
-								// create temporary python script file
-
-								String temporaryDirectorPath = System.getProperty("java.io.tmpdir");
-								String scriptPath = temporaryDirectorPath + "compute_tracks.py";
-								File file = new File(scriptPath);
-
-								ArrayList<String> command = new ArrayList<>();
-								command.addAll(Arrays.asList("python", scriptPath, Globals.filePath,
-										String.valueOf(Globals.pyr_scale), String.valueOf(Globals.levels),
-										String.valueOf(Globals.winSize), String.valueOf(Globals.iterations),
-										String.valueOf(Globals.polyn), String.valueOf(Globals.polysigma),
-										String.valueOf(Globals.flags), String.valueOf(Globals.numberSuperpixels)));
-
-								String pythonScript = "import scipy.io as spio\r\n" + "import os\r\n" + "import sys\r\n"
-										+ "from MOSES.Utility_Functions.file_io import read_multiimg_PIL\r\n"
-										+ "from MOSES.Optical_Flow_Tracking.superpixel_track import compute_grayscale_vid_superpixel_tracks\r\n"
-										+ "infile = sys.argv[1]\r\n" + "vidstack = read_multiimg_PIL(infile)\r\n"
-										+ "optical_flow_params = dict(pyr_scale = float(sys.argv[2]), levels = int(sys.argv[3]), winsize = int(sys.argv[4]), iterations = int(sys.argv[5]), poly_n = int(sys.argv[6]), poly_sigma = float(sys.argv[7]), flags = int(sys.argv[8]))\r\n"
-										+ "n_spixels = int(sys.argv[9])\r\n" + "print(\"Finished set up\")\r\n"
-										+ "optflow_r, meantracks_r = compute_grayscale_vid_superpixel_tracks(vidstack[:,:,:,0], optical_flow_params, n_spixels)\r\n"
-										+ "print(\"Finished extracting superpixel tracks for the 1st channel\")\r\n"
-										+ "optflow_g, meantracks_g = compute_grayscale_vid_superpixel_tracks(vidstack[:,:,:,1], optical_flow_params, n_spixels)\r\n"
-										+ "print(\"Finished extracting superpixel tracks for the 2nd channel\")\r\n";
-
-								// save tracks if the checkbox is enabled
-
-								if (saveCheckBox.isEnabled()) {
-									pythonScript += "fname = os.path.split(infile)[-1]\r\n"
-											+ "savetracksmat = (sys.argv[10] + 'meantracks_' + fname).replace('.tif', '.mat')\r\n"
-											+ "spio.savemat(savetracksmat, {'meantracks_r': meantracks_r, 'meantracks_g': meantracks_g})\r\n"
-											+ "print(\"Saved tracks\")\r\n";
-
-									command.add(Globals.saveDirectory);
-								}
-
-								pythonScript += "from MOSES.Utility_Functions.file_io import mkdir\r\n"
-										+ "from MOSES.Visualisation_Tools.track_plotting import plot_tracks\r\n"
-										+ "import pylab as plt\r\n" + "\r\n"
-										+ "save_frame_folder = sys.argv[10] + 'track_video'\r\n"
-										+ "mkdir(save_frame_folder)\r\n" + "\r\n" + "len_segment = 5\r\n" + "\r\n"
-										+ "for frame in range(len_segment, " + Globals.frames + ", 1):\r\n"
-										+ "    frame_img = vidstack[frame]\r\n" + "    fig = plt.figure()\r\n"
-										+ "    fig.set_size_inches(float(" + Globals.width + ")/ " + Globals.height
-										+ ", 1, forward=False)\r\n"
-										+ "    ax=plt.Axes(fig, [0.,0.,1.,1.]); ax.set_axis_off(); fig.add_axes(ax)\r\n"
-										+ "    ax.imshow(frame_img, alpha=0.6)\r\n"
-										+ "    plot_tracks(meantracks_r[:,frame-len_segment:frame+1],ax, color='r', lw=1)\r\n"
-										+ "    plot_tracks(meantracks_g[:,frame-len_segment:frame+1],ax, color='g', lw=1)\r\n"
-										+ "    ax.set_xlim([0, " + Globals.width + "]); ax.set_ylim([" + Globals.height
-										+ ", 0])\r\n" + "    ax.grid('off'); ax.axis('off')\r\n"
-										+ "    print(os.path.join(save_frame_folder, 'tracksimg-%s_' %(str(frame+1).zfill(3))+fname.replace('.tif','.png')))\r\n"
-										+ "    fig.savefig(os.path.join(save_frame_folder, 'tracksimg-%s_' %(str(frame+1).zfill(3))+fname.replace('.tif','.png')), dpi="
-										+ Globals.height + ")\r\n";
-
-								try {
-									FileWriter writer = new FileWriter(file);
-									writer.write(pythonScript);
-									writer.close();
-								} catch (IOException e2) {
-									IJ.handleException(e2);
-								}
-
-								// run the script
-
-								ProcessBuilder pb = new ProcessBuilder(command);
-
-								IJ.log("Parameters: " + command);
-								IJ.log(pythonScript);
-
-								try {
-									Process p = pb.start();
-
-									BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-									String line;
-									while ((line = in.readLine()) != null) {
-										if (line.isEmpty()) {
-											break;
-										}
-										IJ.log(line);
-									}
-								} catch (IOException e1) {
-									IJ.handleException(e1);
-								}
-
-								file.delete();
-							}
-						};
-
-						thread.start();
-
-						try {
-							thread.join();
-						} catch (InterruptedException e1) {
-							IJ.handleException(e1);
-						}
-
-						return "Done.";
-
-					}
-
-					protected void done() {
-						loadingDialog.setVisible(false);
-
-						ImagePlus imp = FolderOpener.open(Globals.saveDirectory + "track_video", "");
-						imp.show();
-						IJ.saveAs(imp, "Tiff", Globals.saveDirectory + "track_video.tif");
-
-					}
-
-				}
-
-				new MyWorker().execute();
+				parentFrame.empty();
+				parentFrame.computeTracksPanel3 = new ComputeTracksPanel3(parentFrame);
+				parentFrame.getContentPane().add(parentFrame.computeTracksPanel3);
+				parentFrame.validate();
 			}
 		});
 
@@ -520,34 +393,24 @@ public class ComputeTracksPanel2 extends JPanel {
 		nextButton.setFont(new Font("Arial", Font.BOLD, 15));
 		nextButton.setBackground(new Color(13, 59, 102));
 
-		// layout
+		// panels
 
-		setLayout(null);
-		add(titleLabel);
-		add(levelsLabel);
-		add(polySigmaLabel);
-		add(lblOpticalFlowParameter);
-		add(scaleFactorLabel);
-		add(flagsLabel);
-		add(superpixelsPanel);
-		add(saveCheckBox);
-		add(cancelButton);
-		add(backButton);
-		add(nextButton);
-		add(windowSizeLabel);
-		add(iterationsLabel);
-		add(polyNLabel);
-		add(scaleFactorField);
-		add(levelsField);
-		add(windowSizeField);
-		add(iterationsField);
-		add(polySigmaField);
-		add(flagsField);
-		add(polyNField);
-		add(numberSuperpixelsField);
-		add(numberSuperpixelsPanel);
+		JPanel numberSuperpixelsPanel = new JPanel();
+		numberSuperpixelsPanel.setBounds(260, 140, 230, 90);
+
+		JPanel opticalFlowParametersPanel = new JPanel();
+		opticalFlowParametersPanel.setBounds(10, 140, 230, 260);
+		opticalFlowParametersPanel.setLayout(null);
+
+		JPanel downsizeFactorPanel = new JPanel();
+		downsizeFactorPanel.setLayout(null);
+		downsizeFactorPanel.setBounds(260, 254, 230, 90);
+		add(downsizeFactorPanel);
+
+		// help buttons
 
 		JLabel numberSuperpixelsHelp = new JLabel("?");
+		numberSuperpixelsHelp.setBounds(210, 70, 15, 16);
 		numberSuperpixelsHelp.addMouseListener(new MouseAdapter() {
 
 			@Override
@@ -581,17 +444,10 @@ public class ComputeTracksPanel2 extends JPanel {
 				numberSuperpixelsHelp.setForeground(new Color(0, 0, 0));
 			}
 		});
+		numberSuperpixelsPanel.setLayout(null);
 
 		numberSuperpixelsHelp.setFont(new Font("Roboto", Font.BOLD, 20));
-		numberSuperpixelsHelp.setBounds(210, 70, 15, 16);
 		numberSuperpixelsPanel.add(numberSuperpixelsHelp);
-
-		// panels
-
-		JPanel opticalFlowParametersPanel = new JPanel();
-		opticalFlowParametersPanel.setBounds(10, 140, 230, 260);
-		add(opticalFlowParametersPanel);
-		opticalFlowParametersPanel.setLayout(null);
 
 		JLabel opticalFlowHelp = new JLabel("?");
 		opticalFlowHelp.addMouseListener(new MouseAdapter() {
@@ -638,6 +494,8 @@ public class ComputeTracksPanel2 extends JPanel {
 		opticalFlowParametersPanel.add(opticalFlowHelp);
 		opticalFlowHelp.setFont(new Font("Roboto", Font.BOLD, 20));
 
+		// preview button
+
 		JLabel lblStep = new JLabel("STEP 2");
 		lblStep.setVerticalAlignment(SwingConstants.TOP);
 		lblStep.setHorizontalAlignment(SwingConstants.LEFT);
@@ -647,24 +505,33 @@ public class ComputeTracksPanel2 extends JPanel {
 		add(lblStep);
 
 		JLabel lblset = new JLabel(
-				"<html>Define the optical flow parameters and specify the target number of superpixels used for computing the motion tracks. </html>");
+				"<html>Define the optical flow parameters and specify the target number of superpixels used for computing the motion tracks. Change the downsize factor if you wish to work with a smaller version of the image in the next step.</html>");
 		lblset.setVerticalAlignment(SwingConstants.TOP);
 		lblset.setHorizontalAlignment(SwingConstants.LEFT);
 		lblset.setForeground(Color.DARK_GRAY);
 		lblset.setFont(new Font("Roboto", Font.PLAIN, 15));
-		lblset.setBounds(65, 50, 420, 70);
+		lblset.setBounds(65, 50, 420, 78);
 		add(lblset);
 
 		JButton previewButton = new JButton("Preview");
 		previewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ImagePlus currentImage = (ImagePlus) IJ.getImage().clone();
+				double downsizeFactor = Double.parseDouble(downsizeFactorField.getText());
+				int numberSuperpixels = Integer.parseInt(numberSuperpixelsField.getText());
+
+				ImagePlus currentImage = IJ.openImage(Globals.filePath);
+				currentImage.setTitle(Globals.getNameWithoutExtension(Globals.filePath) + "_superpixel_preview_"
+						+ "downsize factor=" + downsizeFactor + "_number_superpixels="
+						+ Integer.parseInt(numberSuperpixelsField.getText()));
+				IJ.run(currentImage, "Size...",
+						"width=" + (int) (Globals.width / Math.sqrt(downsizeFactor)) + " height="
+								+ (int) (Globals.height / Math.sqrt(downsizeFactor)) + " depth=" + Globals.frames
+								+ " constrain average interpolation=Bilinear");
 
 				GeneralPath path = new GeneralPath();
 				int imageWidth = currentImage.getWidth();
 				int imageHeight = currentImage.getHeight();
-				double superpixelSize = Math
-						.sqrt((imageWidth * imageHeight) / Integer.parseInt(numberSuperpixelsField.getText()));
+				double superpixelSize = Math.sqrt((imageWidth * imageHeight) / numberSuperpixels);
 
 				for (int i = 0; i < imageWidth; i += superpixelSize) {
 					path.moveTo(i, 0);
@@ -680,7 +547,7 @@ public class ComputeTracksPanel2 extends JPanel {
 				roi.setStrokeWidth(2);
 
 				currentImage.setOverlay(new Overlay(roi));
-				ui.show(currentImage);
+				parentFrame.ui.show(currentImage);
 			}
 		});
 		previewButton.setVerticalTextPosition(SwingConstants.CENTER);
@@ -688,13 +555,37 @@ public class ComputeTracksPanel2 extends JPanel {
 		previewButton.setForeground(Color.WHITE);
 		previewButton.setFont(new Font("Arial", Font.BOLD, 15));
 		previewButton.setBackground(new Color(13, 59, 102));
-		previewButton.setBounds(260, 240, 230, 30);
+		previewButton.setBounds(260, 370, 230, 30);
 		add(previewButton);
 
-	}
+		// layout
 
-	public void setServices(UIService ui, ImageDisplayService imageDisplayService) {
-		this.ui = ui;
-		this.imageDisplayService = imageDisplayService;
+		setLayout(null);
+		add(titleLabel);
+		add(cancelButton);
+		add(backButton);
+		add(nextButton);
+		add(numberSuperpixelsPanel);
+		add(opticalFlowParametersPanel);
+		opticalFlowParametersPanel.add(levelsLabel);
+		opticalFlowParametersPanel.add(polySigmaLabel);
+		opticalFlowParametersPanel.add(opticalFlowParameterLabel);
+		opticalFlowParametersPanel.add(scaleFactorLabel);
+		opticalFlowParametersPanel.add(flagsLabel);
+		opticalFlowParametersPanel.add(windowSizeLabel);
+		opticalFlowParametersPanel.add(iterationsLabel);
+		opticalFlowParametersPanel.add(polyNLabel);
+		opticalFlowParametersPanel.add(scaleFactorField);
+		opticalFlowParametersPanel.add(levelsField);
+		opticalFlowParametersPanel.add(windowSizeField);
+		opticalFlowParametersPanel.add(iterationsField);
+		opticalFlowParametersPanel.add(polySigmaField);
+		opticalFlowParametersPanel.add(flagsField);
+		opticalFlowParametersPanel.add(polyNField);
+		numberSuperpixelsPanel.add(numberSuperpixelsField);
+		numberSuperpixelsPanel.add(numberSuperpixelsLabel);
+		downsizeFactorPanel.add(downsizeFactorLabel);
+		downsizeFactorPanel.add(downsizeFactorField);
+
 	}
 }
