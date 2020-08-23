@@ -13,6 +13,7 @@ import java.util.Arrays;
 
 import javax.swing.AbstractButton;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -25,6 +26,8 @@ import ij.IJ;
 
 public class MenuPanel extends JPanel {
 	public MainFrame parentFrame;
+
+	JCheckBox batchModeCheckbox;
 
 	public MenuPanel(MainFrame parentFrame) {
 
@@ -57,6 +60,18 @@ public class MenuPanel extends JPanel {
 		titleLabel.setFont(new Font("Arial Black", Font.BOLD, 25));
 		titleLabel.setVerticalTextPosition(JLabel.CENTER);
 		titleLabel.setHorizontalTextPosition(JLabel.CENTER);
+
+		JLabel instructionLabel1 = new JLabel("Extract and visualize superpixel motion tracks from a TIFF file");
+		instructionLabel1.setHorizontalAlignment(SwingConstants.CENTER);
+		instructionLabel1.setFont(new Font("Roboto", Font.PLAIN, 15));
+		instructionLabel1.setBounds(12, 72, 476, 43);
+		add(instructionLabel1);
+
+		batchModeCheckbox = new JCheckBox("Batch mode");
+		batchModeCheckbox.setFont(new Font("Roboto", Font.PLAIN, 15));
+		batchModeCheckbox.setBounds(195, 382, 111, 24);
+		batchModeCheckbox.setBackground(new Color(252, 252, 252));
+		add(batchModeCheckbox);
 		add(titleLabel);
 
 		// compute superpixel tracks button
@@ -74,14 +89,15 @@ public class MenuPanel extends JPanel {
 				validExtensions.addAll(Arrays.asList(".tif", ".tiff"));
 
 				JFrame dialog = new JFrame();
-				if (parentFrame.imageDisplayService.getActiveDataset() == null) { // checks if any files are opened
 
+				// checks if batch mode is enabled
+				if (batchModeCheckbox.isSelected()) {
 					// display dialog box
 
 					Object[] options = { "Cancel", "Import now" };
 					int n = JOptionPane.showOptionDialog(dialog,
-							"No file selected. Please import a TIFF stack to continue.", "MOSES",
-							JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
+							"Batch mode is enabled. Please select a file from the folder you want to analyse and input your preffered settings. MOSES will automatically import and compute the motion tracks for all the other files that have a valid format using the same settings.",
+							"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
 
 					// display import file window
 
@@ -102,25 +118,16 @@ public class MenuPanel extends JPanel {
 									options2[0]);
 						}
 					}
+
 				} else {
+					if (parentFrame.imageDisplayService.getActiveDataset() == null) { // checks if any files are opened
 
-					String filePath = parentFrame.imageDisplayService.getActiveDataset().getSource();
-					// String extension = Globals.getExtension(filePath);
-
-					if (Globals.checkExtension(filePath, validExtensions)) {
-						Globals.filePath = filePath;
-						Globals.fileName = Globals.getName(filePath);
-
-						nextStep();
-
-					} else {
 						// display dialog box
 
 						Object[] options = { "Cancel", "Import now" };
 						int n = JOptionPane.showOptionDialog(dialog,
-								"Current selected image has an invalid file format. Please import a TIFF stack to continue.",
-								"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options,
-								options[0]);
+								"No file selected. Please import a TIFF stack to continue.", "MOSES",
+								JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
 
 						// display import file window
 
@@ -141,22 +148,57 @@ public class MenuPanel extends JPanel {
 										options2[0]);
 							}
 						}
+					} else {
+
+						String filePath = parentFrame.imageDisplayService.getActiveDataset().getSource();
+						// String extension = Globals.getExtension(filePath);
+
+						if (Globals.checkExtension(filePath, validExtensions)) {
+							Globals.filePath = filePath;
+							Globals.fileName = Globals.getName(filePath);
+
+							nextStep();
+
+						} else {
+							// display dialog box
+
+							Object[] options = { "Cancel", "Import now" };
+							int n = JOptionPane.showOptionDialog(dialog,
+									"Current selected image has an invalid file format. Please import a TIFF stack to continue.",
+									"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options,
+									options[0]);
+
+							// display import file window
+
+							if (n == 1) {
+								boolean importStatus = Globals.openFile(parentFrame.ui, validExtensions);
+
+								if (importStatus)
+									nextStep();
+								else {
+
+									// display error dialog box
+
+									JFrame errorDialog = new JFrame();
+									Object[] options2 = { "Ok" };
+									JOptionPane.showOptionDialog(dialog,
+											"Current selected image has an invalid file format. Please import a TIFF stack to continue.",
+											"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null,
+											options2, options2[0]);
+								}
+							}
+						}
 					}
 				}
 			}
 		});
 		add(superpixelTracksButton);
-
-		JLabel lblNewLabel = new JLabel("Extract and visualize superpixel motion tracks from a TIFF file");
-		lblNewLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		lblNewLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
-		lblNewLabel.setBounds(12, 72, 476, 43);
-		add(lblNewLabel);
 	}
 
 	public void nextStep() {
 		// initialize parameters
 
+		Globals.batchMode = batchModeCheckbox.isSelected();
 		Globals.downsizeFactor = 1;
 		Globals.numberSuperpixels = 1000;
 		Globals.levels = 3;

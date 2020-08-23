@@ -25,6 +25,7 @@ public class Globals {
 	public static int frames, width, height, channels, numberSuperpixels, levels, winSize, iterations, polyn, flags,
 			numberSelectedChannels;
 	public static double pyr_scale, polysigma, downsizeFactor;
+	public static boolean batchMode;
 	static ArrayList<Integer> selectedChannels = new ArrayList<Integer>();
 
 	// method that returns file extension from file path
@@ -46,6 +47,13 @@ public class Globals {
 
 	public static String getNameWithoutExtension(String filePath) {
 		String fileName = filePath.substring(filePath.lastIndexOf("\\") + 1, filePath.lastIndexOf("."));
+
+		return fileName;
+	}
+
+	// method that returns file directory
+	public static String getDirectory(String filePath) {
+		String fileName = filePath.substring(0, filePath.lastIndexOf("\\") + 1);
 
 		return fileName;
 	}
@@ -76,7 +84,7 @@ public class Globals {
 
 				ImagePlus image = new ImagePlus(filePath);
 				ui.show(image);
-				IJ.log("Imported " + Globals.getName(filePath));
+				// IJ.log("Imported " + Globals.getName(filePath));
 				return true;
 			} else
 				return false;
@@ -98,51 +106,64 @@ public class Globals {
 
 	}
 
-	public static void checkInstallationStatus() {
-		Globals.installStatus = 0;
-		Thread thread = new Thread() {
+	public static boolean checkMOSESInstallationStatus() {
 
-			public void run() {
+		// create temporary python script file
 
-				// create temporary python script file
-
-				String temporaryDirectorPath = System.getProperty("java.io.tmpdir");
-				String scriptPath = temporaryDirectorPath + "check_install.py";
-				File file = new File(scriptPath);
-
-				try {
-					FileWriter writer = new FileWriter(file);
-					writer.write("try:\r\n"
-							+ "    from MOSES.Optical_Flow_Tracking.superpixel_track import compute_grayscale_vid_superpixel_tracks\r\n"
-							+ "    print(\"1\")\r\n" + "except ModuleNotFoundError:\r\n" + "    print(\"0\")");
-					writer.close();
-				} catch (IOException e2) {
-					IJ.handleException(e2);
-				}
-
-				ProcessBuilder pb = new ProcessBuilder("python", scriptPath);
-				try {
-					Process p = pb.start();
-					BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-					// result = 0 or 1
-					Globals.installStatus = new Integer(in.readLine()).intValue();
-
-				} catch (IOException e1) {
-					IJ.handleException(e1);
-				}
-
-				file.delete();
-			}
-		};
-
-		thread.start();
+		String temporaryDirectorPath = System.getProperty("java.io.tmpdir");
+		String scriptPath = temporaryDirectorPath + "check_install.py";
+		File file = new File(scriptPath);
 
 		try {
-			thread.join();
-		} catch (InterruptedException e1) {
+			FileWriter writer = new FileWriter(file);
+			writer.write("try:\r\n"
+					+ "    from MOSES.Optical_Flow_Tracking.superpixel_track import compute_grayscale_vid_superpixel_tracks\r\n"
+					+ "    print(\"1\")\r\n" + "except ModuleNotFoundError:\r\n" + "    print(\"0\")");
+			writer.close();
+		} catch (IOException e2) {
+			IJ.handleException(e2);
+		}
+
+		ProcessBuilder pb = new ProcessBuilder("python", scriptPath);
+		try {
+			Process p = pb.start();
+			p.waitFor();
+			BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+			// result = 0 or 1
+			int result = new Integer(in.readLine()).intValue();
+
+			if (result == 1)
+				return true;
+			else
+				return false;
+
+		} catch (IOException | InterruptedException e1) {
 			IJ.handleException(e1);
 		}
+
+		file.delete();
+
+		return false;
+	}
+
+	public static boolean checkPythonInstallationStatus() {
+
+		ProcessBuilder pb = new ProcessBuilder("python", "--version");
+		try {
+			Process p = pb.start();
+			p.waitFor();
+
+			if (p.exitValue() == 0)
+				return true;
+			else
+				return false;
+
+		} catch (IOException | InterruptedException e1) {
+			IJ.handleException(e1);
+		}
+
+		return false;
 	}
 
 	public static void moveComponent(Component component2, int x, int y) {
@@ -187,8 +208,8 @@ public class Globals {
 
 		ProcessBuilder pb = new ProcessBuilder(command);
 
-		IJ.log("Parameters: " + command);
-		IJ.log(pythonScript);
+		// IJ.log("Parameters: " + command);
+		// IJ.log(pythonScript);
 
 		try {
 			Process p = pb.start();

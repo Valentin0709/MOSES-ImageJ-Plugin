@@ -84,7 +84,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 		loadingBarPanel = new JPanel();
 		setLayer(loadingBarPanel, 1);
-		loadingBarPanel.setBounds(40, 200, 420, 100);
+		loadingBarPanel.setBounds(40, 200, 420, 130);
 		loadingBarPanel.setVisible(false);
 		setLayout(null);
 		loadingBarPanel.setBorder(new LineBorder(new Color(0, 0, 0), 2));
@@ -95,14 +95,20 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 		loadingBar = new JProgressBar();
 		loadingBar.setVisible(false);
-		loadingBar.setBounds(10, 58, 400, 26);
+		loadingBar.setBounds(10, 90, 400, 26);
 		loadingBarPanel.add(loadingBar);
 
 		JLabel loadingBarLabel = new JLabel("");
 		loadingBarLabel.setVerticalAlignment(SwingConstants.TOP);
 		loadingBarLabel.setFont(new Font("Roboto", Font.BOLD, 15));
-		loadingBarLabel.setBounds(12, 10, 376, 40);
+		loadingBarLabel.setBounds(10, 38, 376, 40);
 		loadingBarPanel.add(loadingBarLabel);
+
+		JLabel fileLabel = new JLabel("");
+		fileLabel.setBounds(10, 12, 376, 26);
+		loadingBarPanel.add(fileLabel);
+		fileLabel.setVerticalAlignment(SwingConstants.TOP);
+		fileLabel.setFont(new Font("Roboto", Font.BOLD, 15));
 
 		// page instructions
 
@@ -139,6 +145,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		bigPanel.setLayout(null);
 
 		scrollPane = new JScrollPane(bigPanel);
+		scrollPane.setBorder(null);
 		scrollPane.setBounds(20, 90, 460, 300);
 		scrollPane.setViewportBorder(null);
 		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -486,7 +493,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 				if (saveCheckBox1.isEnabled() || saveCheckBox3.isEnabled() || saveCheckBox4.isEnabled()) {
 					Globals.saveDirectory = IJ.getDirectory("Choose saving directory");
-					IJ.log(Globals.saveDirectory);
+					// IJ.log(Globals.saveDirectory);
 				}
 
 				// loading bar
@@ -500,14 +507,50 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 				// execute script on different thread
 
 				class MyWorker extends SwingWorker<String, String> {
+					int fileCount = 1, fileNumber = 1;
 
 					@Override
 					protected String doInBackground() {
+						if (Globals.batchMode) {
+
+							ArrayList<String> validExtensions = new ArrayList<String>();
+							validExtensions.addAll(Arrays.asList(".tif", ".tiff"));
+
+							File fileDirectory = new File(Globals.getDirectory(Globals.filePath));
+							IJ.log("Dir: " + Globals.getDirectory(Globals.filePath));
+							String[] files = fileDirectory.list();
+							for (String fileTitle : files) {
+								File selectedFile = new File(fileDirectory.getPath(), fileTitle);
+								IJ.log(selectedFile.getAbsolutePath());
+
+								if (selectedFile.isFile()
+										&& Globals.checkExtension(selectedFile.getAbsolutePath(), validExtensions))
+									fileCount++;
+							}
+							fileCount--;
+
+							for (String fileTitle : files) {
+								File selectedFile = new File(fileDirectory.getPath(), fileTitle);
+
+								if (selectedFile.isFile()
+										&& Globals.checkExtension(selectedFile.getAbsolutePath(), validExtensions)) {
+									analyseFile(selectedFile.getAbsolutePath());
+									fileNumber++;
+								}
+							}
+						} else
+							analyseFile(Globals.filePath);
+
+						return "Done";
+
+					}
+
+					public void analyseFile(String filePath) {
 						// create new file
 
 						String temporaryFilePath = System.getProperty("java.io.tmpdir") + "MOSESimage.tif";
 
-						ImagePlus temporaryImage = IJ.openImage(Globals.filePath);
+						ImagePlus temporaryImage = IJ.openImage(filePath);
 						IJ.run(temporaryImage, "Size...",
 								"width=" + (int) (Globals.width / Math.sqrt(Globals.downsizeFactor)) + " height="
 										+ (int) (Globals.height / Math.sqrt(Globals.downsizeFactor)) + " depth="
@@ -520,13 +563,13 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 						//
 
 						forwardTracksImageSequenceFolderPath = Globals.saveDirectory
-								+ Globals.getNameWithoutExtension(Globals.filePath) + "_forward_tracks_image_sequence";
+								+ Globals.getNameWithoutExtension(filePath) + "_forward_tracks_image_sequence";
 
 						backwardTracksImageSequenceFolderPath = Globals.saveDirectory
-								+ Globals.getNameWithoutExtension(Globals.filePath) + "_backward_tracks_image_sequence";
+								+ Globals.getNameWithoutExtension(filePath) + "_backward_tracks_image_sequence";
 
 						motionFieldImageSequenceFolderPath = Globals.saveDirectory
-								+ Globals.getNameWithoutExtension(Globals.filePath) + "_motion_field_image_sequence";
+								+ Globals.getNameWithoutExtension(filePath) + "_motion_field_image_sequence";
 
 						ArrayList<String> command = new ArrayList<>();
 						command.addAll(Arrays.asList("python", Globals.scriptPath, temporaryFilePath,
@@ -537,7 +580,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 								String.valueOf(Globals.frames),
 								String.valueOf((int) (Globals.width / Math.sqrt(Globals.downsizeFactor))),
 								String.valueOf((int) (Globals.height / Math.sqrt(Globals.downsizeFactor))),
-								Globals.saveDirectory, Globals.getNameWithoutExtension(Globals.filePath),
+								Globals.saveDirectory, Globals.getNameWithoutExtension(filePath),
 								String.valueOf(Globals.numberSelectedChannels)));
 
 						String pythonScriptHeader = "import scipy.io as spio\r\n" + "import os\r\n" + "import sys\r\n"
@@ -634,9 +677,8 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 									ImagePlus imp = FolderOpener
 											.open(forwardTracksImageSequenceFolder.getAbsolutePath(), "");
 									imp.show();
-									IJ.saveAs(imp, "Tiff",
-											Globals.saveDirectory + Globals.getNameWithoutExtension(Globals.filePath)
-													+ "_forward_tracks_video.tif");
+									IJ.saveAs(imp, "Tiff", Globals.saveDirectory
+											+ Globals.getNameWithoutExtension(filePath) + "_forward_tracks_video.tif");
 								}
 
 								// save .avi
@@ -646,10 +688,8 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 									ImagePlus imp = FolderOpener
 											.open(forwardTracksImageSequenceFolder.getAbsolutePath(), "");
-									IJ.run(imp, "AVI... ",
-											"compression=JPEG frame=7 save=" + Globals.saveDirectory
-													+ Globals.getNameWithoutExtension(Globals.filePath)
-													+ "_forward_tracks_video.avi");
+									IJ.run(imp, "AVI... ", "compression=JPEG frame=7 save=" + Globals.saveDirectory
+											+ Globals.getNameWithoutExtension(filePath) + "_forward_tracks_video.avi");
 								}
 
 								// delete image sequence folder
@@ -747,9 +787,8 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 									ImagePlus imp = FolderOpener
 											.open(backwardTracksImageSequenceFolder.getAbsolutePath(), "");
 									imp.show();
-									IJ.saveAs(imp, "Tiff",
-											Globals.saveDirectory + Globals.getNameWithoutExtension(Globals.filePath)
-													+ "_backward_tracks_video.tif");
+									IJ.saveAs(imp, "Tiff", Globals.saveDirectory
+											+ Globals.getNameWithoutExtension(filePath) + "_backward_tracks_video.tif");
 								}
 
 								// save .avi
@@ -758,10 +797,8 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 								if (aviButtonGroup2.isSelected()) {
 									ImagePlus imp = FolderOpener
 											.open(backwardTracksImageSequenceFolder.getAbsolutePath(), "");
-									IJ.run(imp, "AVI... ",
-											"compression=JPEG frame=7 save=" + Globals.saveDirectory
-													+ Globals.getNameWithoutExtension(Globals.filePath)
-													+ "_backward_tracks_video.avi");
+									IJ.run(imp, "AVI... ", "compression=JPEG frame=7 save=" + Globals.saveDirectory
+											+ Globals.getNameWithoutExtension(filePath) + "_backward_tracks_video.avi");
 								}
 
 								// delete image sequence folder
@@ -863,9 +900,8 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 									ImagePlus imp = FolderOpener.open(motionFieldImageSequenceFolder.getAbsolutePath(),
 											"");
 									imp.show();
-									IJ.saveAs(imp, "Tiff",
-											Globals.saveDirectory + Globals.getNameWithoutExtension(Globals.filePath)
-													+ "_motion_field_video.tif");
+									IJ.saveAs(imp, "Tiff", Globals.saveDirectory
+											+ Globals.getNameWithoutExtension(filePath) + "_motion_field_video.tif");
 
 								}
 
@@ -884,8 +920,6 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 						temporaryImageFile.delete();
 
-						return "Done";
-
 					}
 
 					@Override
@@ -895,6 +929,10 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 									"<html> Please wait, this may take a couple of minutes. <br> " + m + "  </html>");
 							loadingBarLabel.validate();
 							loadingBarLabel.repaint();
+
+							fileLabel.setText("File " + fileNumber + " out of " + fileCount);
+							fileLabel.validate();
+							fileLabel.repaint();
 						}
 
 					}
