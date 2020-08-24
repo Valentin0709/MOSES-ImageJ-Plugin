@@ -16,7 +16,7 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/Vali/Fiji.app/jars/ij-1.52p.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Vali/Fiji.app/jars/ij-1.53c.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Vali/Desktop/MOSES Plugin/src/main/resorurces/resources.jar"/>
 	<classpathentry kind="lib" path="jgoodies-forms-1.8.0.jar" sourcepath="jgoodies-forms-1.8.0-sources.jar"/>
 	<classpathentry kind="output" path="target/classes"/>

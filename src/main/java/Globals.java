@@ -213,6 +213,7 @@ public class Globals {
 
 		try {
 			Process p = pb.start();
+
 			p.waitFor();
 
 		} catch (IOException | InterruptedException e) {
