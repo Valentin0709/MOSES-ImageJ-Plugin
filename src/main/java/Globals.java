@@ -1,11 +1,16 @@
 import java.awt.Component;
+import java.awt.Dimension;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
@@ -17,16 +22,6 @@ import ij.ImagePlus;
 public class Globals {
 	public static int frameHight = 500, frameWidth = 500;
 	public static int installStatus;
-	// public static BufferedImage currentImage = null;
-
-	// globals for cell tracking
-	public static String fileName, filePath, saveDirectory;
-	public static String scriptPath = System.getProperty("java.io.tmpdir") + "MOSESscript.py";
-	public static int frames, width, height, channels, numberSuperpixels, levels, winSize, iterations, polyn, flags,
-			numberSelectedChannels;
-	public static double pyr_scale, polysigma, downsizeFactor;
-	public static boolean batchMode;
-	static ArrayList<Integer> selectedChannels = new ArrayList<Integer>();
 
 	// method that returns file extension from file path
 
@@ -42,26 +37,27 @@ public class Globals {
 	public static String getName(String filePath) {
 		String fileName = filePath.substring(filePath.lastIndexOf("\\") + 1);
 
-		return fileName;
+		return fileName.replaceAll("\\s+", "");
 	}
 
 	public static String getNameWithoutExtension(String filePath) {
 		String fileName = filePath.substring(filePath.lastIndexOf("\\") + 1, filePath.lastIndexOf("."));
 
-		return fileName;
+		return fileName.replaceAll("\\s+", "");
 	}
 
 	// method that returns file directory
+
 	public static String getDirectory(String filePath) {
 		String fileName = filePath.substring(0, filePath.lastIndexOf("\\") + 1);
 
-		return fileName;
+		return fileName.replaceAll("\\s+", "");
 	}
 
 	// method that imports a file from the 'open file' window provided by the
 	// UIService
 
-	public static boolean openFile(UIService ui, ArrayList<String> extensions) {
+	public static String openFile(UIService ui, ArrayList<String> extensions, boolean open) {
 		// set look and feel
 
 		try {
@@ -79,17 +75,18 @@ public class Globals {
 			boolean validExtension = checkExtension(file.getPath(), extensions);
 
 			if (validExtension) {
-				filePath = file.getPath();
-				fileName = Globals.getName(filePath);
+				String filePath = file.getPath();
 
-				ImagePlus image = new ImagePlus(filePath);
-				ui.show(image);
-				// IJ.log("Imported " + Globals.getName(filePath));
-				return true;
+				if (open) {
+					ImagePlus image = new ImagePlus(filePath);
+					ui.show(image);
+				}
+
+				return filePath;
 			} else
-				return false;
+				return null;
 		} else
-			return false;
+			return null;
 	}
 
 	public static boolean checkExtension(String filePathh, ArrayList<String> extensions) {
@@ -107,9 +104,6 @@ public class Globals {
 	}
 
 	public static boolean checkMOSESInstallationStatus() {
-
-		// create temporary python script file
-
 		String temporaryDirectorPath = System.getProperty("java.io.tmpdir");
 		String scriptPath = temporaryDirectorPath + "check_install.py";
 		File file = new File(scriptPath);
@@ -147,6 +141,41 @@ public class Globals {
 		return false;
 	}
 
+	public static List<String> getMatlabFiles(String path) {
+		List<String> output = new ArrayList<String>();
+
+		String temporaryDirectorPath = System.getProperty("java.io.tmpdir");
+		String scriptPath = temporaryDirectorPath + "get_matlab_files.py";
+		File file = new File(scriptPath);
+
+		try {
+			FileWriter writer = new FileWriter(file);
+			writer.write("import scipy.io as sio\r\n" + "import sys\r\n" + "files = sio.whosmat(sys.argv[1])\r\n"
+					+ "for i in range(len(files)):\r\n" + "    print(files[i][0])");
+			writer.close();
+		} catch (IOException e2) {
+			IJ.handleException(e2);
+		}
+
+		ProcessBuilder pb = new ProcessBuilder("python", scriptPath, path);
+		try {
+			Process p = pb.start();
+			p.waitFor();
+			BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+			String fileName;
+			while ((fileName = in.readLine()) != null)
+				output.add(fileName);
+
+		} catch (IOException | InterruptedException e1) {
+			IJ.handleException(e1);
+		}
+
+		file.delete();
+
+		return output;
+	}
+
 	public static boolean checkPythonInstallationStatus() {
 
 		ProcessBuilder pb = new ProcessBuilder("python", "--version");
@@ -171,56 +200,50 @@ public class Globals {
 				component2.getHeight());
 	}
 
-	public static char color(int index) {
-		if (index == 0)
-			return 'r';
-		if (index == 1)
-			return 'b';
-		if (index == 2)
-			return 'g';
-		if (index == 3)
-			return 'c';
-		if (index == 4)
-			return 'm';
-		if (index == 5)
-			return 'y';
-		if (index == 5)
-			return 'w';
-		return 'k';
+	public static void setPanelEnabled(JPanel panel, boolean enabled) {
+		Component[] components = panel.getComponents();
 
+		panel.setEnabled(enabled);
+		for (Component component : components) {
+			component.setEnabled(enabled);
+			if (component instanceof JPanel)
+				setPanelEnabled((JPanel) component, enabled);
+
+		}
+
+		panel.revalidate();
+		panel.repaint();
 	}
 
-	public static void runScript(String pythonScript, ArrayList<String> command) {
-		File file = new File(scriptPath);
-		try {
-			file.createNewFile();
-		} catch (IOException e) {
-			IJ.handleException(e);
+	public static void setPanelVisibility(JPanel panel, boolean visibility) {
+		Component[] components = panel.getComponents();
+
+		panel.setVisible(visibility);
+		panel.setOpaque(visibility);
+		for (Component component : components) {
+			component.setVisible(visibility);
+			if (component instanceof JPanel)
+				setPanelEnabled((JPanel) component, visibility);
+
 		}
 
-		try {
-			FileWriter writer = new FileWriter(file);
-			writer.write(pythonScript);
-			writer.close();
-		} catch (IOException e) {
-			IJ.handleException(e);
+		panel.revalidate();
+		panel.repaint();
+	}
+
+	public static void updatePanelSize(JPanel panel) {
+		Component[] components = panel.getComponents();
+
+		int maxHeight = 0;
+		for (Component component : components) {
+			if (component.isVisible() && component.isOpaque()
+					&& component.getBounds().y + component.getBounds().height > maxHeight)
+				maxHeight = component.getBounds().y + component.getBounds().height;
 		}
 
-		ProcessBuilder pb = new ProcessBuilder(command);
+		panel.setPreferredSize(new Dimension(0, maxHeight + 20));
 
-		// IJ.log("Parameters: " + command);
-		// IJ.log(pythonScript);
-
-		try {
-			Process p = pb.start();
-
-			p.waitFor();
-
-		} catch (IOException | InterruptedException e) {
-			IJ.handleException(e);
-		}
-
-		file.delete();
-
+		SwingUtilities.getAncestorOfClass(JFrame.class, panel).validate();
+		SwingUtilities.getAncestorOfClass(JFrame.class, panel).repaint();
 	}
 }

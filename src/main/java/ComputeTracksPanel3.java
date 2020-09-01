@@ -1,80 +1,63 @@
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.SystemColor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
-import java.io.File;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
-import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.border.LineBorder;
 
 import ij.IJ;
-import ij.ImagePlus;
-import ij.plugin.FolderOpener;
 
 public class ComputeTracksPanel3 extends JLayeredPane {
 
-	public MainFrame parentFrame;
-	public ComputeTracksPanel3 self = this;
+	private MainFrame parentFrame;
+	private ComputeTracksPanel3 self = this;
 
-	public JCheckBox saveCheckBox1 = null, saveCheckBox2 = null, saveCheckBox3 = null, saveCheckBox4 = null,
-			saveCheckBox5 = null;
+	SaveOption saveOption1, saveOption2, saveOption3, saveOption4, saveOption5, saveOption6;
+	ColorOption colorOption1, colorOption2, colorOption3, colorOption4, colorOption5;
 
-	public JPanel optionPanel1, optionPanel2, optionPanel3, bigPanel;
-	JScrollPane scrollPane;
-	private JPanel loadingBarPanel;
-	private JProgressBar loadingBar;
+	private JCheckBox saveCheckBox1 = null, saveCheckBox2 = null, saveCheckBox3 = null, saveCheckBox4 = null,
+			saveCheckBox5 = null, saveCheckBox6, saveCheckBox7, saveCheckBox71, saveCheckBox72, saveCheckBox8,
+			saveCheckBox112, saveCheckBox111, saveCheckBox9, saveCheckBox91, saveCheckBox92, saveCheckBox10,
+			saveCheckBox11, saveCheckBox12;
 
-	public JRadioButton tifButtonGroup3, matButtonGroup3;
+	private JPanel optionPanel1, optionPanel2, optionPanel3, optionPanel4, optionPanel5, optionPanel6, optionPanel7,
+			optionPanel8, optionPanel9, bigPanel;
+	private JScrollPane scrollPane;
 
-	ArrayList<JRadioButton> radioButtonGroup1 = new ArrayList<JRadioButton>(),
-			radioButtonGroup2 = new ArrayList<JRadioButton>(), radioButtonGroup3 = new ArrayList<JRadioButton>();
-	ArrayList<Pair<JComboBox, JLabel>> colorSelect1 = new ArrayList<Pair<JComboBox, JLabel>>(),
-			colorSelect2 = new ArrayList<Pair<JComboBox, JLabel>>(),
-			colorSelect3 = new ArrayList<Pair<JComboBox, JLabel>>();
-	Pair<ArrayList<JRadioButton>, JLabel> saveOption1 = new Pair<>(new ArrayList<JRadioButton>(), new JLabel()),
-			saveOption2 = new Pair<>(new ArrayList<JRadioButton>(), new JLabel()),
-			saveOption3 = new Pair<>(new ArrayList<JRadioButton>(), new JLabel());
+	private JRadioButton tifButtonGroup3, matButtonGroup3;
 
-	File forwardTracksImageSequenceFolder, backwardTracksImageSequenceFolder, motionFieldImageSequenceFolder,
-			MOSESMeshImageSequenceFolder;
-	String forwardTracksImageSequenceFolderPath, backwardTracksImageSequenceFolderPath,
-			motionFieldImageSequenceFolderPath, MOSESMeshImageSequenceFolderPath;
+	private ArrayList<JRadioButton> radioButtonGroup1 = new ArrayList<JRadioButton>(),
+			radioButtonGroup2 = new ArrayList<JRadioButton>(), radioButtonGroup3 = new ArrayList<JRadioButton>(),
+			radioButtonGroup4 = new ArrayList<JRadioButton>();
 
-	File temporaryImageFile = null;
-	private JCheckBox saveCheckBox6, saveCheckBox7;
-	private JLabel tracksTitleLabel;
-	private JLabel meshTitleLabel;
-	private JPanel optionPanel4;
-	private JLabel instructionLabel5;
-	private JFormattedTextField distanceTresholdField;
-	private JPanel optionPanel5;
-	private JCheckBox saveCheckBox71;
-	private JLabel frameLabel;
-	private JFormattedTextField frameField;
-	private JCheckBox saveCheckBox72;
+	private JLabel tracksTitleLabel, meshTitleLabel, instructionLabel5, instructionLabel6, instructionLabel7,
+			instructionLabel8, frameLabel, frameLabel2, frameLabel3, noteLabel, noteLabel2, noteLabel3,
+			temporalSegmentLabel2, instructionLabel9, instructionLabel10, noteLabel4;
+	private JFormattedTextField temporalSegmentField1, temporalSegmentField2, distanceTresholdField,
+			distanceTresholdField2, frameField, frameField2, frameField3, KNeighborField;
+	private JRadioButton backwardTracksButton1, forwardTracksButton1, backwardTracksButton2, forwardTracksButton2,
+			backwardTracksButton3, forwardTracksButton3;
+
+	private ComputeTracks swingWorker;
+	private boolean swingWorkerStarted = false;
 
 	public ComputeTracksPanel3(MainFrame parentFrame) {
 
@@ -98,46 +81,25 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		this.setBackground(new Color(252, 252, 252));
 		this.setOpaque(true);
 
-		loadingBarPanel = new JPanel();
-		setLayer(loadingBarPanel, 1);
-		loadingBarPanel.setBounds(40, 200, 420, 130);
-		loadingBarPanel.setVisible(false);
-		setLayout(null);
-		loadingBarPanel.setBorder(new LineBorder(new Color(0, 0, 0), 2));
-		loadingBarPanel.setOpaque(false);
-		loadingBarPanel.setBackground(SystemColor.activeCaption);
-		add(loadingBarPanel);
-		loadingBarPanel.setLayout(null);
+		// formats
 
-		loadingBar = new JProgressBar();
-		loadingBar.setVisible(false);
-		loadingBar.setBounds(10, 90, 400, 26);
-		loadingBarPanel.add(loadingBar);
-
-		JLabel loadingBarLabel = new JLabel("");
-		loadingBarLabel.setVerticalAlignment(SwingConstants.TOP);
-		loadingBarLabel.setFont(new Font("Roboto", Font.BOLD, 15));
-		loadingBarLabel.setBounds(10, 38, 376, 40);
-		loadingBarPanel.add(loadingBarLabel);
-
-		JLabel fileLabel = new JLabel("");
-		fileLabel.setBounds(10, 12, 376, 26);
-		loadingBarPanel.add(fileLabel);
-		fileLabel.setVerticalAlignment(SwingConstants.TOP);
-		fileLabel.setFont(new Font("Roboto", Font.BOLD, 15));
+		DecimalFormat decimalFormat = new DecimalFormat("#.##");
+		decimalFormat.setGroupingUsed(false);
+		DecimalFormat integerFormat = new DecimalFormat("###");
+		decimalFormat.setGroupingUsed(false);
 
 		// page instructions
 
-		JLabel backgroundPanel = new JLabel("Compute superpixel tracks", SwingConstants.CENTER);
+		JLabel backgroundPanel = new JLabel("Compute motion tracks and mesh", SwingConstants.CENTER);
 		backgroundPanel.setBounds(0, 0, 500, 36);
 		backgroundPanel.setVerticalTextPosition(SwingConstants.CENTER);
 		backgroundPanel.setHorizontalTextPosition(SwingConstants.CENTER);
-		backgroundPanel.setFont(new Font("Arial Black", Font.BOLD, 25));
+		backgroundPanel.setFont(new Font("Arial Black", Font.BOLD, 23));
 		add(backgroundPanel);
 
 		JLabel instructionLabel1 = new JLabel(
 				"<html> Select you preferred outputs. You'll be asked to choose a saving directory at the end. </html>");
-		instructionLabel1.setBounds(65, 50, 420, 36);
+		instructionLabel1.setBounds(65, 40, 420, 36);
 		instructionLabel1.setVerticalAlignment(SwingConstants.TOP);
 		instructionLabel1.setHorizontalAlignment(SwingConstants.LEFT);
 		instructionLabel1.setForeground(Color.DARK_GRAY);
@@ -145,7 +107,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		add(instructionLabel1);
 
 		JLabel stepLabel = new JLabel("STEP 3");
-		stepLabel.setBounds(10, 50, 53, 30);
+		stepLabel.setBounds(10, 40, 53, 30);
 		stepLabel.setVerticalAlignment(SwingConstants.TOP);
 		stepLabel.setHorizontalAlignment(SwingConstants.LEFT);
 		stepLabel.setForeground(Color.DARK_GRAY);
@@ -161,8 +123,9 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		bigPanel.setLayout(null);
 
 		scrollPane = new JScrollPane(bigPanel);
+		setLayer(scrollPane, 0);
 		scrollPane.setBorder(null);
-		scrollPane.setBounds(20, 90, 460, 300);
+		scrollPane.setBounds(20, 80, 460, 345);
 		scrollPane.setViewportBorder(null);
 		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		add(scrollPane);
@@ -170,59 +133,22 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		// save forward tracks checkbox
 
 		saveCheckBox1 = new JCheckBox("<html>Forward motion tracks (.mat) </html>");
-		saveCheckBox1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (saveCheckBox1.isSelected()) {
-					saveCheckBox2.setEnabled(true);
-				} else {
-					saveCheckBox2.setEnabled(false);
-
-					if (saveCheckBox2.isSelected()) {
-						saveCheckBox2.setSelected(false);
-						moveLowerComponents(optionPanel1, 0, -100);
-						setPanelVisibility(optionPanel1, false);
-						updateBigPanel();
-					}
-
-				}
-			}
-		});
 		saveCheckBox1.setHorizontalAlignment(SwingConstants.LEFT);
 		saveCheckBox1.setFont(new Font("Roboto", Font.PLAIN, 15));
 		saveCheckBox1.setBackground(Color.WHITE);
-		saveCheckBox1.setBounds(10, 25, 400, 20);
-		bigPanel.add(saveCheckBox1);
+		saveCheckBox1.setBounds(0, 0, 400, 20);
 
 		// save forward tracks with overlay checkbox
 
 		saveCheckBox2 = new JCheckBox("<html>Overlay forward motion tracks on the initial image</html>");
 		saveCheckBox2.setEnabled(false);
-		saveCheckBox2.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (saveCheckBox2.isEnabled()) {
-
-					if (saveCheckBox2.isSelected()) {
-						moveLowerComponents(optionPanel1, 0, 100);
-						setPanelVisibility(optionPanel1, true);
-						updateBigPanel();
-
-					} else {
-						moveLowerComponents(optionPanel1, 0, -100);
-						setPanelVisibility(optionPanel1, false);
-						updateBigPanel();
-					}
-				}
-			}
-		});
 		saveCheckBox2.setHorizontalAlignment(SwingConstants.LEFT);
 		saveCheckBox2.setFont(new Font("Roboto", Font.PLAIN, 15));
 		saveCheckBox2.setBackground(Color.WHITE);
-		saveCheckBox2.setBounds(30, 45, 400, 20);
-		bigPanel.add(saveCheckBox2);
+		saveCheckBox2.setBounds(0, 0, 400, 20);
 
 		optionPanel1 = new JPanel();
-		optionPanel1.setBounds(30, 65, 405, 100);
-		bigPanel.add(optionPanel1);
+		optionPanel1.setBounds(0, 0, 405, 115);
 		optionPanel1.setOpaque(false);
 		optionPanel1.setBackground(new Color(238, 238, 238));
 		optionPanel1.setLayout(null);
@@ -236,198 +162,22 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		instructionLabel2.setForeground(Color.DARK_GRAY);
 		instructionLabel2.setFont(new Font("Roboto", Font.PLAIN, 15));
 
-		generateSaveOptionList(optionPanel1, saveOption1, 320, 5, true);
-		generateChannelSelectionList(optionPanel1, colorSelect1, 10, 25);
+		// generateSaveOptionList(optionPanel1, saveList1, 320, 5, true);
+		saveOption1 = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
+		saveOption1.show(optionPanel1, 320, 5, true);
+		colorOption1 = new ColorOption();
+		colorOption1.show(optionPanel1, 10, 25, 3);
 
-		// save backward tracks checkbox
+		JLabel temporalSegmentLabel1 = new JLabel("Plot tracks in temporal segments of length:");
+		temporalSegmentLabel1.setVerticalAlignment(SwingConstants.TOP);
+		temporalSegmentLabel1.setHorizontalAlignment(SwingConstants.LEFT);
+		temporalSegmentLabel1.setVisible(false);
+		temporalSegmentLabel1.setFont(new Font("Roboto", Font.PLAIN, 15));
+		temporalSegmentLabel1.setBounds(5, 90, 295, 20);
+		optionPanel1.add(temporalSegmentLabel1);
 
-		saveCheckBox4 = new JCheckBox("<html>Backward motion tracks (.mat) </html>");
-		saveCheckBox4.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (saveCheckBox4.isSelected()) {
-					saveCheckBox5.setEnabled(true);
-				} else {
-					saveCheckBox5.setEnabled(false);
+		temporalSegmentField1 = new JFormattedTextField(integerFormat) {
 
-					if (saveCheckBox5.isSelected()) {
-						saveCheckBox5.setSelected(false);
-						moveLowerComponents(optionPanel2, 0, -100);
-						setPanelVisibility(optionPanel2, false);
-						updateBigPanel();
-					}
-				}
-			}
-		});
-		saveCheckBox4.setHorizontalAlignment(SwingConstants.LEFT);
-		saveCheckBox4.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox4.setBackground(Color.WHITE);
-		saveCheckBox4.setBounds(10, 75, 400, 20);
-		bigPanel.add(saveCheckBox4);
-
-		// save backward tracks with overlay checkbox
-
-		saveCheckBox5 = new JCheckBox("<html>Overlay backward motion tracks on the initial image</html>");
-		saveCheckBox5.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (saveCheckBox5.isEnabled()) {
-
-					if (saveCheckBox5.isSelected()) {
-						moveLowerComponents(optionPanel2, 0, 100);
-						setPanelVisibility(optionPanel2, true);
-						updateBigPanel();
-
-					} else {
-						moveLowerComponents(optionPanel2, 0, -100);
-						setPanelVisibility(optionPanel2, false);
-						updateBigPanel();
-					}
-				}
-			}
-		});
-		saveCheckBox5.setHorizontalAlignment(SwingConstants.LEFT);
-		saveCheckBox5.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox5.setEnabled(false);
-		saveCheckBox5.setBackground(Color.WHITE);
-		saveCheckBox5.setBounds(30, 95, 400, 20);
-		bigPanel.add(saveCheckBox5);
-
-		optionPanel2 = new JPanel();
-		optionPanel2.setOpaque(false);
-		optionPanel2.setBounds(30, 115, 405, 100);
-		optionPanel2.setBackground(new Color(238, 238, 238));
-		bigPanel.add(optionPanel2);
-		optionPanel2.setLayout(null);
-
-		generateSaveOptionList(optionPanel2, saveOption2, 320, 5, true);
-		generateChannelSelectionList(optionPanel2, colorSelect2, 10, 25);
-
-		JLabel instructionLabel3 = new JLabel("<html> Select the display color for each motion track </html>");
-		instructionLabel3.setVisible(false);
-		instructionLabel3.setBounds(5, 5, 306, 18);
-		instructionLabel3.setFont(new Font("Roboto", Font.PLAIN, 15));
-		optionPanel2.add(instructionLabel3);
-
-		// save motion flow checkbox
-
-		saveCheckBox3 = new JCheckBox("<html> Motion field</html>");
-		saveCheckBox3.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-
-				if (saveCheckBox3.isSelected()) {
-					setPanelVisibility(optionPanel3, true);
-					moveLowerComponents(optionPanel3, 0, 100);
-					updateBigPanel();
-
-				} else {
-					setPanelVisibility(optionPanel3, false);
-					moveLowerComponents(optionPanel3, 0, -100);
-					updateBigPanel();
-				}
-
-			}
-		});
-		saveCheckBox3.setHorizontalAlignment(SwingConstants.LEFT);
-		saveCheckBox3.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox3.setBackground(Color.WHITE);
-		saveCheckBox3.setBounds(10, 125, 442, 20);
-		bigPanel.add(saveCheckBox3);
-
-		optionPanel3 = new JPanel();
-		optionPanel3.setOpaque(false);
-		optionPanel3.setBackground(new Color(238, 238, 238));
-		optionPanel3.setBounds(10, 145, 425, 100);
-		bigPanel.add(optionPanel3);
-		optionPanel3.setLayout(null);
-
-		JLabel saveAsLabel3 = new JLabel("Save as");
-		saveAsLabel3.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveAsLabel3.setBounds(5, 5, 80, 16);
-		saveAsLabel3.setVisible(false);
-		optionPanel3.add(saveAsLabel3);
-
-		matButtonGroup3 = new JRadioButton(".mat");
-		matButtonGroup3.setSelected(true);
-		matButtonGroup3.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				checkDefaultRadioButton(radioButtonGroup3);
-			}
-		});
-		matButtonGroup3.setVisible(false);
-		matButtonGroup3.setFont(new Font("Roboto", Font.PLAIN, 14));
-		matButtonGroup3.setBounds(5, 20, 85, 18);
-		optionPanel3.add(matButtonGroup3);
-
-		tifButtonGroup3 = new JRadioButton(".tif");
-		tifButtonGroup3.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				checkDefaultRadioButton(radioButtonGroup3);
-			}
-		});
-		tifButtonGroup3.setVisible(false);
-		tifButtonGroup3.setFont(new Font("Roboto", Font.PLAIN, 14));
-		tifButtonGroup3.setBounds(108, 20, 85, 18);
-		optionPanel3.add(tifButtonGroup3);
-
-		JLabel instructionLabel4 = new JLabel(
-				"<html> Note: For large images saving the motion field takes up a lot of hard disk space. It is therefore not recommended to do so. The motion field is summarized by the superpixel tracks. </html>");
-		instructionLabel4.setVisible(false);
-		instructionLabel4.setFont(new Font("Roboto", Font.PLAIN, 14));
-		instructionLabel4.setBounds(5, 40, 420, 54);
-		optionPanel3.add(instructionLabel4);
-
-		// save mesh
-
-		saveCheckBox6 = new JCheckBox("<html>MOSES mesh (.mat)</html>");
-		saveCheckBox6.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (saveCheckBox6.isSelected()) {
-					saveCheckBox7.setEnabled(true);
-
-					moveLowerComponents(optionPanel4, 0, 50);
-					setPanelVisibility(optionPanel4, true);
-					updateBigPanel();
-				} else {
-					saveCheckBox7.setEnabled(false);
-					moveLowerComponents(optionPanel4, 0, -50);
-					setPanelVisibility(optionPanel4, false);
-					updateBigPanel();
-
-					if (saveCheckBox7.isSelected()) {
-						saveCheckBox7.setSelected(false);
-						moveLowerComponents(optionPanel5, 0, -180);
-						setPanelVisibility(optionPanel5, false);
-						updateBigPanel();
-					}
-
-				}
-			}
-		});
-		saveCheckBox6.setHorizontalAlignment(SwingConstants.LEFT);
-		saveCheckBox6.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox6.setBackground(Color.WHITE);
-		saveCheckBox6.setBounds(10, 175, 442, 20);
-		bigPanel.add(saveCheckBox6);
-
-		optionPanel4 = new JPanel();
-		optionPanel4.setLayout(null);
-		optionPanel4.setOpaque(false);
-		optionPanel4.setBounds(10, 195, 425, 50);
-		bigPanel.add(optionPanel4);
-
-		instructionLabel5 = new JLabel(
-				"<html> Please set the distace threshold used for computing the MOSES mesh  </html>");
-		instructionLabel5.setVisible(false);
-		instructionLabel5.setVerticalAlignment(SwingConstants.TOP);
-		instructionLabel5.setFont(new Font("Roboto", Font.PLAIN, 15));
-		instructionLabel5.setBounds(10, 5, 415, 36);
-		optionPanel4.add(instructionLabel5);
-
-		DecimalFormat decimalFormat = new DecimalFormat("#.##");
-		decimalFormat.setGroupingUsed(false);
-		DecimalFormat integerFormat = new DecimalFormat("###");
-		decimalFormat.setGroupingUsed(false);
-
-		distanceTresholdField = new JFormattedTextField(decimalFormat) {
 			@Override
 			protected void processFocusEvent(final FocusEvent e) {
 				if (e.isTemporary()) {
@@ -442,37 +192,551 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 				super.processFocusEvent(e);
 			}
 		};
-		distanceTresholdField.setText("1.2");
+		temporalSegmentField1.setText(String.valueOf(ComputeTracksParameters.getForwardTracksTemporalSegment()));
+		temporalSegmentField1.setVisible(false);
+		temporalSegmentField1.setHorizontalAlignment(SwingConstants.CENTER);
+		temporalSegmentField1.setFont(new Font("Roboto", Font.PLAIN, 15));
+		temporalSegmentField1.setBounds(290, 92, 70, 18);
+		optionPanel1.add(temporalSegmentField1);
+
+		// save backward tracks checkbox
+
+		saveCheckBox4 = new JCheckBox("<html>Backward motion tracks (.mat) </html>");
+		saveCheckBox4.setHorizontalAlignment(SwingConstants.LEFT);
+		saveCheckBox4.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox4.setBackground(Color.WHITE);
+		saveCheckBox4.setBounds(0, 0, 400, 20);
+
+		// save backward tracks with overlay checkbox
+
+		saveCheckBox5 = new JCheckBox("<html>Overlay backward motion tracks on the initial image</html>");
+		saveCheckBox5.setHorizontalAlignment(SwingConstants.LEFT);
+		saveCheckBox5.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox5.setEnabled(false);
+		saveCheckBox5.setBackground(Color.WHITE);
+		saveCheckBox5.setBounds(0, 0, 400, 20);
+		// bigPanel.add(saveCheckBox5);
+
+		optionPanel2 = new JPanel();
+		optionPanel2.setOpaque(false);
+		optionPanel2.setBounds(0, 0, 405, 135);
+		optionPanel2.setBackground(new Color(238, 238, 238));
+		optionPanel2.setLayout(null);
+
+		// generateSaveOptionList(optionPanel2, saveList2, 320, 5, true);
+		saveOption2 = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
+		saveOption2.show(optionPanel2, 320, 5, true);
+		colorOption2 = new ColorOption();
+		colorOption2.show(optionPanel2, 10, 25, 3);
+
+		JLabel instructionLabel3 = new JLabel("<html> Select the display color for each motion track </html>");
+		instructionLabel3.setVisible(false);
+		instructionLabel3.setBounds(5, 5, 306, 18);
+		instructionLabel3.setFont(new Font("Roboto", Font.PLAIN, 15));
+		optionPanel2.add(instructionLabel3);
+
+		temporalSegmentLabel2 = new JLabel("Plot tracks in temporal segments of length:");
+		temporalSegmentLabel2.setVisible(false);
+		temporalSegmentLabel2.setVerticalAlignment(SwingConstants.TOP);
+		temporalSegmentLabel2.setHorizontalAlignment(SwingConstants.LEFT);
+		temporalSegmentLabel2.setFont(new Font("Roboto", Font.PLAIN, 15));
+		temporalSegmentLabel2.setBounds(5, 90, 295, 20);
+		optionPanel2.add(temporalSegmentLabel2);
+
+		temporalSegmentField2 = new JFormattedTextField(integerFormat) {
+			@Override
+			protected void processFocusEvent(final FocusEvent e) {
+				if (e.isTemporary()) {
+					return;
+				}
+
+				if (e.getID() == FocusEvent.FOCUS_LOST) {
+					if (getText() == null || getText().isEmpty()) {
+						setValue(0);
+					}
+				}
+				super.processFocusEvent(e);
+			}
+		};
+		temporalSegmentField2.setVisible(false);
+		temporalSegmentField2.setText(String.valueOf(ComputeTracksParameters.getBackwardTracksTemporalSegment()));
+		temporalSegmentField2.setHorizontalAlignment(SwingConstants.CENTER);
+		temporalSegmentField2.setFont(new Font("Roboto", Font.PLAIN, 15));
+		temporalSegmentField2.setBounds(290, 92, 70, 18);
+		optionPanel2.add(temporalSegmentField2);
+
+		noteLabel = new JLabel("Note: The tracks are plotted on the reversed video");
+		noteLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
+		noteLabel.setVerticalAlignment(SwingConstants.TOP);
+		noteLabel.setHorizontalAlignment(SwingConstants.LEFT);
+		noteLabel.setVisible(false);
+		noteLabel.setBounds(5, 110, 400, 20);
+		optionPanel2.add(noteLabel);
+
+		// save motion flow checkbox
+
+		saveCheckBox3 = new JCheckBox("<html> Motion field</html>");
+		saveCheckBox3.setHorizontalAlignment(SwingConstants.LEFT);
+		saveCheckBox3.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox3.setBackground(Color.WHITE);
+		saveCheckBox3.setBounds(0, 0, 442, 20);
+
+		optionPanel3 = new JPanel();
+		optionPanel3.setOpaque(false);
+		optionPanel3.setBackground(new Color(238, 238, 238));
+		optionPanel3.setBounds(0, 0, 425, 100);
+		optionPanel3.setLayout(null);
+
+		saveOption6 = new SaveOption(Arrays.asList(".mat", ".tif"));
+		saveOption6.show(optionPanel3, 5, 0, false);
+
+		JLabel instructionLabel4 = new JLabel(
+				"<html> Note: For large images saving the motion field takes up a lot of hard disk space. It is therefore not recommended to do so. The motion field is summarized by the superpixel tracks. </html>");
+		instructionLabel4.setVisible(false);
+		instructionLabel4.setFont(new Font("Roboto", Font.PLAIN, 14));
+		instructionLabel4.setBounds(5, 40, 420, 54);
+		optionPanel3.add(instructionLabel4);
+
+		// save MOSES mesh
+
+		saveCheckBox6 = new JCheckBox("<html>MOSES mesh (.mat)</html>");
+		saveCheckBox6.setHorizontalAlignment(SwingConstants.LEFT);
+		saveCheckBox6.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox6.setBackground(Color.WHITE);
+		saveCheckBox6.setBounds(0, 0, 442, 20);
+
+		optionPanel4 = new JPanel();
+		optionPanel4.setBounds(0, 0, 425, 111);
+		optionPanel4.setLayout(null);
+		optionPanel4.setOpaque(false);
+
+		instructionLabel5 = new JLabel(
+				"<html> Please set the distace threshold used for computing the MOSES mesh  </html>");
+		instructionLabel5.setVisible(false);
+		instructionLabel5.setVerticalAlignment(SwingConstants.TOP);
+		instructionLabel5.setFont(new Font("Roboto", Font.PLAIN, 15));
+		instructionLabel5.setBounds(5, 5, 415, 36);
+		optionPanel4.add(instructionLabel5);
+
+		distanceTresholdField = new JFormattedTextField(decimalFormat) {
+			@Override
+			protected void processFocusEvent(final FocusEvent e) {
+				if (e.isTemporary()) {
+					return;
+				}
+
+				if (e.getID() == FocusEvent.FOCUS_LOST) {
+					if (getText() == null || getText().isEmpty()) {
+						setValue(String.valueOf(ComputeTracksParameters.getMOSESMeshDistanceThreshold()));
+					}
+				}
+				super.processFocusEvent(e);
+			}
+		};
+		distanceTresholdField.setText(String.valueOf(ComputeTracksParameters.getMOSESMeshDistanceThreshold()));
 		distanceTresholdField.setVisible(false);
 		distanceTresholdField.setHorizontalAlignment(SwingConstants.CENTER);
 		distanceTresholdField.setFont(new Font("Roboto", Font.PLAIN, 15));
-		distanceTresholdField.setBounds(110, 24, 100, 22);
+		distanceTresholdField.setBounds(120, 25, 100, 18);
 		optionPanel4.add(distanceTresholdField);
+
+		instructionLabel6 = new JLabel("Compute mesh from:");
+		instructionLabel6.setVisible(false);
+		instructionLabel6.setFont(new Font("Roboto", Font.PLAIN, 15));
+		instructionLabel6.setBounds(5, 50, 151, 16);
+		optionPanel4.add(instructionLabel6);
+
+		forwardTracksButton1 = new JRadioButton("Forward tracks");
+		forwardTracksButton1.setSelected(true);
+		forwardTracksButton1.setVisible(false);
+		forwardTracksButton1.setFont(new Font("Roboto", Font.PLAIN, 15));
+		forwardTracksButton1.setBounds(25, 66, 137, 20);
+		optionPanel4.add(forwardTracksButton1);
+
+		backwardTracksButton1 = new JRadioButton("Backward tracks");
+		backwardTracksButton1.setVisible(false);
+		backwardTracksButton1.setFont(new Font("Roboto", Font.PLAIN, 15));
+		backwardTracksButton1.setBounds(25, 86, 137, 20);
+		optionPanel4.add(backwardTracksButton1);
+
+		forwardTracksButton1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				backwardTracksButton1.setSelected(!forwardTracksButton1.isSelected());
+			}
+		});
+
+		backwardTracksButton1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				forwardTracksButton1.setSelected(!backwardTracksButton1.isSelected());
+			}
+		});
+
+		// MOSES mesh vis
 
 		saveCheckBox7 = new JCheckBox("Visualize MOSES mesh");
 		saveCheckBox7.setEnabled(false);
-		saveCheckBox7.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (saveCheckBox7.isEnabled()) {
-
-					if (saveCheckBox7.isSelected()) {
-						moveLowerComponents(optionPanel5, 0, 180);
-						setPanelVisibility(optionPanel5, true);
-						updateBigPanel();
-
-					} else {
-						moveLowerComponents(optionPanel5, 0, -180);
-						setPanelVisibility(optionPanel5, false);
-						updateBigPanel();
-					}
-				}
-			}
-		});
 		saveCheckBox7.setBackground(Color.WHITE);
 		saveCheckBox7.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox7.setBounds(30, 195, 196, 24);
-		bigPanel.add(saveCheckBox7);
-		;
+		saveCheckBox7.setBounds(0, 0, 196, 20);
+
+		optionPanel5 = new JPanel();
+		optionPanel5.setBounds(0, 0, 405, 220);
+		optionPanel5.setOpaque(false);
+		optionPanel5.setLayout(null);
+
+		saveCheckBox71 = new JCheckBox("Create visualization for a selected frame (.png)");
+		saveCheckBox71.setVisible(false);
+		saveCheckBox71.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox71.setBounds(5, 80, 347, 18);
+		optionPanel5.add(saveCheckBox71);
+
+		frameLabel = new JLabel("Frame:");
+		frameLabel.setVisible(false);
+		frameLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
+		frameLabel.setBounds(45, 100, 55, 20);
+		optionPanel5.add(frameLabel);
+
+		frameField = new JFormattedTextField(integerFormat) {
+
+			@Override
+			protected void processFocusEvent(final FocusEvent e) {
+				if (e.isTemporary()) {
+					return;
+				}
+
+				if (e.getID() == FocusEvent.FOCUS_LOST) {
+					if (getText() == null || getText().isEmpty()) {
+						setValue(String.valueOf(ComputeTracksParameters.getMOSESMeshFrame()));
+					}
+				}
+				super.processFocusEvent(e);
+			}
+		};
+		frameField.setText(String.valueOf(ComputeTracksParameters.getMOSESMeshFrame()));
+		frameField.setHorizontalAlignment(SwingConstants.CENTER);
+		frameField.setVisible(false);
+		frameField.setFont(new Font("Roboto", Font.PLAIN, 15));
+		frameField.setBounds(100, 100, 100, 20);
+		optionPanel5.add(frameField);
+
+		saveCheckBox72 = new JCheckBox("Create visualization for all frames");
+		saveCheckBox72.setVisible(false);
+		saveCheckBox72.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox72.setBounds(5, 120, 261, 18);
+		optionPanel5.add(saveCheckBox72);
+
+		JLabel lblSelectTheDisplay = new JLabel("<html> Select the display color for the mesh nodes </html>");
+		lblSelectTheDisplay.setVisible(false);
+		lblSelectTheDisplay.setFont(new Font("Roboto", Font.PLAIN, 15));
+		lblSelectTheDisplay.setBounds(5, 5, 335, 20);
+		optionPanel5.add(lblSelectTheDisplay);
+
+		noteLabel2 = new JLabel(
+				"<html> Note: If you are using the backward tracks, the MOSES mesh will be plotted on the reversed video </html>");
+		noteLabel2.setVisible(false);
+		noteLabel2.setFont(new Font("Roboto", Font.PLAIN, 15));
+		noteLabel2.setBounds(5, 180, 400, 36);
+		optionPanel5.add(noteLabel2);
+
+		// generateSaveOptionList(optionPanel5, saveList3, 10, 140, false);
+		saveOption3 = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
+		saveOption3.show(optionPanel5, 10, 140, false);
+		colorOption3 = new ColorOption();
+		colorOption3.show(optionPanel5, 5, 25, 2);
+
+		// save radial mesh
+
+		saveCheckBox8 = new JCheckBox("<html>Radial mesh (.mat)</html>");
+		saveCheckBox8.setHorizontalAlignment(SwingConstants.LEFT);
+		saveCheckBox8.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox8.setBackground(Color.WHITE);
+		saveCheckBox8.setBounds(0, 0, 442, 20);
+
+		optionPanel6 = new JPanel();
+		optionPanel6.setBounds(0, 0, 425, 111);
+		optionPanel6.setLayout(null);
+		optionPanel6.setOpaque(false);
+
+		instructionLabel7 = new JLabel(
+				"<html> Please set the distace threshold used for computing the radial mesh  </html>");
+		instructionLabel7.setVisible(false);
+		instructionLabel7.setVerticalAlignment(SwingConstants.TOP);
+		instructionLabel7.setFont(new Font("Roboto", Font.PLAIN, 15));
+		instructionLabel7.setBounds(5, 5, 415, 36);
+		optionPanel6.add(instructionLabel7);
+
+		distanceTresholdField2 = new JFormattedTextField(decimalFormat) {
+			@Override
+			protected void processFocusEvent(final FocusEvent e) {
+				if (e.isTemporary()) {
+					return;
+				}
+
+				if (e.getID() == FocusEvent.FOCUS_LOST) {
+					if (getText() == null || getText().isEmpty()) {
+						setValue(String.valueOf(ComputeTracksParameters.getRadialMeshDistanceThreshold()));
+					}
+				}
+				super.processFocusEvent(e);
+			}
+		};
+		distanceTresholdField2.setText(String.valueOf(ComputeTracksParameters.getRadialMeshDistanceThreshold()));
+		distanceTresholdField2.setVisible(false);
+		distanceTresholdField2.setHorizontalAlignment(SwingConstants.CENTER);
+		distanceTresholdField2.setFont(new Font("Roboto", Font.PLAIN, 15));
+		distanceTresholdField2.setBounds(120, 25, 100, 18);
+		optionPanel6.add(distanceTresholdField2);
+
+		instructionLabel8 = new JLabel("Compute mesh from:");
+		instructionLabel8.setVisible(false);
+		instructionLabel8.setFont(new Font("Roboto", Font.PLAIN, 15));
+		instructionLabel8.setBounds(5, 50, 151, 16);
+		optionPanel6.add(instructionLabel8);
+
+		forwardTracksButton2 = new JRadioButton("Forward tracks");
+		forwardTracksButton2.setSelected(true);
+		forwardTracksButton2.setVisible(false);
+		forwardTracksButton2.setFont(new Font("Roboto", Font.PLAIN, 15));
+		forwardTracksButton2.setBounds(25, 66, 137, 20);
+		optionPanel6.add(forwardTracksButton2);
+
+		backwardTracksButton2 = new JRadioButton("Backward tracks");
+		backwardTracksButton2.setVisible(false);
+		backwardTracksButton2.setFont(new Font("Roboto", Font.PLAIN, 15));
+		backwardTracksButton2.setBounds(25, 86, 137, 20);
+		optionPanel6.add(backwardTracksButton2);
+
+		forwardTracksButton2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				backwardTracksButton2.setSelected(!forwardTracksButton2.isSelected());
+			}
+		});
+
+		backwardTracksButton2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				forwardTracksButton2.setSelected(!backwardTracksButton2.isSelected());
+			}
+		});
+
+		saveCheckBox9 = new JCheckBox("Visualize radial mesh");
+		saveCheckBox9.setEnabled(false);
+		saveCheckBox9.setBackground(Color.WHITE);
+		saveCheckBox9.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox9.setBounds(0, 0, 196, 20);
+
+		// save radial vis
+
+		optionPanel7 = new JPanel();
+		optionPanel7.setBounds(0, 0, 405, 220);
+		optionPanel7.setOpaque(false);
+		optionPanel7.setLayout(null);
+
+		saveCheckBox91 = new JCheckBox("Create visualization for a selected frame (.png)");
+		saveCheckBox91.setVisible(false);
+		saveCheckBox91.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox91.setBounds(5, 80, 401, 18);
+		optionPanel7.add(saveCheckBox91);
+
+		frameLabel2 = new JLabel("Frame:");
+		frameLabel2.setVisible(false);
+		frameLabel2.setFont(new Font("Roboto", Font.PLAIN, 15));
+		frameLabel2.setBounds(45, 100, 55, 20);
+		optionPanel7.add(frameLabel2);
+
+		frameField2 = new JFormattedTextField(integerFormat) {
+
+			@Override
+			protected void processFocusEvent(final FocusEvent e) {
+				if (e.isTemporary()) {
+					return;
+				}
+
+				if (e.getID() == FocusEvent.FOCUS_LOST) {
+					if (getText() == null || getText().isEmpty()) {
+						setValue(String.valueOf(ComputeTracksParameters.getRadialMeshFrame()));
+					}
+				}
+				super.processFocusEvent(e);
+			}
+		};
+		frameField2.setText(String.valueOf(ComputeTracksParameters.getRadialMeshFrame()));
+		frameField2.setHorizontalAlignment(SwingConstants.CENTER);
+		frameField2.setVisible(false);
+		frameField2.setFont(new Font("Roboto", Font.PLAIN, 15));
+		frameField2.setBounds(100, 100, 100, 20);
+		optionPanel7.add(frameField2);
+
+		saveCheckBox92 = new JCheckBox("Create visualization for all frames");
+		saveCheckBox92.setVisible(false);
+		saveCheckBox92.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox92.setBounds(5, 120, 261, 18);
+		optionPanel7.add(saveCheckBox92);
+
+		JLabel lblSelectTheDisplay2 = new JLabel("<html> Select the display color for the mesh nodes </html>");
+		lblSelectTheDisplay2.setVisible(false);
+		lblSelectTheDisplay2.setFont(new Font("Roboto", Font.PLAIN, 15));
+		lblSelectTheDisplay2.setBounds(5, 5, 335, 20);
+		optionPanel7.add(lblSelectTheDisplay2);
+
+		noteLabel3 = new JLabel(
+				"<html> Note: If you are using the backward tracks, the radial mesh will be plotted on the reversed video </html>");
+		noteLabel3.setVisible(false);
+		noteLabel3.setFont(new Font("Roboto", Font.PLAIN, 15));
+		noteLabel3.setBounds(5, 180, 400, 36);
+		optionPanel7.add(noteLabel3);
+
+		// generateSaveOptionList(optionPanel7, saveList4, 10, 140, false);
+		saveOption4 = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
+		saveOption4.show(optionPanel7, 10, 140, false);
+		colorOption4 = new ColorOption();
+		colorOption4.show(optionPanel7, 5, 25, 2);
+
+		// save K nearest neighbors mesh
+
+		saveCheckBox10 = new JCheckBox("<html>K nearest neighbors mesh (.mat)</html>");
+		saveCheckBox10.setHorizontalAlignment(SwingConstants.LEFT);
+		saveCheckBox10.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox10.setBackground(Color.WHITE);
+		saveCheckBox10.setBounds(0, 0, 442, 20);
+
+		optionPanel8 = new JPanel();
+		optionPanel8.setBounds(0, 0, 425, 111);
+		optionPanel8.setLayout(null);
+		optionPanel8.setOpaque(false);
+
+		instructionLabel9 = new JLabel(
+				"<html> Please set the K value used for computing the K nearest neighbors mesh </html>");
+		instructionLabel9.setVisible(false);
+		instructionLabel9.setVerticalAlignment(SwingConstants.TOP);
+		instructionLabel9.setFont(new Font("Roboto", Font.PLAIN, 15));
+		instructionLabel9.setBounds(5, 5, 415, 36);
+		optionPanel8.add(instructionLabel9);
+
+		KNeighborField = new JFormattedTextField(integerFormat) {
+			@Override
+			protected void processFocusEvent(final FocusEvent e) {
+				if (e.isTemporary()) {
+					return;
+				}
+
+				if (e.getID() == FocusEvent.FOCUS_LOST) {
+					if (getText() == null || getText().isEmpty()) {
+						setValue(String.valueOf(ComputeTracksParameters.getKNeighbor()));
+					}
+				}
+				super.processFocusEvent(e);
+			}
+		};
+		KNeighborField.setText(String.valueOf(ComputeTracksParameters.getKNeighbor()));
+		KNeighborField.setVisible(false);
+		KNeighborField.setHorizontalAlignment(SwingConstants.CENTER);
+		KNeighborField.setFont(new Font("Roboto", Font.PLAIN, 15));
+		KNeighborField.setBounds(120, 25, 100, 18);
+		optionPanel8.add(KNeighborField);
+
+		instructionLabel10 = new JLabel("Compute mesh from:");
+		instructionLabel10.setVisible(false);
+		instructionLabel10.setFont(new Font("Roboto", Font.PLAIN, 15));
+		instructionLabel10.setBounds(5, 50, 151, 16);
+		optionPanel8.add(instructionLabel10);
+
+		forwardTracksButton3 = new JRadioButton("Forward tracks");
+		forwardTracksButton3.setSelected(true);
+		forwardTracksButton3.setVisible(false);
+		forwardTracksButton3.setFont(new Font("Roboto", Font.PLAIN, 15));
+		forwardTracksButton3.setBounds(25, 66, 137, 20);
+		optionPanel8.add(forwardTracksButton3);
+
+		backwardTracksButton3 = new JRadioButton("Backward tracks");
+		backwardTracksButton3.setVisible(false);
+		backwardTracksButton3.setFont(new Font("Roboto", Font.PLAIN, 15));
+		backwardTracksButton3.setBounds(25, 86, 137, 20);
+		optionPanel8.add(backwardTracksButton3);
+
+		forwardTracksButton3.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				backwardTracksButton3.setSelected(!forwardTracksButton3.isSelected());
+			}
+		});
+
+		backwardTracksButton3.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				forwardTracksButton3.setSelected(!backwardTracksButton3.isSelected());
+			}
+		});
+
+		// save radial vis
+
+		saveCheckBox11 = new JCheckBox("Visualize K nearest neighbors mesh");
+		saveCheckBox11.setEnabled(false);
+		saveCheckBox11.setBackground(Color.WHITE);
+		saveCheckBox11.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox11.setBounds(0, 0, 300, 20);
+
+		optionPanel9 = new JPanel();
+		optionPanel9.setBounds(0, 0, 405, 220);
+		optionPanel9.setOpaque(false);
+		optionPanel9.setLayout(null);
+
+		saveCheckBox111 = new JCheckBox("Create visualization for a selected frame (.png)");
+		saveCheckBox111.setVisible(false);
+		saveCheckBox111.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox111.setBounds(5, 80, 401, 18);
+		optionPanel9.add(saveCheckBox111);
+
+		frameLabel3 = new JLabel("Frame:");
+		frameLabel3.setVisible(false);
+		frameLabel3.setFont(new Font("Roboto", Font.PLAIN, 15));
+		frameLabel3.setBounds(45, 100, 55, 20);
+		optionPanel9.add(frameLabel3);
+
+		frameField3 = new JFormattedTextField(integerFormat) {
+
+			@Override
+			protected void processFocusEvent(final FocusEvent e) {
+				if (e.isTemporary()) {
+					return;
+				}
+
+				if (e.getID() == FocusEvent.FOCUS_LOST) {
+					if (getText() == null || getText().isEmpty()) {
+						setValue(String.valueOf(ComputeTracksParameters.getNeighborMeshFrame()));
+					}
+				}
+				super.processFocusEvent(e);
+			}
+		};
+		frameField3.setText(String.valueOf(ComputeTracksParameters.getNeighborMeshFrame()));
+		frameField3.setHorizontalAlignment(SwingConstants.CENTER);
+		frameField3.setVisible(false);
+		frameField3.setFont(new Font("Roboto", Font.PLAIN, 15));
+		frameField3.setBounds(100, 100, 100, 20);
+		optionPanel9.add(frameField3);
+
+		saveCheckBox112 = new JCheckBox("Create visualization for all frames");
+		saveCheckBox112.setVisible(false);
+		saveCheckBox112.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox112.setBounds(5, 120, 261, 18);
+		optionPanel9.add(saveCheckBox112);
+
+		JLabel lblSelectTheDisplay3 = new JLabel("<html> Select the display color for the mesh nodes </html>");
+		lblSelectTheDisplay3.setVisible(false);
+		lblSelectTheDisplay3.setFont(new Font("Roboto", Font.PLAIN, 15));
+		lblSelectTheDisplay3.setBounds(5, 5, 335, 20);
+		optionPanel9.add(lblSelectTheDisplay3);
+
+		noteLabel4 = new JLabel(
+				"<html> Note: If you are using the backward tracks, the radial mesh will be plotted on the reversed video </html>");
+		noteLabel4.setVisible(false);
+		noteLabel4.setFont(new Font("Roboto", Font.PLAIN, 15));
+		noteLabel4.setBounds(5, 180, 400, 36);
+		optionPanel9.add(noteLabel4);
+
+		// generateSaveOptionList(optionPanel9, saveList5, 10, 140, false);
+		saveOption5 = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
+		saveOption5.show(optionPanel9, 10, 140, false);
+		colorOption5 = new ColorOption();
+		colorOption5.show(optionPanel9, 5, 25, 2);
 
 		// buttons
 
@@ -483,8 +747,11 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		cancelButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// display menuPanel and close current panel
+				// stop swing worker
+				if (swingWorkerStarted)
+					swingWorker.destroy();
 
+				// display menuPanel and close current panel
 				parentFrame.empty();
 				parentFrame.menuPanel = new MenuPanel(parentFrame);
 				parentFrame.getContentPane().add(parentFrame.menuPanel);
@@ -505,6 +772,10 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		backButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				// stop swing worker
+				if (swingWorkerStarted)
+					swingWorker.destroy();
+
 				// display menuPanel and close current panel
 
 				parentFrame.empty();
@@ -526,673 +797,138 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		nextButton.setBounds(350, 430, 140, 30);
 		nextButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				// load file chooser and run script if any checkbox is selected
 
-				// load file chooser if any checkbox is selected
+				if (saveCheckBox1.isEnabled() || saveCheckBox3.isEnabled() || saveCheckBox4.isEnabled()
+						|| saveCheckBox6.isEnabled() || saveCheckBox8.isEnabled()) {
 
-				if (saveCheckBox1.isEnabled() || saveCheckBox3.isEnabled() || saveCheckBox4.isEnabled()) {
-					Globals.saveDirectory = IJ.getDirectory("Choose saving directory");
-					// IJ.log(Globals.saveDirectory);
-				}
+					String saveDirectory = IJ.getDirectory("Choose saving directory");
+					if (saveDirectory != null) {
+						ComputeTracksParameters.setSaveDirectory(saveDirectory);
 
-				// loading bar
+						// add parameters
 
-				setPanelVisibility(loadingBarPanel, true);
-				updateBigPanel();
-				loadingBar.setIndeterminate(true);
-				loadingBarLabel.setText(
-						"<html> Please wait, this may take a couple of minutes. <br> Processing parameters...  </html>");
-
-				// execute script on different thread
-
-				class MyWorker extends SwingWorker<String, String> {
-					int fileCount = 1, fileNumber = 1;
-
-					@Override
-					protected String doInBackground() {
-						if (Globals.batchMode) {
-
-							ArrayList<String> validExtensions = new ArrayList<String>();
-							validExtensions.addAll(Arrays.asList(".tif", ".tiff"));
-
-							File fileDirectory = new File(Globals.getDirectory(Globals.filePath));
-							IJ.log("Dir: " + Globals.getDirectory(Globals.filePath));
-							String[] files = fileDirectory.list();
-							for (String fileTitle : files) {
-								File selectedFile = new File(fileDirectory.getPath(), fileTitle);
-								IJ.log(selectedFile.getAbsolutePath());
-
-								if (selectedFile.isFile()
-										&& Globals.checkExtension(selectedFile.getAbsolutePath(), validExtensions))
-									fileCount++;
-							}
-							fileCount--;
-
-							for (String fileTitle : files) {
-								File selectedFile = new File(fileDirectory.getPath(), fileTitle);
-
-								if (selectedFile.isFile()
-										&& Globals.checkExtension(selectedFile.getAbsolutePath(), validExtensions)) {
-									analyseFile(selectedFile.getAbsolutePath());
-									fileNumber++;
-								}
-							}
-						} else
-							analyseFile(Globals.filePath);
-
-						return "Done";
-
-					}
-
-					public void analyseFile(String filePath) {
-						// create new file
-
-						String temporaryFilePath = System.getProperty("java.io.tmpdir") + "MOSESimage.tif";
-
-						ImagePlus temporaryImage = IJ.openImage(filePath);
-						IJ.run(temporaryImage, "Size...",
-								"width=" + (int) (Globals.width / Math.sqrt(Globals.downsizeFactor)) + " height="
-										+ (int) (Globals.height / Math.sqrt(Globals.downsizeFactor)) + " depth="
-										+ Globals.frames + " constrain average interpolation=Bilinear");
-						IJ.saveAs(temporaryImage, "Tiff", temporaryFilePath);
-						temporaryImage.close();
-
-						temporaryImageFile = new File(temporaryFilePath);
-
-						//
-
-						forwardTracksImageSequenceFolderPath = Globals.saveDirectory
-								+ Globals.getNameWithoutExtension(filePath) + "_forward_tracks_image_sequence";
-
-						backwardTracksImageSequenceFolderPath = Globals.saveDirectory
-								+ Globals.getNameWithoutExtension(filePath) + "_backward_tracks_image_sequence";
-
-						motionFieldImageSequenceFolderPath = Globals.saveDirectory
-								+ Globals.getNameWithoutExtension(filePath) + "_motion_field_image_sequence";
-
-						MOSESMeshImageSequenceFolderPath = Globals.saveDirectory
-								+ Globals.getNameWithoutExtension(filePath) + "_MOSES_mesh_image_sequence";
-
-						ArrayList<String> command = new ArrayList<>();
-						command.addAll(Arrays.asList("python", Globals.scriptPath, temporaryFilePath,
-								String.valueOf(Globals.pyr_scale), String.valueOf(Globals.levels),
-								String.valueOf(Globals.winSize), String.valueOf(Globals.iterations),
-								String.valueOf(Globals.polyn), String.valueOf(Globals.polysigma),
-								String.valueOf(Globals.flags), String.valueOf(Globals.numberSuperpixels),
-								String.valueOf(Globals.frames),
-								String.valueOf((int) (Globals.width / Math.sqrt(Globals.downsizeFactor))),
-								String.valueOf((int) (Globals.height / Math.sqrt(Globals.downsizeFactor))),
-								Globals.saveDirectory, Globals.getNameWithoutExtension(filePath),
-								String.valueOf(Globals.numberSelectedChannels), distanceTresholdField.getText(),
-								frameField.getText()));
-
-						String pythonScriptHeader = "import scipy.io as spio\r\n" + "import os\r\n" + "import sys\r\n"
-								+ "from MOSES.Utility_Functions.file_io import read_multiimg_PIL\r\n"
-								+ "from MOSES.Utility_Functions.file_io import mkdir\r\n"
-								+ "from MOSES.Visualisation_Tools.track_plotting import plot_tracks\r\n"
-								+ "from MOSES.Optical_Flow_Tracking.superpixel_track import compute_grayscale_vid_superpixel_tracks_FB  \r\n"
-								+ "import pylab as plt\r\n"
-								+ "from MOSES.Optical_Flow_Tracking.superpixel_track import compute_grayscale_vid_superpixel_tracks\r\n"
-								+ "from MOSES.Visualisation_Tools.motion_field_visualisation import view_ang_flow \r\n"
-								+ "from MOSES.Motion_Analysis.mesh_statistics_tools import construct_MOSES_mesh\r\n"
-								+ "from MOSES.Visualisation_Tools.mesh_visualisation import visualise_mesh\r\n"
-								+ "from MOSES.Motion_Analysis.mesh_statistics_tools import from_neighbor_list_to_graph\r\n"
-								+ "infile = sys.argv[1]\r\n" + "vidstack = read_multiimg_PIL(infile)\r\n"
-								+ "optical_flow_params = dict(pyr_scale = float(sys.argv[2]), levels = int(sys.argv[3]), winsize = int(sys.argv[4]), iterations = int(sys.argv[5]), poly_n = int(sys.argv[6]), poly_sigma = float(sys.argv[7]), flags = int(sys.argv[8]))\r\n"
-								+ "n_spixels = int(sys.argv[9])\r\n" + "print(\"Finished set up\")\r\n";
-
-						String pythonScript = null;
-
-						// forward tracks
-
-						if (saveCheckBox1.isSelected()) {
-
-							pythonScript = pythonScriptHeader;
-
-							for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-								int channelIndex = Globals.selectedChannels.get(i);
-
-								pythonScript += "optflow_" + channelIndex + ", forward_tracks_" + channelIndex
-										+ " = compute_grayscale_vid_superpixel_tracks(vidstack[:,:,:," + channelIndex
-										+ "], optical_flow_params, n_spixels)\r\n"
-										+ "print(\"Finished extracting superpixel tracks for channel " + channelIndex
-										+ " \")\r\n";
-
-							}
-
-							pythonScript += "savetracksmat = (sys.argv[13] + sys.argv[14] + '_forward_tracks.mat')\r\n"
-									+ "spio.savemat(savetracksmat, {";
-
-							boolean firstchannel = true;
-							for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-								int channelIndex = Globals.selectedChannels.get(i);
-
-								if (!firstchannel) {
-									pythonScript += ", ";
-								} else {
-									firstchannel = false;
-								}
-
-								pythonScript += "'forward_tracks_" + channelIndex + "': forward_tracks_" + channelIndex
-										+ "";
-
-							}
-
-							pythonScript += "})\r\n" + "print(\"Saved tracks\")\r\n";
-
-							if (saveCheckBox2.isSelected()) {
-
-								forwardTracksImageSequenceFolder = new File(forwardTracksImageSequenceFolderPath);
-								forwardTracksImageSequenceFolder.mkdirs();
-
-								pythonScript += "save_frame_folder = sys.argv[13] + sys.argv[14] + '_forward_tracks_image_sequence' \r\n"
-										+ "mkdir(save_frame_folder)\r\n" + "len_segment = 5\r\n"
-										+ "for frame in range(len_segment, int(sys.argv[10]), 1):\r\n"
-										+ "    frame_img = vidstack[frame]\r\n" + "    fig = plt.figure()\r\n"
-										+ "    fig.set_size_inches(int(sys.argv[11]) / int(sys.argv[12]), 1, forward=False)\r\n"
-										+ "    ax=plt.Axes(fig, [0.,0.,1.,1.]); ax.set_axis_off(); fig.add_axes(ax)\r\n"
-										+ "    ax.imshow(frame_img, alpha=0.6)\r\n";
-
-								for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-									int channelIndex = Globals.selectedChannels.get(i);
-
-									pythonScript += "    plot_tracks(forward_tracks_" + channelIndex
-											+ "[:,frame-len_segment:frame+1],ax, color='"
-											+ Globals.color(colorSelect1.get(i).getL().getSelectedIndex())
-											+ "', lw=1)\r\n";
-
-								}
-
-								pythonScript += "    ax.set_xlim([0, int(sys.argv[11])]); ax.set_ylim([int(sys.argv[12]), 0])\r\n"
-										+ "    ax.grid('off'); ax.axis('off')\r\n"
-										+ "    fig.savefig(os.path.join(save_frame_folder, 'tracksimg-%s_' %(str(frame+1).zfill(3)) + sys.argv[14] + '.png'), dpi=int(sys.argv[12]))\r\n"
-										+ "    plt.close(fig)\r\n";
-
-							}
-
-							publish("Computing forward tracks...");
-							Thread.yield();
-
-							Globals.runScript(pythonScript, command);
-
-							if (saveCheckBox2.isSelected()) {
-								// save .tif
-								publish("Generating tiff stack from forward tracks...");
-								Thread.yield();
-
-								if (saveOption1.getL().get(0).isSelected()) {
-									ImagePlus imp = FolderOpener
-											.open(forwardTracksImageSequenceFolder.getAbsolutePath(), "");
-									imp.show();
-									IJ.saveAs(imp, "Tiff", Globals.saveDirectory
-											+ Globals.getNameWithoutExtension(filePath) + "_forward_tracks_video.tif");
-								}
-
-								// save .avi
-								publish("Generating avi video from forward tracks...");
-								Thread.yield();
-								if (saveOption1.getL().get(1).isSelected()) {
-
-									ImagePlus imp = FolderOpener
-											.open(forwardTracksImageSequenceFolder.getAbsolutePath(), "");
-									IJ.run(imp, "AVI... ", "compression=JPEG frame=7 save=" + Globals.saveDirectory
-											+ Globals.getNameWithoutExtension(filePath) + "_forward_tracks_video.avi");
-								}
-
-								// delete image sequence folder
-								publish("Deleting temporary files...");
-								Thread.yield();
-								if (!saveOption1.getL().get(2).isSelected()) {
-									String[] entries = forwardTracksImageSequenceFolder.list();
-									for (String fileName : entries) {
-										File currentFile = new File(forwardTracksImageSequenceFolder.getPath(),
-												fileName);
-										currentFile.delete();
-									}
-
-									forwardTracksImageSequenceFolder.delete();
-								}
-							}
-
+						if (saveCheckBox1.isSelected())
+							ComputeTracksParameters.setOutput("forward_tracks");
+						if (saveCheckBox2.isSelected()) {
+							ComputeTracksParameters.setOutput("forward_tracks_visualisation");
+							ComputeTracksParameters.setSaveOption("forward_tracks_save_options", saveOption1);
+							ComputeTracksParameters.setColorOption("forward_tracks_colors", colorOption1);
+							ComputeTracksParameters
+									.setForwardTracksTemporalSegment(Integer.parseInt(temporalSegmentField1.getText()));
 						}
-
-						// backward tracks
-
-						if (saveCheckBox4.isSelected()) {
-							pythonScript = pythonScriptHeader;
-
-							for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-								int channelIndex = Globals.selectedChannels.get(i);
-
-								pythonScript += "optflow_" + channelIndex + ", forward_tracks_" + channelIndex
-										+ ", backward_tracks_" + channelIndex
-										+ " = compute_grayscale_vid_superpixel_tracks_FB(vidstack[:,:,:," + channelIndex
-										+ "], optical_flow_params, n_spixels=n_spixels)\r\n";
-
-							}
-
-							pythonScript += "savetracksmat2 = (sys.argv[13] + sys.argv[14] + '_backward_tracks.mat') \r\n"
-									+ "spio.savemat(savetracksmat2, {";
-
-							boolean firstchannel = true;
-							for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-								int channelIndex = Globals.selectedChannels.get(i);
-
-								if (!firstchannel) {
-									pythonScript += ", ";
-								} else {
-									firstchannel = false;
-								}
-
-								pythonScript += "'backward_tracks_" + channelIndex + "': backward_tracks_"
-										+ channelIndex + "";
-
-							}
-
-							pythonScript += "})\r\n" + "print(\"Saved tracks\")\r\n";
-
-							if (saveCheckBox5.isSelected()) {
-
-								backwardTracksImageSequenceFolder = new File(backwardTracksImageSequenceFolderPath);
-								backwardTracksImageSequenceFolder.mkdirs();
-
-								pythonScript += "save_frame_folder = sys.argv[13] + sys.argv[14] + '_backward_tracks_image_sequence' \r\n"
-										+ "mkdir(save_frame_folder)\r\n" + "len_segment = 5\r\n"
-										+ "for frame in range(len_segment, int(sys.argv[10]), 1):\r\n"
-										+ "    frame_img = vidstack[frame]\r\n" + "    fig = plt.figure()\r\n"
-										+ "    fig.set_size_inches(int(sys.argv[11]) / int(sys.argv[12]), 1, forward=False)\r\n"
-										+ "    ax=plt.Axes(fig, [0.,0.,1.,1.]); ax.set_axis_off(); fig.add_axes(ax)\r\n"
-										+ "    ax.imshow(frame_img, alpha=0.6)\r\n";
-
-								for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-									int channelIndex = Globals.selectedChannels.get(i);
-
-									pythonScript += "    plot_tracks(backward_tracks_" + channelIndex
-											+ "[:,frame-len_segment:frame+1],ax, color='"
-											+ Globals.color(colorSelect2.get(i).getL().getSelectedIndex())
-											+ "', lw=1)\r\n";
-
-								}
-
-								pythonScript += "    ax.set_xlim([0, int(sys.argv[11])]); ax.set_ylim([int(sys.argv[12]), 0])\r\n"
-										+ "    ax.grid('off'); ax.axis('off')\r\n"
-										+ "    fig.savefig(os.path.join(save_frame_folder, 'tracksimg-%s_' %(str(frame+1).zfill(3)) + sys.argv[14] + '.png'), dpi=int(sys.argv[12]))\r\n"
-										+ "    plt.close(fig)\r\n";
-							}
-
-							publish("Computing backward tracks...");
-							Thread.yield();
-
-							Globals.runScript(pythonScript, command);
-
-							if (saveCheckBox5.isSelected()) {
-								// save .tif
-								publish("Generating tiff stack from backward tracks...");
-								Thread.yield();
-
-								if (saveOption2.getL().get(0).isSelected()) {
-									ImagePlus imp = FolderOpener
-											.open(backwardTracksImageSequenceFolder.getAbsolutePath(), "");
-									imp.show();
-									IJ.saveAs(imp, "Tiff", Globals.saveDirectory
-											+ Globals.getNameWithoutExtension(filePath) + "_backward_tracks_video.tif");
-								}
-
-								// save .avi
-								publish("Generating avi video from backward tracks...");
-								Thread.yield();
-								if (saveOption2.getL().get(1).isSelected()) {
-									ImagePlus imp = FolderOpener
-											.open(backwardTracksImageSequenceFolder.getAbsolutePath(), "");
-									IJ.run(imp, "AVI... ", "compression=JPEG frame=7 save=" + Globals.saveDirectory
-											+ Globals.getNameWithoutExtension(filePath) + "_backward_tracks_video.avi");
-								}
-
-								// delete image sequence folder
-								publish("Deleting temporary files...");
-								Thread.yield();
-								if (!saveOption2.getL().get(2).isSelected()) {
-									String[] entries = backwardTracksImageSequenceFolder.list();
-									for (String fileName : entries) {
-										File currentFile = new File(backwardTracksImageSequenceFolder.getPath(),
-												fileName);
-										currentFile.delete();
-									}
-
-									backwardTracksImageSequenceFolder.delete();
-								}
-							}
-						}
-
-						// motion flow
 
 						if (saveCheckBox3.isSelected()) {
-
-							pythonScript = pythonScriptHeader;
-
-							for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-								int channelIndex = Globals.selectedChannels.get(i);
-
-								pythonScript += "optflow_" + channelIndex + ", forward_tracks_" + channelIndex
-										+ " = compute_grayscale_vid_superpixel_tracks(vidstack[:,:,:," + channelIndex
-										+ "], optical_flow_params, n_spixels)\r\n"
-										+ "print(\"Finished extracting superpixel tracks for channel " + channelIndex
-										+ " \")\r\n";
-
-							}
-
-							if (matButtonGroup3.isSelected()) {
-
-								pythonScript += "save_optflow_mat = (sys.argv[13] + sys.argv[14] + '_optflow.mat')\r\n"
-										+ "spio.savemat(save_optflow_mat, {";
-
-								boolean firstchannel = true;
-								for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-									int channelIndex = Globals.selectedChannels.get(i);
-
-									if (!firstchannel) {
-										pythonScript += ", ";
-									} else {
-										firstchannel = false;
-									}
-
-									pythonScript += "'optflow_" + channelIndex + "': optflow_" + channelIndex + "";
-
-								}
-
-								pythonScript += "})\r\n";
-							}
-
-							if (tifButtonGroup3.isSelected()) {
-
-								motionFieldImageSequenceFolder = new File(motionFieldImageSequenceFolderPath);
-								motionFieldImageSequenceFolder.mkdirs();
-
-								pythonScript += "save_frame_folder = sys.argv[13] + sys.argv[14] + '_motion_field_image_sequence' \r\n"
-										+ "mkdir(save_frame_folder)\r\n"
-										+ "for frame in range(1, int(sys.argv[10]), 1):\r\n"
-										+ "    fig, ax = plt.subplots(nrows = 1, ncols = int(sys.argv[15]))\r\n";
-
-								for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-									int channelIndex = Globals.selectedChannels.get(i);
-
-									if (Globals.numberSelectedChannels > 1) {
-
-										pythonScript += "    ax[" + i + "].imshow(view_ang_flow(optflow_" + channelIndex
-												+ "[frame])) \r\n" + "    ax[" + i + "].grid('off')\r\n";
-
-									} else {
-
-										pythonScript += "    ax.imshow(view_ang_flow(optflow_" + channelIndex
-												+ "[frame])) \r\n" + "    ax.grid('off')\r\n";
-
-									}
-								}
-
-								pythonScript += "    fig.savefig(os.path.join(save_frame_folder, 'motionfield-%s_' %(str(frame).zfill(3)) + sys.argv[14] + '.png'), dpi=int(sys.argv[12]))\r\n"
-										+ "    plt.close()\r\n";
-							}
-
-							publish("Generating motion field...");
-							Thread.yield();
-
-							Globals.runScript(pythonScript, command);
-
-							if (saveCheckBox3.isSelected()) {
-								// make tiff stack from image sequence and delete the folder
-								publish("Generating tiff stack from motion field...");
-								Thread.yield();
-
-								if (tifButtonGroup3.isSelected()) {
-									ImagePlus imp = FolderOpener.open(motionFieldImageSequenceFolder.getAbsolutePath(),
-											"");
-									imp.show();
-									IJ.saveAs(imp, "Tiff", Globals.saveDirectory
-											+ Globals.getNameWithoutExtension(filePath) + "_motion_field_video.tif");
-
-								}
-
-								publish("Deleting temporary files...");
-								Thread.yield();
-
-								String[] entries = motionFieldImageSequenceFolder.list();
-								for (String fileName : entries) {
-									File currentFile = new File(motionFieldImageSequenceFolder.getPath(), fileName);
-									currentFile.delete();
-								}
-
-								motionFieldImageSequenceFolder.delete();
-							}
+							ComputeTracksParameters.setOutput("motion_field");
+							ComputeTracksParameters.setSaveOption("motion_field_save_options", saveOption6);
 						}
 
-						// MOSES mesh
+						if (saveCheckBox4.isSelected())
+							ComputeTracksParameters.setOutput("backward_tracks");
+						if (saveCheckBox5.isSelected()) {
+							ComputeTracksParameters.setOutput("backward_tracks_visualisation");
+							ComputeTracksParameters.setSaveOption("backward_tracks_save_options", saveOption2);
+							ComputeTracksParameters.setColorOption("backward_tracks_colors", colorOption2);
+							ComputeTracksParameters.setBackwardTracksTemporalSegment(
+									Integer.parseInt(temporalSegmentField2.getText()));
+						}
 
 						if (saveCheckBox6.isSelected()) {
-							pythonScript = pythonScriptHeader;
+							ComputeTracksParameters.setOutput("MOSES_mesh");
+							ComputeTracksParameters
+									.setMOSESMeshDistanceThreshold(Double.parseDouble(distanceTresholdField.getText()));
+							ComputeTracksParameters.setMOSESMeshForwardTracks(forwardTracksButton1.isSelected());
+						}
+						if (saveCheckBox7.isSelected()) {
+							ComputeTracksParameters.setOutput("MOSES_mesh_visualisation");
+							ComputeTracksParameters.setColorOption("MOSES_mesh_colors", colorOption3);
+						}
+						if (saveCheckBox71.isSelected()) {
+							ComputeTracksParameters.setOutput("MOSES_mesh_frame_visualisation");
+							ComputeTracksParameters.setMOSESMeshFrame(Integer.parseInt(frameField.getText()));
+						}
+						if (saveCheckBox72.isSelected()) {
+							ComputeTracksParameters.setOutput("MOSES_mesh_complete_visualisation");
 
-							for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-								int channelIndex = Globals.selectedChannels.get(i);
-
-								pythonScript += "optflow_" + channelIndex + ", forward_tracks_" + channelIndex
-										+ " = compute_grayscale_vid_superpixel_tracks(vidstack[:,:,:," + channelIndex
-										+ "], optical_flow_params, n_spixels)\r\n"
-										+ "print(\"Finished extracting superpixel tracks for channel " + channelIndex
-										+ " \")\r\n";
-							}
-
-							pythonScript += "spixel_size = forward_tracks_" + Globals.selectedChannels.get(0)
-									+ "[1,0,1] - forward_tracks_" + Globals.selectedChannels.get(0) + "[1,0,0]\r\n";
-
-							for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-								int channelIndex = Globals.selectedChannels.get(i);
-
-								pythonScript += "MOSES_mesh_strain_time_" + channelIndex + ", MOSES_mesh_neighborlist_"
-										+ channelIndex + " = construct_MOSES_mesh(forward_tracks_" + channelIndex
-										+ ", dist_thresh= float(sys.argv[16]), spixel_size=spixel_size)\r\n";
-							}
-
-							pythonScript += "savetracksmat = (sys.argv[13] + sys.argv[14] + '_MOSES_mesh.mat')\r\n"
-									+ "spio.savemat(savetracksmat, {";
-
-							boolean firstchannel = true;
-							for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-								int channelIndex = Globals.selectedChannels.get(i);
-
-								if (!firstchannel) {
-									pythonScript += ", ";
-								} else {
-									firstchannel = false;
-								}
-
-								pythonScript += "'MOSES_mesh_neighborlist_" + channelIndex
-										+ "': MOSES_mesh_neighborlist_" + channelIndex + "";
-
-							}
-
-							pythonScript += "})\r\n";
-
-							if (saveCheckBox7.isSelected()) {
-
-								if (saveCheckBox71.isSelected()) {
-
-									for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-										int channelIndex = Globals.selectedChannels.get(i);
-
-										pythonScript += "for i in range(len(MOSES_mesh_neighborlist_" + channelIndex
-												+ ")):\r\n" + "    MOSES_mesh_neighborlist_" + channelIndex
-												+ "[i] = MOSES_mesh_neighborlist_" + channelIndex
-												+ "[i].astype(int)\r\n" + "mesh_frame_networkx_G_" + channelIndex
-												+ " = from_neighbor_list_to_graph(forward_tracks_" + channelIndex
-												+ ", MOSES_mesh_neighborlist_" + channelIndex
-												+ ", int(sys.argv[17]))\r\n";
-
-									}
-
-									pythonScript += "fig, ax = plt.subplots(nrows=1, ncols="
-											+ Globals.numberSelectedChannels + ")\r\n";
-
-									if (Globals.numberSelectedChannels > 1) {
-										for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-											int channelIndex = Globals.selectedChannels.get(i);
-
-											pythonScript += "ax[" + i
-													+ "].imshow(vidstack[int(sys.argv[17])], alpha=0.7)\r\n"
-													+ "visualise_mesh(mesh_frame_networkx_G_" + channelIndex
-													+ ", forward_tracks_" + channelIndex
-													+ "[:,int(sys.argv[17]),[1,0]], ax[" + i
-													+ "], node_size=spixel_size/10, linewidths=1, width=1, node_color='"
-													+ Globals.color(colorSelect3.get(i).getL().getSelectedIndex())
-													+ "')\r\n" + "ax[" + i + "].set_ylim([int(sys.argv[12]),0])\r\n"
-													+ "ax[" + i + "].set_xlim([0,int(sys.argv[11])])\r\n" + "ax[" + i
-													+ "].grid('off'); ax[" + i + "].axis('off')\r\n";
-										}
-									} else {
-										pythonScript += "ax.imshow(vidstack[int(sys.argv[17])], alpha=0.7)\r\n"
-												+ "visualise_mesh(mesh_frame_networkx_G_"
-												+ Globals.selectedChannels.get(0) + ", forward_tracks_"
-												+ Globals.selectedChannels.get(0)
-												+ "[:,int(sys.argv[17]),[1,0]], ax, node_size=spixel_size/10, linewidths=1, width=1, node_color='"
-												+ Globals.color(colorSelect3.get(0).getL().getSelectedIndex())
-												+ "')\r\n" + "ax.set_ylim([int(sys.argv[12]),0])\r\n"
-												+ "ax.set_xlim([0,int(sys.argv[11])])\r\n"
-												+ "ax.grid('off'); ax.axis('off')\r\n";
-									}
-
-									pythonScript += "fig.savefig(os.path.join(sys.argv[13], 'MOSES_mesh_' + sys.argv[14] + '.png'), dpi=int(sys.argv[12]))\r\n"
-											+ "plt.close()\r\n";
-								}
-
-								if (saveCheckBox72.isSelected()) {
-
-									MOSESMeshImageSequenceFolder = new File(MOSESMeshImageSequenceFolderPath);
-									MOSESMeshImageSequenceFolder.mkdirs();
-
-									pythonScript += "save_frame_folder = sys.argv[13] + sys.argv[14] + '_MOSES_mesh_image_sequence' \r\n"
-											+ "mkdir(save_frame_folder)\r\n";
-
-									pythonScript += "for frame in range(1, int(sys.argv[10]), 1):\r\n"
-											+ "	fig, ax = plt.subplots(nrows=1, ncols=" + Globals.numberSelectedChannels
-											+ ")\r\n";
-									;
-
-									for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-										int channelIndex = Globals.selectedChannels.get(i);
-
-										pythonScript += "	for i in range(len(MOSES_mesh_neighborlist_" + channelIndex
-												+ ")):\r\n" + "		MOSES_mesh_neighborlist_" + channelIndex
-												+ "[i] = MOSES_mesh_neighborlist_" + channelIndex
-												+ "[i].astype(int)\r\n" + "	mesh_frame_networkx_G_" + channelIndex
-												+ " = from_neighbor_list_to_graph(forward_tracks_" + channelIndex
-												+ ", MOSES_mesh_neighborlist_" + channelIndex + ", frame)\r\n";
-
-									}
-
-									if (Globals.numberSelectedChannels > 1) {
-										for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-											int channelIndex = Globals.selectedChannels.get(i);
-
-											pythonScript += "	ax[" + i + "].imshow(vidstack[frame], alpha=0.7)\r\n"
-													+ "	visualise_mesh(mesh_frame_networkx_G_" + channelIndex
-													+ ", forward_tracks_" + channelIndex + "[:,frame,[1,0]], ax[" + i
-													+ "], node_size=spixel_size/10, linewidths=1, width=1, node_color='"
-													+ Globals.color(colorSelect3.get(i).getL().getSelectedIndex())
-													+ "')\r\n" + "	ax[" + i + "].set_ylim([int(sys.argv[12]),0])\r\n"
-													+ "	ax[" + i + "].set_xlim([0,int(sys.argv[11])])\r\n" + "	ax[" + i
-													+ "].grid('off'); ax[" + i + "].axis('off')\r\n";
-										}
-									} else {
-										pythonScript += "	ax.imshow(vidstack[frame], alpha=0.7)\r\n"
-												+ "	visualise_mesh(mesh_frame_networkx_G_"
-												+ Globals.selectedChannels.get(0) + ", forward_tracks_"
-												+ Globals.selectedChannels.get(0)
-												+ "[:,frame,[1,0]], ax, node_size=spixel_size/10, linewidths=1, width=1, node_color='"
-												+ Globals.color(colorSelect3.get(0).getL().getSelectedIndex())
-												+ "')\r\n" + "	ax.set_ylim([int(sys.argv[12]),0])\r\n"
-												+ "	ax.set_xlim([0,int(sys.argv[11])])\r\n"
-												+ "	ax.grid('off'); ax.axis('off')\r\n";
-									}
-
-									pythonScript += "	fig.savefig(os.path.join(save_frame_folder, 'MOSES_mesh-%s_' %(str(frame).zfill(3)) + sys.argv[14] + '.png'), dpi=int(sys.argv[12]))\r\n"
-											+ "	plt.close()\r\n";
-
-								}
-							}
-
-							publish("Generating MOSES mesh...");
-							Thread.yield();
-
-							Globals.runScript(pythonScript, command);
-
-							if (saveCheckBox72.isSelected()) {
-								// save .tif
-								publish("Generating tiff stack from MOSES mesh...");
-								Thread.yield();
-
-								if (saveOption3.getL().get(0).isSelected()) {
-									ImagePlus imp = FolderOpener.open(MOSESMeshImageSequenceFolder.getAbsolutePath(),
-											"");
-									imp.show();
-									IJ.saveAs(imp, "Tiff", Globals.saveDirectory
-											+ Globals.getNameWithoutExtension(filePath) + "_MOSES_mesh_video.tif");
-								}
-
-								// save .avi
-								publish("Generating avi video from MOSES mesh...");
-								Thread.yield();
-								if (saveOption3.getL().get(1).isSelected()) {
-									ImagePlus imp = FolderOpener.open(MOSESMeshImageSequenceFolder.getAbsolutePath(),
-											"");
-									IJ.run(imp, "AVI... ", "compression=JPEG frame=7 save=" + Globals.saveDirectory
-											+ Globals.getNameWithoutExtension(filePath) + "_MOSES_mesh_video.avi");
-								}
-
-								// delete image sequence folder
-								publish("Deleting temporary files...");
-								Thread.yield();
-								if (!saveOption3.getL().get(2).isSelected()) {
-									String[] entries = MOSESMeshImageSequenceFolder.list();
-									for (String fileName : entries) {
-										File currentFile = new File(MOSESMeshImageSequenceFolder.getPath(), fileName);
-										currentFile.delete();
-									}
-
-									MOSESMeshImageSequenceFolder.delete();
-								}
-							}
-
+							ComputeTracksParameters.setSaveOption("MOSES_mesh_complete_visualisation_save_options",
+									saveOption3);
 						}
 
-						temporaryImageFile.delete();
-
-					}
-
-					@Override
-					protected void process(List<String> messages) {
-						for (String m : messages) {
-							loadingBarLabel.setText(
-									"<html> Please wait, this may take a couple of minutes. <br> " + m + "  </html>");
-							loadingBarLabel.validate();
-							loadingBarLabel.repaint();
-
-							fileLabel.setText("File " + fileNumber + " out of " + fileCount);
-							fileLabel.validate();
-							fileLabel.repaint();
+						if (saveCheckBox8.isSelected()) {
+							ComputeTracksParameters.setOutput("radial_mesh");
+							ComputeTracksParameters.setRadialMeshDistanceThreshold(
+									Double.parseDouble(distanceTresholdField2.getText()));
+							ComputeTracksParameters.setRadialMeshForwardTracks(forwardTracksButton2.isSelected());
+						}
+						if (saveCheckBox9.isSelected()) {
+							ComputeTracksParameters.setOutput("radial_mesh_visualisation");
+							ComputeTracksParameters.setColorOption("radial_mesh_colors", colorOption4);
+						}
+						if (saveCheckBox91.isSelected()) {
+							ComputeTracksParameters.setOutput("radial_mesh_frame_visualisation");
+							ComputeTracksParameters.setRadialMeshFrame(Integer.parseInt(frameField2.getText()));
+						}
+						if (saveCheckBox92.isSelected()) {
+							ComputeTracksParameters.setOutput("radial_mesh_complete_visualisation");
+							ComputeTracksParameters.setSaveOption("radial_mesh_complete_visualisation_save_options",
+									saveOption4);
 						}
 
+						if (saveCheckBox10.isSelected()) {
+							ComputeTracksParameters.setOutput("neighbor_mesh");
+							ComputeTracksParameters.setKNeighbor(Integer.parseInt(KNeighborField.getText()));
+							ComputeTracksParameters.setNeighborMeshForwardTracks(forwardTracksButton3.isSelected());
+						}
+						if (saveCheckBox11.isSelected()) {
+							ComputeTracksParameters.setOutput("neighbor_mesh_visualisation");
+							ComputeTracksParameters.setColorOption("neighbor_mesh_colors", colorOption5);
+						}
+						if (saveCheckBox111.isSelected()) {
+							ComputeTracksParameters.setOutput("neighbor_mesh_frame_visualisation");
+							ComputeTracksParameters.setNeighborMeshFrame(Integer.parseInt(frameField3.getText()));
+						}
+						if (saveCheckBox112.isSelected()) {
+							ComputeTracksParameters.setOutput("neighbor_mesh_complete_visualisation");
+							ComputeTracksParameters.setSaveOption("neighbor_mesh_complete_visualisation_save_options",
+									saveOption5);
+						}
+
+						if (saveCheckBox12.isSelected())
+							ComputeTracksParameters.setOutput("config_file");
+
+						// loading bar panel
+
+						ProgressPanel progress = new ProgressPanel(self, 40, 200);
+						self.add(progress);
+						self.setLayer(progress, 1);
+						progress.setVisibility(true);
+
+						Globals.setPanelEnabled(bigPanel, false);
+						scrollPane.setVerticalScrollBarPolicy(scrollPane.VERTICAL_SCROLLBAR_NEVER);
+
+						// run process
+						class SwingWorkerListener implements PropertyChangeListener {
+							@Override
+							public void propertyChange(PropertyChangeEvent evt) {
+								if (swingWorker.isDone()) {
+									// display menuPanel and close current panel
+									parentFrame.empty();
+									parentFrame.menuPanel = new MenuPanel(parentFrame);
+									parentFrame.getContentPane().add(parentFrame.menuPanel);
+									parentFrame.validate();
+								}
+
+							}
+						}
+
+						swingWorker = new ComputeTracks(progress);
+						swingWorkerStarted = true;
+						swingWorker.addPropertyChangeListener(new SwingWorkerListener());
+						swingWorker.execute();
 					}
-
-					@Override
-					protected void done() {
-						setPanelVisibility(loadingBarPanel, false);
-						updateBigPanel();
-
-					}
-
 				}
 
-				new MyWorker().execute();
-
 			}
-
 		});
 
 		nextButton.setVerticalTextPosition(SwingConstants.CENTER);
@@ -1202,6 +938,8 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		nextButton.setBackground(new Color(13, 59, 102));
 		add(nextButton);
 		radioButtonGroup3.addAll(Arrays.asList(matButtonGroup3, tifButtonGroup3));
+
+		// titles
 
 		tracksTitleLabel = new JLabel("<html> Superpixel motion tracks</html>");
 		tracksTitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -1217,217 +955,41 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		meshTitleLabel.setBounds(0, 150, 460, 23);
 		bigPanel.add(meshTitleLabel);
 
-		// save mesh vis
+		// save config file
 
-		optionPanel5 = new JPanel();
-		optionPanel5.setBounds(30, 215, 425, 180);
-		bigPanel.add(optionPanel5);
-		optionPanel5.setOpaque(false);
-		optionPanel5.setLayout(null);
+		saveCheckBox12 = new JCheckBox("Save config file");
+		saveCheckBox12.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox12.setBounds(10, 325, 320, 20);
+		saveCheckBox12.setBackground(new Color(252, 252, 252));
+		bigPanel.add(saveCheckBox12);
 
-		saveCheckBox71 = new JCheckBox("Create visualization for a selected frame (.png)");
-		saveCheckBox71.setVisible(false);
-		saveCheckBox71.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox71.setBounds(5, 80, 401, 18);
-		optionPanel5.add(saveCheckBox71);
+		// generate checkbox list
 
-		frameLabel = new JLabel("Frame:");
-		frameLabel.setVisible(false);
-		frameLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
-		frameLabel.setBounds(45, 100, 55, 20);
-		optionPanel5.add(frameLabel);
+		CheckBoxList checkBoxList = new CheckBoxList(bigPanel);
+		checkBoxList.addCheckBox(saveCheckBox1);
+		checkBoxList.addCheckBoxChild(saveCheckBox1, saveCheckBox2);
+		checkBoxList.addPanelChild(saveCheckBox2, optionPanel1);
+		checkBoxList.addCheckBox(saveCheckBox4);
+		checkBoxList.addCheckBoxChild(saveCheckBox4, saveCheckBox5);
+		checkBoxList.addPanelChild(saveCheckBox5, optionPanel2);
+		checkBoxList.addCheckBox(saveCheckBox3);
+		checkBoxList.addPanelChild(saveCheckBox3, optionPanel3);
+		checkBoxList.show(10, 25);
 
-		frameField = new JFormattedTextField(integerFormat) {
-
-			@Override
-			protected void processFocusEvent(final FocusEvent e) {
-				if (e.isTemporary()) {
-					return;
-				}
-
-				if (e.getID() == FocusEvent.FOCUS_LOST) {
-					if (getText() == null || getText().isEmpty()) {
-						setValue(0);
-					}
-				}
-				super.processFocusEvent(e);
-			}
-		};
-		frameField.setText("5");
-		frameField.setHorizontalAlignment(SwingConstants.CENTER);
-		frameField.setVisible(false);
-		frameField.setFont(new Font("Roboto", Font.PLAIN, 15));
-		frameField.setBounds(100, 100, 100, 20);
-		optionPanel5.add(frameField);
-
-		saveCheckBox72 = new JCheckBox("Create visualization for all frames");
-		saveCheckBox72.setVisible(false);
-		saveCheckBox72.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox72.setBounds(5, 120, 261, 18);
-		optionPanel5.add(saveCheckBox72);
-
-		JLabel lblSelectTheDisplay = new JLabel("<html> Select the display color for the mesh nodes </html>");
-		lblSelectTheDisplay.setVisible(false);
-		lblSelectTheDisplay.setFont(new Font("Roboto", Font.PLAIN, 15));
-		lblSelectTheDisplay.setBounds(5, 5, 335, 20);
-		optionPanel5.add(lblSelectTheDisplay);
-
-		generateSaveOptionList(optionPanel5, saveOption3, 10, 140, false);
-		generateChannelSelectionList(optionPanel5, colorSelect3, 5, 25);
-
-	}
-
-	public void generateChannelSelectionList(JPanel panel, ArrayList<Pair<JComboBox, JLabel>> colorSelect, int x,
-			int y) {
-		colorSelect.clear();
-
-		for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-			int channelIndex = Globals.selectedChannels.get(i);
-
-			JComboBox comboBox = new JComboBox();
-			comboBox.setModel(new DefaultComboBoxModel(
-					new String[] { "red", "blue", "green", "cyan", "magenta", "yellow", "black", "white" }));
-			comboBox.setBounds(x + 110, y + i * 25, 100, 20);
-			comboBox.setFont(new Font("Roboto", Font.PLAIN, 15));
-			comboBox.setSelectedIndex(i);
-			comboBox.setVisible(false);
-
-			JLabel label = new JLabel("Channel " + (channelIndex + 1) + " color: ");
-			label.setVerticalAlignment(SwingConstants.TOP);
-			label.setHorizontalAlignment(SwingConstants.LEFT);
-			label.setFont(new Font("Roboto", Font.PLAIN, 15));
-			label.setBounds(x, y + i * 25, 180, 20);
-			label.setForeground(Color.DARK_GRAY);
-			label.setVisible(false);
-
-			panel.add(comboBox);
-			panel.add(label);
-
-			colorSelect.add(new Pair(comboBox, label));
-		}
-	}
-
-	public void generateSaveOptionList(JPanel panel, Pair<ArrayList<JRadioButton>, JLabel> saveOption, int x, int y,
-			boolean vertical) {
-		JLabel saveAsLabel;
-		JRadioButton tifButton, aviButton, imageSequenceButton;
-
-		// 315 5
-		saveAsLabel = new JLabel("Save as:");
-		saveAsLabel.setVisible(false);
-		saveAsLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveAsLabel.setVerticalAlignment(SwingConstants.CENTER);
-		if (vertical)
-			saveAsLabel.setBounds(x, y, 85, 18);
-		else
-			saveAsLabel.setBounds(x, y, 85, 40);
-		panel.add(saveAsLabel);
-
-		tifButton = new JRadioButton(".tif");
-		tifButton.setSelected(true);
-		tifButton.setVisible(false);
-		tifButton.setVerticalAlignment(SwingConstants.CENTER);
-		tifButton.setFont(new Font("Roboto", Font.PLAIN, 14));
-		if (vertical)
-			tifButton.setBounds(x, y + 15, 85, 18);
-		else
-			tifButton.setBounds(x + 60, y, 55, 40);
-		panel.add(tifButton);
-
-		aviButton = new JRadioButton(".avi");
-		aviButton.setVisible(false);
-		aviButton.setVerticalAlignment(SwingConstants.CENTER);
-		aviButton.setFont(new Font("Roboto", Font.PLAIN, 14));
-		if (vertical)
-			aviButton.setBounds(x, y + 30, 85, 18);
-		else
-			aviButton.setBounds(x + 120, y, 55, 40);
-		panel.add(aviButton);
-
-		imageSequenceButton = new JRadioButton("<html> image sequence </html>");
-		imageSequenceButton.setVisible(false);
-		imageSequenceButton.setHorizontalAlignment(SwingConstants.LEFT);
-		imageSequenceButton.setVerticalAlignment(SwingConstants.CENTER);
-		imageSequenceButton.setFont(new Font("Roboto", Font.PLAIN, 14));
-		if (vertical)
-			imageSequenceButton.setBounds(x, y + 45, 85, 40);
-		else
-			imageSequenceButton.setBounds(x + 180, y, 85, 40);
-		panel.add(imageSequenceButton);
-
-		ArrayList<JRadioButton> radioButtonGroup = new ArrayList<JRadioButton>();
-		radioButtonGroup.addAll(Arrays.asList(tifButton, aviButton, imageSequenceButton));
-
-		saveOption.setR(saveAsLabel);
-		saveOption.setL(radioButtonGroup);
-
-		final Pair<ArrayList<JRadioButton>, JLabel> saveOptionFinalCopy = saveOption;
-
-		tifButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				checkDefaultRadioButton(saveOptionFinalCopy.l);
-			}
-		});
-
-		aviButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				checkDefaultRadioButton(saveOptionFinalCopy.l);
-			}
-		});
-
-		imageSequenceButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				checkDefaultRadioButton(saveOptionFinalCopy.l);
-			}
-		});
-	}
-
-	public void moveLowerComponents(Component component, int x, int y) {
-		Component[] components = bigPanel.getComponents();
-
-		for (Component component2 : components) {
-			if (component2 != component && component.getBounds().y <= component2.getBounds().y)
-				Globals.moveComponent(component2, x, y);
-		}
-	}
-
-	public void setPanelVisibility(JPanel panel, boolean visibility) {
-		Component[] components = panel.getComponents();
-
-		panel.setOpaque(visibility);
-		panel.setVisible(visibility);
-		for (Component component : components) {
-			component.setVisible(visibility);
-		}
-	}
-
-	public void updateBigPanel() {
-		Component[] components = bigPanel.getComponents();
-
-		int maxHeight = 0;
-		for (Component component : components) {
-			if (component.isVisible() && component.isOpaque()
-					&& component.getBounds().y + component.getBounds().height > maxHeight)
-				maxHeight = component.getBounds().y + component.getBounds().height;
-		}
-
-		bigPanel.setPreferredSize(new Dimension(0, maxHeight + 20));
-
-		validate();
-		repaint();
-	}
-
-	public void checkDefaultRadioButton(ArrayList<JRadioButton> radioButtonGroup) {
-		boolean selected = false;
-
-		for (int i = 0; i < radioButtonGroup.size(); i++) {
-			if (radioButtonGroup.get(i).isSelected()) {
-				selected = true;
-			}
-		}
-
-		if (!selected)
-			radioButtonGroup.get(0).setSelected(true);
-
+		CheckBoxList checkBoxList2 = new CheckBoxList(bigPanel);
+		checkBoxList2.addCheckBox(saveCheckBox6);
+		checkBoxList2.addPanelChild(saveCheckBox6, optionPanel4);
+		checkBoxList2.addCheckBoxChild(saveCheckBox6, saveCheckBox7);
+		checkBoxList2.addPanelChild(saveCheckBox7, optionPanel5);
+		checkBoxList2.addCheckBox(saveCheckBox8);
+		checkBoxList2.addPanelChild(saveCheckBox8, optionPanel6);
+		checkBoxList2.addCheckBoxChild(saveCheckBox8, saveCheckBox9);
+		checkBoxList2.addPanelChild(saveCheckBox9, optionPanel7);
+		checkBoxList2.show(10, 175);
+		checkBoxList2.addCheckBox(saveCheckBox10);
+		checkBoxList2.addPanelChild(saveCheckBox10, optionPanel8);
+		checkBoxList2.addCheckBoxChild(saveCheckBox10, saveCheckBox11);
+		checkBoxList2.addPanelChild(saveCheckBox11, optionPanel9);
+		checkBoxList2.show(10, 175);
 	}
 }

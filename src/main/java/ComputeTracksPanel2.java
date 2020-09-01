@@ -53,11 +53,11 @@ public class ComputeTracksPanel2 extends JPanel {
 
 		// title labels
 
-		JLabel titleLabel = new JLabel("Compute superpixel tracks", SwingConstants.CENTER);
+		JLabel titleLabel = new JLabel("Compute motion tracks and mesh", SwingConstants.CENTER);
 		titleLabel.setBounds(0, 0, 500, 36);
 		titleLabel.setVerticalTextPosition(SwingConstants.CENTER);
 		titleLabel.setHorizontalTextPosition(SwingConstants.CENTER);
-		titleLabel.setFont(new Font("Arial Black", Font.BOLD, 25));
+		titleLabel.setFont(new Font("Arial Black", Font.BOLD, 23));
 
 		// collect parameters labels
 
@@ -140,7 +140,7 @@ public class ComputeTracksPanel2 extends JPanel {
 
 		scaleFactorField.setHorizontalAlignment(SwingConstants.CENTER);
 		scaleFactorField.setFont(new Font("Roboto", Font.PLAIN, 15));
-		scaleFactorField.setText(String.valueOf(Globals.pyr_scale));
+		scaleFactorField.setText(String.valueOf(ComputeTracksParameters.getPyrScale()));
 		scaleFactorField.setBounds(125, 50, 60, 20);
 
 		JFormattedTextField levelsField = new JFormattedTextField(integerFormat) {
@@ -158,7 +158,7 @@ public class ComputeTracksPanel2 extends JPanel {
 				super.processFocusEvent(e);
 			}
 		};
-		levelsField.setText(String.valueOf(Globals.levels));
+		levelsField.setText(String.valueOf(ComputeTracksParameters.getLevels()));
 		levelsField.setHorizontalAlignment(SwingConstants.CENTER);
 		levelsField.setFont(new Font("Roboto", Font.PLAIN, 15));
 		levelsField.setBounds(125, 80, 60, 20);
@@ -178,7 +178,7 @@ public class ComputeTracksPanel2 extends JPanel {
 				super.processFocusEvent(e);
 			}
 		};
-		windowSizeField.setText(String.valueOf(Globals.winSize));
+		windowSizeField.setText(String.valueOf(ComputeTracksParameters.getWinSize()));
 		windowSizeField.setHorizontalAlignment(SwingConstants.CENTER);
 		windowSizeField.setFont(new Font("Roboto", Font.PLAIN, 15));
 		windowSizeField.setBounds(125, 110, 60, 20);
@@ -198,7 +198,7 @@ public class ComputeTracksPanel2 extends JPanel {
 				super.processFocusEvent(e);
 			}
 		};
-		iterationsField.setText(String.valueOf(Globals.iterations));
+		iterationsField.setText(String.valueOf(ComputeTracksParameters.getIterations()));
 		iterationsField.setHorizontalAlignment(SwingConstants.CENTER);
 		iterationsField.setFont(new Font("Roboto", Font.PLAIN, 15));
 		iterationsField.setBounds(125, 140, 60, 20);
@@ -218,7 +218,7 @@ public class ComputeTracksPanel2 extends JPanel {
 				super.processFocusEvent(e);
 			}
 		};
-		polyNField.setText(String.valueOf(Globals.polyn));
+		polyNField.setText(String.valueOf(ComputeTracksParameters.getPolyn()));
 		polyNField.setHorizontalAlignment(SwingConstants.CENTER);
 		polyNField.setFont(new Font("Roboto", Font.PLAIN, 15));
 		polyNField.setBounds(125, 170, 60, 20);
@@ -238,7 +238,7 @@ public class ComputeTracksPanel2 extends JPanel {
 				super.processFocusEvent(e);
 			}
 		};
-		polySigmaField.setText(String.valueOf(Globals.polysigma));
+		polySigmaField.setText(String.valueOf(ComputeTracksParameters.getPolySigma()));
 		polySigmaField.setHorizontalAlignment(SwingConstants.CENTER);
 		polySigmaField.setFont(new Font("Roboto", Font.PLAIN, 15));
 		polySigmaField.setBounds(125, 200, 60, 20);
@@ -258,7 +258,7 @@ public class ComputeTracksPanel2 extends JPanel {
 				super.processFocusEvent(e);
 			}
 		};
-		flagsField.setText(String.valueOf(Globals.flags));
+		flagsField.setText(String.valueOf(ComputeTracksParameters.getFlags()));
 		flagsField.setHorizontalAlignment(SwingConstants.CENTER);
 		flagsField.setFont(new Font("Roboto", Font.PLAIN, 15));
 		flagsField.setBounds(125, 230, 60, 20);
@@ -279,7 +279,7 @@ public class ComputeTracksPanel2 extends JPanel {
 			}
 		};
 		numberSuperpixelsField.setBounds(65, 50, 100, 20);
-		numberSuperpixelsField.setText(String.valueOf(Globals.numberSuperpixels));
+		numberSuperpixelsField.setText(String.valueOf(ComputeTracksParameters.getNumberSuperpixels()));
 		numberSuperpixelsField.setHorizontalAlignment(SwingConstants.CENTER);
 		numberSuperpixelsField.setFont(new Font("Roboto", Font.PLAIN, 15));
 
@@ -298,7 +298,7 @@ public class ComputeTracksPanel2 extends JPanel {
 				super.processFocusEvent(e);
 			}
 		};
-		downsizeFactorField.setText(String.valueOf(Globals.downsizeFactor));
+		downsizeFactorField.setText(String.valueOf(ComputeTracksParameters.getDownsizeFactor()));
 		downsizeFactorField.setHorizontalAlignment(SwingConstants.CENTER);
 		downsizeFactorField.setFont(new Font("Roboto", Font.PLAIN, 15));
 		downsizeFactorField.setBounds(65, 50, 100, 20);
@@ -337,15 +337,15 @@ public class ComputeTracksPanel2 extends JPanel {
 		backButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				Globals.pyr_scale = Double.parseDouble(scaleFactorField.getText());
-				Globals.levels = Integer.parseInt(levelsField.getText());
-				Globals.winSize = Integer.parseInt(windowSizeField.getText());
-				Globals.iterations = Integer.parseInt(iterationsField.getText());
-				Globals.polyn = Integer.parseInt(polyNField.getText());
-				Globals.polysigma = Double.parseDouble(polySigmaField.getText());
-				Globals.flags = Integer.parseInt(flagsField.getText());
-				Globals.numberSuperpixels = Integer.parseInt(numberSuperpixelsField.getText());
-				Globals.downsizeFactor = Double.parseDouble(downsizeFactorField.getText());
+				ComputeTracksParameters.setPyrScale(Double.parseDouble(scaleFactorField.getText()));
+				ComputeTracksParameters.setLevels(Integer.parseInt(levelsField.getText()));
+				ComputeTracksParameters.setWinSize(Integer.parseInt(windowSizeField.getText()));
+				ComputeTracksParameters.setIterations(Integer.parseInt(iterationsField.getText()));
+				ComputeTracksParameters.setPolyn(Integer.parseInt(polyNField.getText()));
+				ComputeTracksParameters.setPolySigma(Double.parseDouble(polySigmaField.getText()));
+				ComputeTracksParameters.setFlags(Integer.parseInt(flagsField.getText()));
+				ComputeTracksParameters.setNumberSuperpixels(Integer.parseInt(numberSuperpixelsField.getText()));
+				ComputeTracksParameters.setDownsizeFactor(Double.parseDouble(downsizeFactorField.getText()));
 
 				// display menuPanel and close current panel
 
@@ -368,15 +368,15 @@ public class ComputeTracksPanel2 extends JPanel {
 		nextButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				Globals.pyr_scale = Double.parseDouble(scaleFactorField.getText());
-				Globals.levels = Integer.parseInt(levelsField.getText());
-				Globals.winSize = Integer.parseInt(windowSizeField.getText());
-				Globals.iterations = Integer.parseInt(iterationsField.getText());
-				Globals.polyn = Integer.parseInt(polyNField.getText());
-				Globals.polysigma = Double.parseDouble(polySigmaField.getText());
-				Globals.flags = Integer.parseInt(flagsField.getText());
-				Globals.numberSuperpixels = Integer.parseInt(numberSuperpixelsField.getText());
-				Globals.downsizeFactor = Double.parseDouble(downsizeFactorField.getText());
+				ComputeTracksParameters.setPyrScale(Double.parseDouble(scaleFactorField.getText()));
+				ComputeTracksParameters.setLevels(Integer.parseInt(levelsField.getText()));
+				ComputeTracksParameters.setWinSize(Integer.parseInt(windowSizeField.getText()));
+				ComputeTracksParameters.setIterations(Integer.parseInt(iterationsField.getText()));
+				ComputeTracksParameters.setPolyn(Integer.parseInt(polyNField.getText()));
+				ComputeTracksParameters.setPolySigma(Double.parseDouble(polySigmaField.getText()));
+				ComputeTracksParameters.setFlags(Integer.parseInt(flagsField.getText()));
+				ComputeTracksParameters.setNumberSuperpixels(Integer.parseInt(numberSuperpixelsField.getText()));
+				ComputeTracksParameters.setDownsizeFactor(Double.parseDouble(downsizeFactorField.getText()));
 
 				// display next panel and close current panel
 
@@ -501,7 +501,7 @@ public class ComputeTracksPanel2 extends JPanel {
 		lblStep.setHorizontalAlignment(SwingConstants.LEFT);
 		lblStep.setForeground(Color.DARK_GRAY);
 		lblStep.setFont(new Font("Roboto", Font.BOLD, 15));
-		lblStep.setBounds(10, 50, 53, 30);
+		lblStep.setBounds(10, 40, 53, 30);
 		add(lblStep);
 
 		JLabel lblset = new JLabel(
@@ -510,7 +510,7 @@ public class ComputeTracksPanel2 extends JPanel {
 		lblset.setHorizontalAlignment(SwingConstants.LEFT);
 		lblset.setForeground(Color.DARK_GRAY);
 		lblset.setFont(new Font("Roboto", Font.PLAIN, 15));
-		lblset.setBounds(65, 50, 420, 78);
+		lblset.setBounds(65, 40, 420, 78);
 		add(lblset);
 
 		JButton previewButton = new JButton("Preview");
@@ -519,14 +519,14 @@ public class ComputeTracksPanel2 extends JPanel {
 				double downsizeFactor = Double.parseDouble(downsizeFactorField.getText());
 				int numberSuperpixels = Integer.parseInt(numberSuperpixelsField.getText());
 
-				ImagePlus currentImage = IJ.openImage(Globals.filePath);
-				currentImage.setTitle(Globals.getNameWithoutExtension(Globals.filePath) + "_superpixel_preview_"
-						+ "downsize factor=" + downsizeFactor + "_number_superpixels="
+				ImagePlus currentImage = IJ.openImage(ComputeTracksParameters.getFilePath());
+				currentImage.setTitle(Globals.getNameWithoutExtension(ComputeTracksParameters.getFilePath())
+						+ "_superpixel_preview_" + "downsize factor=" + downsizeFactor + "_number_superpixels="
 						+ Integer.parseInt(numberSuperpixelsField.getText()));
 				IJ.run(currentImage, "Size...",
-						"width=" + (int) (Globals.width / Math.sqrt(downsizeFactor)) + " height="
-								+ (int) (Globals.height / Math.sqrt(downsizeFactor)) + " depth=" + Globals.frames
-								+ " constrain average interpolation=Bilinear");
+						"width=" + (int) (ComputeTracksParameters.getWidth() / Math.sqrt(downsizeFactor)) + " height="
+								+ (int) (ComputeTracksParameters.getHeight() / Math.sqrt(downsizeFactor)) + " depth="
+								+ ComputeTracksParameters.getFrames() + " constrain average interpolation=Bilinear");
 
 				GeneralPath path = new GeneralPath();
 				int imageWidth = currentImage.getWidth();

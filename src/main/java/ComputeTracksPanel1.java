@@ -18,12 +18,11 @@ import ij.IJ;
 
 public class ComputeTracksPanel1 extends JPanel {
 	public MainFrame parentFrame;
+	ComputeTracksPanel1 self = this;
 
 	JLabel nameField, heightField, widthField, framesField, channelsField;
 	JPanel selectChannelPanel;
 	JCheckBox checkBoxList[];
-
-	ComputeTracksPanel1 self = this;
 
 	public ComputeTracksPanel1(MainFrame parentFrame) {
 
@@ -52,11 +51,11 @@ public class ComputeTracksPanel1 extends JPanel {
 
 		// title labels
 
-		JLabel titleLabel = new JLabel("Compute superpixel tracks", SwingConstants.CENTER);
+		JLabel titleLabel = new JLabel("Compute motion tracks and mesh", SwingConstants.CENTER);
 		titleLabel.setBounds(0, 0, 500, 36);
 		titleLabel.setVerticalTextPosition(SwingConstants.CENTER);
 		titleLabel.setHorizontalTextPosition(SwingConstants.CENTER);
-		titleLabel.setFont(new Font("Arial Black", Font.BOLD, 25));
+		titleLabel.setFont(new Font("Arial Black", Font.BOLD, 23));
 
 		JLabel filePropertiesLabel = new JLabel("File properties", SwingConstants.CENTER);
 		filePropertiesLabel.setBounds(10, 140, 230, 40);
@@ -78,7 +77,7 @@ public class ComputeTracksPanel1 extends JPanel {
 		instructionLabel.setForeground(Color.DARK_GRAY);
 		instructionLabel.setHorizontalAlignment(SwingConstants.LEFT);
 		instructionLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
-		instructionLabel.setBounds(65, 50, 420, 70);
+		instructionLabel.setBounds(65, 40, 420, 70);
 
 		// file properties panel
 
@@ -122,31 +121,31 @@ public class ComputeTracksPanel1 extends JPanel {
 		channelsLabel.setHorizontalTextPosition(SwingConstants.CENTER);
 		channelsLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
 
-		nameField = new JLabel(Globals.fileName, SwingConstants.LEFT);
+		nameField = new JLabel(ComputeTracksParameters.getFileName(), SwingConstants.LEFT);
 		nameField.setBounds(100, 190, 130, 20);
 		nameField.setVerticalTextPosition(SwingConstants.CENTER);
 		nameField.setHorizontalTextPosition(SwingConstants.CENTER);
 		nameField.setFont(new Font("Roboto", Font.PLAIN, 15));
 
-		framesField = new JLabel(String.valueOf(Globals.frames), SwingConstants.LEFT);
+		framesField = new JLabel(String.valueOf(ComputeTracksParameters.getFrames()), SwingConstants.LEFT);
 		framesField.setBounds(100, 220, 130, 20);
 		framesField.setVerticalTextPosition(SwingConstants.CENTER);
 		framesField.setHorizontalTextPosition(SwingConstants.CENTER);
 		framesField.setFont(new Font("Roboto", Font.PLAIN, 15));
 
-		widthField = new JLabel(String.valueOf(Globals.width), SwingConstants.LEFT);
+		widthField = new JLabel(String.valueOf(ComputeTracksParameters.getWidth()), SwingConstants.LEFT);
 		widthField.setBounds(100, 250, 130, 20);
 		widthField.setVerticalTextPosition(SwingConstants.CENTER);
 		widthField.setHorizontalTextPosition(SwingConstants.CENTER);
 		widthField.setFont(new Font("Roboto", Font.PLAIN, 15));
 
-		heightField = new JLabel(String.valueOf(Globals.height), SwingConstants.LEFT);
+		heightField = new JLabel(String.valueOf(ComputeTracksParameters.getHeight()), SwingConstants.LEFT);
 		heightField.setBounds(100, 280, 130, 20);
 		heightField.setVerticalTextPosition(SwingConstants.CENTER);
 		heightField.setHorizontalTextPosition(SwingConstants.CENTER);
 		heightField.setFont(new Font("Roboto", Font.PLAIN, 15));
 
-		channelsField = new JLabel(String.valueOf(Globals.channels), SwingConstants.LEFT);
+		channelsField = new JLabel(String.valueOf(ComputeTracksParameters.getChannels()), SwingConstants.LEFT);
 		channelsField.setBounds(100, 310, 130, 20);
 		channelsField.setVerticalTextPosition(SwingConstants.CENTER);
 		channelsField.setHorizontalTextPosition(SwingConstants.CENTER);
@@ -161,16 +160,12 @@ public class ComputeTracksPanel1 extends JPanel {
 
 				boolean valid = false;
 
-				Globals.numberSelectedChannels = 0;
-				Globals.selectedChannels.clear();
-				for (int i = 0; i < Globals.channels; i++) {
-					if (checkBoxList[i].isSelected()) {
-						Globals.numberSelectedChannels++;
-						Globals.selectedChannels.add(i);
-					}
-				}
+				ComputeTracksParameters.clearSelectedChannels();
+				for (int i = 0; i < ComputeTracksParameters.getChannels(); i++)
+					if (checkBoxList[i].isSelected())
+						ComputeTracksParameters.setSelectedChannel(i);
 
-				if (Globals.numberSelectedChannels > 0)
+				if (ComputeTracksParameters.getNumberSelectedChannels() > 0)
 					valid = true;
 
 				if (valid) {
@@ -184,7 +179,7 @@ public class ComputeTracksPanel1 extends JPanel {
 
 					JFrame dialog = new JFrame();
 					Object[] options = { "Ok" };
-					int n = JOptionPane.showOptionDialog(dialog,
+					JOptionPane.showOptionDialog(dialog,
 							"No channel selected. Please select the image channels you want to analyse.", "MOSES",
 							JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
 				}
@@ -265,7 +260,7 @@ public class ComputeTracksPanel1 extends JPanel {
 
 		JLabel stepLabel = new JLabel("STEP 1");
 		stepLabel.setVerticalAlignment(SwingConstants.TOP);
-		stepLabel.setBounds(10, 50, 53, 30);
+		stepLabel.setBounds(10, 40, 53, 30);
 		add(stepLabel);
 		stepLabel.setHorizontalAlignment(SwingConstants.LEFT);
 		stepLabel.setForeground(Color.DARK_GRAY);
@@ -275,9 +270,9 @@ public class ComputeTracksPanel1 extends JPanel {
 	}
 
 	public void generateCheckBoxList() {
-		checkBoxList = new JCheckBox[Globals.channels];
+		checkBoxList = new JCheckBox[ComputeTracksParameters.getChannels()];
 
-		for (int i = 0; i < Globals.channels; i++) {
+		for (int i = 0; i < ComputeTracksParameters.getChannels(); i++) {
 			checkBoxList[i] = new JCheckBox("channel " + (i + 1));
 			checkBoxList[i].setBounds(300, 190 + i * 30, 200, 20);
 			checkBoxList[i].setFont(new Font("Roboto", Font.PLAIN, 15));
@@ -286,8 +281,8 @@ public class ComputeTracksPanel1 extends JPanel {
 			self.add(checkBoxList[i]);
 		}
 
-		for (int i = 0; i < Globals.selectedChannels.size(); i++) {
-			int channelIndex = Globals.selectedChannels.get(i);
+		for (int i = 0; i < ComputeTracksParameters.getNumberSelectedChannels(); i++) {
+			int channelIndex = ComputeTracksParameters.getSelectedChannels(i);
 
 			checkBoxList[channelIndex].setSelected(true);
 		}

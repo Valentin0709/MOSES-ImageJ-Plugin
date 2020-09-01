@@ -11,7 +11,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import javax.swing.AbstractButton;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
@@ -61,10 +60,11 @@ public class MenuPanel extends JPanel {
 		titleLabel.setVerticalTextPosition(JLabel.CENTER);
 		titleLabel.setHorizontalTextPosition(JLabel.CENTER);
 
-		JLabel instructionLabel1 = new JLabel("Extract and visualize superpixel motion tracks from a TIFF file");
+		JLabel instructionLabel1 = new JLabel(
+				"<html> Extract and visualize superpixel motion tracks (input TIFF image stack) <html>");
 		instructionLabel1.setHorizontalAlignment(SwingConstants.CENTER);
 		instructionLabel1.setFont(new Font("Roboto", Font.PLAIN, 15));
-		instructionLabel1.setBounds(12, 72, 476, 43);
+		instructionLabel1.setBounds(20, 70, 460, 43);
 		add(instructionLabel1);
 
 		batchModeCheckbox = new JCheckBox("Batch mode");
@@ -76,12 +76,11 @@ public class MenuPanel extends JPanel {
 
 		// compute superpixel tracks button
 
-		JButton superpixelTracksButton = new JButton("Compute superpixel tracks");
-		superpixelTracksButton.setBounds(87, 123, 327, 59);
+		JButton superpixelTracksButton = new JButton("<html> Compute superpixel motion tracks and mesh </html> ");
+		superpixelTracksButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		superpixelTracksButton.setBounds(20, 120, 460, 43);
 		superpixelTracksButton.setFont(new Font("Arial", Font.BOLD, 20));
 		superpixelTracksButton.setForeground(Color.WHITE);
-		superpixelTracksButton.setVerticalTextPosition(AbstractButton.CENTER);
-		superpixelTracksButton.setHorizontalTextPosition(AbstractButton.CENTER);
 		superpixelTracksButton.setBackground(new Color(13, 59, 102));
 		superpixelTracksButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -102,12 +101,11 @@ public class MenuPanel extends JPanel {
 					// display import file window
 
 					if (n == 1) {
-						boolean importStatus = Globals.openFile(parentFrame.ui, validExtensions);
+						String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
 
-						if (importStatus)
-							nextStep();
+						if (importedFilePath != null)
+							nextStep(importedFilePath);
 						else {
-
 							// display error dialog box
 
 							JFrame errorDialog = new JFrame();
@@ -132,10 +130,10 @@ public class MenuPanel extends JPanel {
 						// display import file window
 
 						if (n == 1) {
-							boolean importStatus = Globals.openFile(parentFrame.ui, validExtensions);
+							String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
 
-							if (importStatus)
-								nextStep();
+							if (importedFilePath != null)
+								nextStep(importedFilePath);
 							else {
 
 								// display error dialog box
@@ -150,16 +148,12 @@ public class MenuPanel extends JPanel {
 						}
 					} else {
 
-						String filePath = parentFrame.imageDisplayService.getActiveDataset().getSource();
+						String openFilePath = parentFrame.imageDisplayService.getActiveDataset().getSource();
 						// String extension = Globals.getExtension(filePath);
 
-						if (Globals.checkExtension(filePath, validExtensions)) {
-							Globals.filePath = filePath;
-							Globals.fileName = Globals.getName(filePath);
-
-							nextStep();
-
-						} else {
+						if (Globals.checkExtension(openFilePath, validExtensions))
+							nextStep(openFilePath);
+						else {
 							// display dialog box
 
 							Object[] options = { "Cancel", "Import now" };
@@ -171,10 +165,10 @@ public class MenuPanel extends JPanel {
 							// display import file window
 
 							if (n == 1) {
-								boolean importStatus = Globals.openFile(parentFrame.ui, validExtensions);
+								String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
 
-								if (importStatus)
-									nextStep();
+								if (importedFilePath != null)
+									nextStep(importedFilePath);
 								else {
 
 									// display error dialog box
@@ -193,23 +187,37 @@ public class MenuPanel extends JPanel {
 			}
 		});
 		add(superpixelTracksButton);
+
+		/*
+		 * JLabel instructionLabel1_1 = new JLabel(
+		 * "<html> Extract motion measurements from superpixel motion tracks (input MATLAB file) </html>"
+		 * ); instructionLabel1_1.setHorizontalAlignment(SwingConstants.CENTER);
+		 * instructionLabel1_1.setFont(new Font("Roboto", Font.PLAIN, 15));
+		 * instructionLabel1_1.setBounds(20, 180, 460, 43); add(instructionLabel1_1);
+		 * 
+		 * 
+		 * JButton motionMeasurementsButton = new
+		 * JButton("<html> Compute MOSES motion measurements </html>");
+		 * motionMeasurementsButton.addActionListener(new ActionListener() { public void
+		 * actionPerformed(ActionEvent e) { parentFrame.empty();
+		 * parentFrame.motionMeasurements1 = new MotionMeasurements1(parentFrame);
+		 * parentFrame.getContentPane().add(parentFrame.motionMeasurements1);
+		 * parentFrame.validate(); } });
+		 * motionMeasurementsButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		 * motionMeasurementsButton.setForeground(Color.WHITE);
+		 * motionMeasurementsButton.setFont(new Font("Arial", Font.BOLD, 20));
+		 * motionMeasurementsButton.setBackground(new Color(13, 59, 102));
+		 * motionMeasurementsButton.setBounds(20, 230, 460, 43);
+		 * add(motionMeasurementsButton);
+		 */
 	}
 
-	public void nextStep() {
+	public void nextStep(String filePath) {
 		// initialize parameters
 
-		Globals.batchMode = batchModeCheckbox.isSelected();
-		Globals.downsizeFactor = 1;
-		Globals.numberSuperpixels = 1000;
-		Globals.levels = 3;
-		Globals.winSize = 15;
-		Globals.iterations = 3;
-		Globals.polyn = 5;
-		Globals.flags = 0;
-		Globals.pyr_scale = 0.5;
-		Globals.polysigma = 1.2;
-		Globals.numberSelectedChannels = 0;
-		Globals.selectedChannels.clear();
+		ComputeTracksParameters.initialise();
+		ComputeTracksParameters.setBatchMode(batchModeCheckbox.isSelected());
+		ComputeTracksParameters.setFilePath(filePath);
 
 		// run script
 
@@ -234,22 +242,22 @@ public class MenuPanel extends JPanel {
 					IJ.handleException(e2);
 				}
 
-				ProcessBuilder pb = new ProcessBuilder("python", scriptPath, Globals.filePath);
+				ProcessBuilder pb = new ProcessBuilder("python", scriptPath, ComputeTracksParameters.getFilePath());
 				try {
 					Process p = pb.start();
 					BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
 
 					// number of frames
-					Globals.frames = new Integer(in.readLine()).intValue();
+					ComputeTracksParameters.setFrames(new Integer(in.readLine()).intValue());
 
 					// image height
-					Globals.height = new Integer(in.readLine()).intValue();
+					ComputeTracksParameters.setHeight(new Integer(in.readLine()).intValue());
 
 					// image width
-					Globals.width = new Integer(in.readLine()).intValue();
+					ComputeTracksParameters.setWidth(new Integer(in.readLine()).intValue());
 
 					// number of channels
-					Globals.channels = new Integer(in.readLine()).intValue();
+					ComputeTracksParameters.setChannels(new Integer(in.readLine()).intValue());
 				} catch (IOException e1) {
 					IJ.handleException(e1);
 				}
