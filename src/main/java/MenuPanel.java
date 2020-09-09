@@ -61,15 +61,15 @@ public class MenuPanel extends JPanel {
 		titleLabel.setHorizontalTextPosition(JLabel.CENTER);
 
 		JLabel instructionLabel1 = new JLabel(
-				"<html> Extract and visualize superpixel motion tracks (input TIFF image stack) <html>");
+				"<html> Extract and visualize superpixel motion tracks from a TIFF image stack<html>");
 		instructionLabel1.setHorizontalAlignment(SwingConstants.CENTER);
 		instructionLabel1.setFont(new Font("Roboto", Font.PLAIN, 15));
-		instructionLabel1.setBounds(20, 70, 460, 43);
+		instructionLabel1.setBounds(0, 92, 500, 24);
 		add(instructionLabel1);
 
 		batchModeCheckbox = new JCheckBox("Batch mode");
 		batchModeCheckbox.setFont(new Font("Roboto", Font.PLAIN, 15));
-		batchModeCheckbox.setBounds(195, 382, 111, 24);
+		batchModeCheckbox.setBounds(196, 436, 111, 24);
 		batchModeCheckbox.setBackground(new Color(252, 252, 252));
 		add(batchModeCheckbox);
 		add(titleLabel);
@@ -78,7 +78,7 @@ public class MenuPanel extends JPanel {
 
 		JButton superpixelTracksButton = new JButton("<html> Compute superpixel motion tracks and mesh </html> ");
 		superpixelTracksButton.setHorizontalTextPosition(SwingConstants.CENTER);
-		superpixelTracksButton.setBounds(20, 120, 460, 43);
+		superpixelTracksButton.setBounds(20, 50, 460, 43);
 		superpixelTracksButton.setFont(new Font("Arial", Font.BOLD, 20));
 		superpixelTracksButton.setForeground(Color.WHITE);
 		superpixelTracksButton.setBackground(new Color(13, 59, 102));
@@ -104,7 +104,7 @@ public class MenuPanel extends JPanel {
 						String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
 
 						if (importedFilePath != null)
-							nextStep(importedFilePath);
+							computeTracks(importedFilePath);
 						else {
 							// display error dialog box
 
@@ -133,7 +133,7 @@ public class MenuPanel extends JPanel {
 							String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
 
 							if (importedFilePath != null)
-								nextStep(importedFilePath);
+								computeTracks(importedFilePath);
 							else {
 
 								// display error dialog box
@@ -152,7 +152,7 @@ public class MenuPanel extends JPanel {
 						// String extension = Globals.getExtension(filePath);
 
 						if (Globals.checkExtension(openFilePath, validExtensions))
-							nextStep(openFilePath);
+							computeTracks(openFilePath);
 						else {
 							// display dialog box
 
@@ -168,7 +168,7 @@ public class MenuPanel extends JPanel {
 								String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
 
 								if (importedFilePath != null)
-									nextStep(importedFilePath);
+									computeTracks(importedFilePath);
 								else {
 
 									// display error dialog box
@@ -188,31 +188,48 @@ public class MenuPanel extends JPanel {
 		});
 		add(superpixelTracksButton);
 
-		/*
-		 * JLabel instructionLabel1_1 = new JLabel(
-		 * "<html> Extract motion measurements from superpixel motion tracks (input MATLAB file) </html>"
-		 * ); instructionLabel1_1.setHorizontalAlignment(SwingConstants.CENTER);
-		 * instructionLabel1_1.setFont(new Font("Roboto", Font.PLAIN, 15));
-		 * instructionLabel1_1.setBounds(20, 180, 460, 43); add(instructionLabel1_1);
-		 * 
-		 * 
-		 * JButton motionMeasurementsButton = new
-		 * JButton("<html> Compute MOSES motion measurements </html>");
-		 * motionMeasurementsButton.addActionListener(new ActionListener() { public void
-		 * actionPerformed(ActionEvent e) { parentFrame.empty();
-		 * parentFrame.motionMeasurements1 = new MotionMeasurements1(parentFrame);
-		 * parentFrame.getContentPane().add(parentFrame.motionMeasurements1);
-		 * parentFrame.validate(); } });
-		 * motionMeasurementsButton.setHorizontalTextPosition(SwingConstants.CENTER);
-		 * motionMeasurementsButton.setForeground(Color.WHITE);
-		 * motionMeasurementsButton.setFont(new Font("Arial", Font.BOLD, 20));
-		 * motionMeasurementsButton.setBackground(new Color(13, 59, 102));
-		 * motionMeasurementsButton.setBounds(20, 230, 460, 43);
-		 * add(motionMeasurementsButton);
-		 */
+		JButton motionSaliencyMapButton = new JButton("Motion saliency map");
+		motionSaliencyMapButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				motionMeasurements();
+			}
+		});
+		motionSaliencyMapButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		motionSaliencyMapButton.setForeground(Color.WHITE);
+		motionSaliencyMapButton.setFont(new Font("Arial", Font.BOLD, 20));
+		motionSaliencyMapButton.setBackground(new Color(13, 59, 102));
+		motionSaliencyMapButton.setBounds(10, 158, 230, 43);
+		add(motionSaliencyMapButton);
+
+		JLabel titleLabel2 = new JLabel("Extract motion measurements", SwingConstants.CENTER);
+		titleLabel2.setVerticalTextPosition(SwingConstants.CENTER);
+		titleLabel2.setHorizontalTextPosition(SwingConstants.CENTER);
+		titleLabel2.setFont(new Font("Arial Black", Font.BOLD, 20));
+		titleLabel2.setBounds(0, 126, 500, 29);
+		add(titleLabel2);
+
+		JButton meshStrainCurveButton = new JButton("Mesh metrics");
+		meshStrainCurveButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				MeshMetricsParameters.initialise();
+				MeshMetricsParameters.setBatchMode(batchModeCheckbox.isSelected());
+
+				parentFrame.empty();
+				parentFrame.meshMetricsPanel = new MeshMetricsPanel(parentFrame);
+				parentFrame.getContentPane().add(parentFrame.meshMetricsPanel);
+				parentFrame.validate();
+			}
+		});
+		meshStrainCurveButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		meshStrainCurveButton.setForeground(Color.WHITE);
+		meshStrainCurveButton.setFont(new Font("Arial", Font.BOLD, 20));
+		meshStrainCurveButton.setBackground(new Color(13, 59, 102));
+		meshStrainCurveButton.setBounds(260, 158, 230, 43);
+		add(meshStrainCurveButton);
+
 	}
 
-	public void nextStep(String filePath) {
+	public void computeTracks(String filePath) {
 		// initialize parameters
 
 		ComputeTracksParameters.initialise();
@@ -279,6 +296,16 @@ public class MenuPanel extends JPanel {
 		parentFrame.empty();
 		parentFrame.computeTracksPanel1 = new ComputeTracksPanel1(parentFrame);
 		parentFrame.getContentPane().add(parentFrame.computeTracksPanel1);
+		parentFrame.validate();
+	}
+
+	public void motionMeasurements() {
+		SaliencyMapParameters.initialise();
+		SaliencyMapParameters.setBatchMode(batchModeCheckbox.isSelected());
+
+		parentFrame.empty();
+		parentFrame.saliencyMapPanel = new SaliencyMapPanel(parentFrame);
+		parentFrame.getContentPane().add(parentFrame.saliencyMapPanel);
 		parentFrame.validate();
 	}
 }

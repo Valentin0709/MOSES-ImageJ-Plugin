@@ -9,7 +9,8 @@ public class ComputeTracksParameters {
 	private static int forwardTracksTemporalSegment, backwardTracksTemporalSegment, MOSESMeshFrame, radialMeshFrame,
 			neighborMeshFrame, KNeighbor;
 	private static double pyrScale, polySigma, downsizeFactor, MOSESMeshDistanceThreshold, radialMeshDistanceThreshold;
-	private static boolean batchMode, MOSESMeshForwardTracks, radialMeshForwardTracks, neighborMeshForwardTracks;
+	private static boolean batchMode, MOSESMeshForwardTracks, radialMeshForwardTracks, neighborMeshForwardTracks,
+			denseForwardTracks, denseBackwardTracks;
 	private static ArrayList<Integer> selectedChannels = new ArrayList<Integer>();
 	private static Map<String, Boolean> outputs = new HashMap<String, Boolean>();
 	private static Map<String, SaveOption> saveOptions = new HashMap<String, SaveOption>();
@@ -28,6 +29,7 @@ public class ComputeTracksParameters {
 		polySigma = 1.2;
 		flags = 0;
 		downsizeFactor = 1;
+		denseForwardTracks = denseBackwardTracks = false;
 		forwardTracksTemporalSegment = backwardTracksTemporalSegment = 5;
 		neighborMeshFrame = MOSESMeshFrame = radialMeshFrame = 1;
 		MOSESMeshDistanceThreshold = radialMeshDistanceThreshold = 1.2;
@@ -327,6 +329,22 @@ public class ComputeTracksParameters {
 		return neighborMeshFrame;
 	}
 
+	public static void setDenseForwardTracks(boolean b) {
+		denseForwardTracks = b;
+	}
+
+	public static boolean getDenseForwardTracks() {
+		return denseForwardTracks;
+	}
+
+	public static void setDenseBackwardTracks(boolean b) {
+		denseForwardTracks = b;
+	}
+
+	public static boolean getDenseBackwardTracks() {
+		return denseForwardTracks;
+	}
+
 	public static List<String> getOutputList() {
 		List<String> outputList = new ArrayList<String>();
 
@@ -398,6 +416,9 @@ public class ComputeTracksParameters {
 		}
 		outputList.add(selectedChannelsList);
 
+		if (isOutput("forward_tracks"))
+			outputList.add("denseForwardTracks=" + denseForwardTracks);
+
 		if (isOutput("forward_tracks_visualisation")) {
 			outputList.add("forwardTracksTemporalSegment=" + forwardTracksTemporalSegment);
 
@@ -418,6 +439,9 @@ public class ComputeTracksParameters {
 			}
 			outputList.add(saveList);
 		}
+
+		if (isOutput("backward_tracks"))
+			outputList.add("denseBackwardTracks=" + denseBackwardTracks);
 
 		if (isOutput("backward_tracks_visualisation")) {
 			outputList.add("backwardTracksTemporalSegment=" + backwardTracksTemporalSegment);
@@ -539,6 +563,5 @@ public class ComputeTracksParameters {
 		}
 
 		return outputList;
-
 	}
 }

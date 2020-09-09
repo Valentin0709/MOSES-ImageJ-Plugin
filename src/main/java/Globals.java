@@ -176,6 +176,40 @@ public class Globals {
 		return output;
 	}
 
+	public static String getMatlabMetadata(String path) {
+		String fileName = null;
+
+		String temporaryDirectorPath = System.getProperty("java.io.tmpdir");
+		String scriptPath = temporaryDirectorPath + "get_matlab_metadata.py";
+		File file = new File(scriptPath);
+
+		try {
+			FileWriter writer = new FileWriter(file);
+			writer.write("import scipy.io as spio\r\n" + "import sys\r\n" + "file = spio.loadmat(sys.argv[1])\r\n"
+					+ "print(str(file['metadata'][0][2]).replace('[','').replace(']','').replace('\\'',''))");
+
+			writer.close();
+		} catch (IOException e2) {
+			IJ.handleException(e2);
+		}
+
+		ProcessBuilder pb = new ProcessBuilder("python", scriptPath, path);
+		try {
+			Process p = pb.start();
+			p.waitFor();
+			BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+			fileName = in.readLine();
+
+		} catch (IOException | InterruptedException e1) {
+			IJ.handleException(e1);
+		}
+
+		file.delete();
+
+		return fileName;
+	}
+
 	public static boolean checkPythonInstallationStatus() {
 
 		ProcessBuilder pb = new ProcessBuilder("python", "--version");

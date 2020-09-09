@@ -22,7 +22,8 @@ public class MainFrame extends JFrame {
 	public ComputeTracksPanel1 computeTracksPanel1 = new ComputeTracksPanel1(this);
 	public ComputeTracksPanel2 computeTracksPanel2 = new ComputeTracksPanel2(this);
 	public ComputeTracksPanel3 computeTracksPanel3 = new ComputeTracksPanel3(this);
-	public MotionMeasurements1 motionMeasurements1 = new MotionMeasurements1(this);
+	public SaliencyMapPanel saliencyMapPanel = new SaliencyMapPanel(this);
+	public MeshMetricsPanel meshMetricsPanel = new MeshMetricsPanel(this);
 
 	public MainFrame() {
 

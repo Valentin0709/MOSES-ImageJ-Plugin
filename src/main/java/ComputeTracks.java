@@ -19,16 +19,16 @@ import ij.ImagePlus;
 import ij.plugin.FolderOpener;
 
 class ComputeTracks extends SwingWorker<String, String> {
-	PythonScript script;
-	ProgressPanel progress;
-	Process process;
-	int fileCount, fileNumber, scriptCount;
-	String currentFilePath, temporaryFilePath;
-	public File forwardTracksImageSequenceFolder, backwardTracksImageSequenceFolder, motionFieldImageSequenceFolder,
+	private PythonScript script;
+	private ProgressPanel progress;
+	private Process process;
+	private int fileCount, fileNumber, scriptCount;
+	private String currentFilePath, temporaryFilePath;
+	private File forwardTracksImageSequenceFolder, backwardTracksImageSequenceFolder, motionFieldImageSequenceFolder,
 			MOSESMeshImageSequenceFolderF, MOSESMeshImageSequenceFolderB, radialMeshImageSequenceFolderF,
 			radialMeshImageSequenceFolderB, neighborMeshImageSequenceFolderF, neighborMeshImageSequenceFolderB,
 			temporaryImageFile, configFile;
-	public String forwardTracksImageSequenceFolderPath, backwardTracksImageSequenceFolderPath,
+	private String forwardTracksImageSequenceFolderPath, backwardTracksImageSequenceFolderPath,
 			motionFieldImageSequenceFolderPath, MOSESMeshImageSequenceFolderPathF, MOSESMeshImageSequenceFolderPathB,
 			radialMeshImageSequenceFolderPathF, radialMeshImageSequenceFolderPathB,
 			neighborMeshImageSequenceFolderPathF, neighborMeshImageSequenceFolderPathB;
@@ -198,10 +198,18 @@ class ComputeTracks extends SwingWorker<String, String> {
 
 			script.addScript(PythonScript.print(
 					PythonScript.addString("-Computing forward tracks for channel " + (channelIndex + 1) + "...")));
-			script.addScript(PythonScript.callFunctionWithResult(
-					Arrays.asList("optflow_" + (channelIndex + 1), "forward_tracks_" + (channelIndex + 1)),
-					"compute_grayscale_vid_superpixel_tracks", Arrays.asList("vidstack[:,:,:," + channelIndex + "]",
-							"optical_flow_params", "parameters.get('n_spixels')")));
+
+			if (ComputeTracksParameters.getDenseForwardTracks())
+				script.addScript(PythonScript.callFunctionWithResult(
+						Arrays.asList("optflow_" + (channelIndex + 1), "forward_tracks_" + (channelIndex + 1)),
+						"compute_grayscale_vid_superpixel_tracks",
+						Arrays.asList("vidstack[:,:,:," + channelIndex + "]", "optical_flow_params",
+								"parameters.get('n_spixels')", "dense = True", "mindensity = 1")));
+			else
+				script.addScript(PythonScript.callFunctionWithResult(
+						Arrays.asList("optflow_" + (channelIndex + 1), "forward_tracks_" + (channelIndex + 1)),
+						"compute_grayscale_vid_superpixel_tracks", Arrays.asList("vidstack[:,:,:," + channelIndex + "]",
+								"optical_flow_params", "parameters.get('n_spixels')")));
 		}
 		script.newLine();
 
@@ -216,6 +224,7 @@ class ComputeTracks extends SwingWorker<String, String> {
 
 			saveList.add(new Pair<>("forward_tracks_" + (channelIndex + 1), "forward_tracks_" + (channelIndex + 1)));
 		}
+		saveList.add(new Pair<>("metadata", "np.array([rows, columns, parameters.get('fileName')], dtype=object)"));
 
 		script.addScript(PythonScript.callFunction("spio.savemat",
 				Arrays.asList("saveLocation", PythonScript.makeSaveList(saveList))));
@@ -323,11 +332,21 @@ class ComputeTracks extends SwingWorker<String, String> {
 
 			script.addScript(PythonScript.print(
 					PythonScript.addString("-Computing backward tracks for channel " + (channelIndex + 1) + "...")));
-			script.addScript(PythonScript.callFunctionWithResult(
-					Arrays.asList("optflow_" + (channelIndex + 1), "forward_tracks_" + (channelIndex + 1),
-							"backward_tracks_" + (channelIndex + 1)),
-					"compute_grayscale_vid_superpixel_tracks_FB", Arrays.asList("vidstack[:,:,:," + channelIndex + "]",
-							"optical_flow_params", "n_spixels = parameters.get('n_spixels')")));
+
+			if (ComputeTracksParameters.getDenseBackwardTracks())
+				script.addScript(PythonScript.callFunctionWithResult(
+						Arrays.asList("optflow_" + (channelIndex + 1), "forward_tracks_" + (channelIndex + 1),
+								"backward_tracks_" + (channelIndex + 1)),
+						"compute_grayscale_vid_superpixel_tracks_FB",
+						Arrays.asList("vidstack[:,:,:," + channelIndex + "]", "optical_flow_params",
+								"n_spixels = parameters.get('n_spixels')", "dense = True", "mindensity = 1")));
+			else
+				script.addScript(PythonScript.callFunctionWithResult(
+						Arrays.asList("optflow_" + (channelIndex + 1), "forward_tracks_" + (channelIndex + 1),
+								"backward_tracks_" + (channelIndex + 1)),
+						"compute_grayscale_vid_superpixel_tracks_FB",
+						Arrays.asList("vidstack[:,:,:," + channelIndex + "]", "optical_flow_params",
+								"n_spixels = parameters.get('n_spixels')")));
 		}
 		script.newLine();
 
@@ -342,6 +361,7 @@ class ComputeTracks extends SwingWorker<String, String> {
 
 			saveList.add(new Pair<>("backward_tracks_" + (channelIndex + 1), "backward_tracks_" + (channelIndex + 1)));
 		}
+		saveList.add(new Pair<>("metadata", "np.array([rows, columns, parameters.get('fileName')], dtype=object)"));
 
 		script.addScript(PythonScript.callFunction("spio.savemat",
 				Arrays.asList("saveLocation", PythonScript.makeSaveList(saveList))));
@@ -458,6 +478,7 @@ class ComputeTracks extends SwingWorker<String, String> {
 
 				saveList.add(new Pair<>("optflow_" + (channelIndex + 1), "optflow_" + (channelIndex + 1)));
 			}
+			saveList.add(new Pair<>("metadata", "np.array([rows, columns, parameters.get('fileName')], dtype=object)"));
 
 			script.addScript(PythonScript.callFunction("spio.savemat",
 					Arrays.asList("saveLocation", PythonScript.makeSaveList(saveList))));
@@ -617,6 +638,7 @@ class ComputeTracks extends SwingWorker<String, String> {
 			saveList.add(new Pair<>("MOSES_mesh_strain_time_" + (channelIndex + 1),
 					"MOSES_mesh_strain_time_" + (channelIndex + 1)));
 		}
+		saveList.add(new Pair<>("metadata", "np.array([rows, columns, parameters.get('fileName')], dtype=object)"));
 
 		script.addScript(PythonScript.callFunction("spio.savemat",
 				Arrays.asList("saveLocation", PythonScript.makeSaveList(saveList))));
@@ -966,6 +988,7 @@ class ComputeTracks extends SwingWorker<String, String> {
 			saveList.add(new Pair<>("radial_mesh_strain_time_" + (channelIndex + 1),
 					"radial_mesh_strain_time_" + (channelIndex + 1)));
 		}
+		saveList.add(new Pair<>("metadata", "np.array([rows, columns, parameters.get('fileName')], dtype=object)"));
 
 		script.addScript(PythonScript.callFunction("spio.savemat",
 				Arrays.asList("saveLocation", PythonScript.makeSaveList(saveList))));
@@ -1322,6 +1345,7 @@ class ComputeTracks extends SwingWorker<String, String> {
 			saveList.add(new Pair<>("neighbor_mesh_strain_time_" + (channelIndex + 1),
 					"neighbor_mesh_strain_time_" + (channelIndex + 1)));
 		}
+		saveList.add(new Pair<>("metadata", "np.array([rows, columns, parameters.get('fileName')], dtype=object)"));
 
 		script.addScript(PythonScript.callFunction("spio.savemat",
 				Arrays.asList("saveLocation", PythonScript.makeSaveList(saveList))));
@@ -1664,7 +1688,6 @@ class ComputeTracks extends SwingWorker<String, String> {
 				+ Globals.getNameWithoutExtension(currentFilePath) + "_forward_tracks_neighbor_mesh_image_sequence";
 		neighborMeshImageSequenceFolderPathB = ComputeTracksParameters.getSaveDirectory()
 				+ Globals.getNameWithoutExtension(currentFilePath) + "_backward_tracks_neighbor_mesh_image_sequence";
-
 	}
 
 	private void analyseFile() {
@@ -1863,7 +1886,6 @@ class ComputeTracks extends SwingWorker<String, String> {
 
 			folder.delete();
 		}
-
 	}
 
 	@Override

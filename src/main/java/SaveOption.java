@@ -53,7 +53,7 @@ public class SaveOption {
 
 			button.setFont(new Font("Roboto", Font.PLAIN, 14));
 			if (vertical) {
-				button.setBounds(x, y + 14 + 22 * buttonCount, 85, 22);
+				button.setBounds(x, y + 18 + 22 * buttonCount, 85, 22);
 				button.setVerticalAlignment(SwingConstants.TOP);
 			} else {
 				button.setBounds(x + 60 * (buttonCount + 1), y, 60, 40);

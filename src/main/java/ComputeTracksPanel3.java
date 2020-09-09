@@ -36,10 +36,10 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 	private JCheckBox saveCheckBox1 = null, saveCheckBox2 = null, saveCheckBox3 = null, saveCheckBox4 = null,
 			saveCheckBox5 = null, saveCheckBox6, saveCheckBox7, saveCheckBox71, saveCheckBox72, saveCheckBox8,
 			saveCheckBox112, saveCheckBox111, saveCheckBox9, saveCheckBox91, saveCheckBox92, saveCheckBox10,
-			saveCheckBox11, saveCheckBox12;
+			saveCheckBox11, saveCheckBox12, saveCheckBox13, saveCheckBox14;
 
 	private JPanel optionPanel1, optionPanel2, optionPanel3, optionPanel4, optionPanel5, optionPanel6, optionPanel7,
-			optionPanel8, optionPanel9, bigPanel;
+			optionPanel8, optionPanel9, optionPanel10, optionPanel11, bigPanel;
 	private JScrollPane scrollPane;
 
 	private JRadioButton tifButtonGroup3, matButtonGroup3;
@@ -50,7 +50,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 	private JLabel tracksTitleLabel, meshTitleLabel, instructionLabel5, instructionLabel6, instructionLabel7,
 			instructionLabel8, frameLabel, frameLabel2, frameLabel3, noteLabel, noteLabel2, noteLabel3,
-			temporalSegmentLabel2, instructionLabel9, instructionLabel10, noteLabel4;
+			temporalSegmentLabel2, instructionLabel9, instructionLabel10, noteLabel4, noteLabel5, noteLabel6;
 	private JFormattedTextField temporalSegmentField1, temporalSegmentField2, distanceTresholdField,
 			distanceTresholdField2, frameField, frameField2, frameField3, KNeighborField;
 	private JRadioButton backwardTracksButton1, forwardTracksButton1, backwardTracksButton2, forwardTracksButton2,
@@ -86,7 +86,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		DecimalFormat decimalFormat = new DecimalFormat("#.##");
 		decimalFormat.setGroupingUsed(false);
 		DecimalFormat integerFormat = new DecimalFormat("###");
-		decimalFormat.setGroupingUsed(false);
+		integerFormat.setGroupingUsed(false);
 
 		// page instructions
 
@@ -135,8 +135,29 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		saveCheckBox1 = new JCheckBox("<html>Forward motion tracks (.mat) </html>");
 		saveCheckBox1.setHorizontalAlignment(SwingConstants.LEFT);
 		saveCheckBox1.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox1.setBackground(Color.WHITE);
+		saveCheckBox1.setBackground(new Color(252, 252, 252));
 		saveCheckBox1.setBounds(0, 0, 400, 20);
+
+		optionPanel10 = new JPanel();
+		optionPanel10.setBounds(0, 0, 405, 85);
+		optionPanel10.setOpaque(false);
+		optionPanel10.setBackground(new Color(238, 238, 238));
+		optionPanel10.setLayout(null);
+
+		saveCheckBox13 = new JCheckBox("<html>Compute dense tracks</html>");
+		saveCheckBox13.setHorizontalAlignment(SwingConstants.LEFT);
+		saveCheckBox13.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox13.setBounds(5, 5, 300, 20);
+		optionPanel10.add(saveCheckBox13);
+
+		noteLabel5 = new JLabel(
+				"<html> Note: Dense superpixel tracking is the preferred tracking approach when one expects the video to contain significant movement</html>");
+		noteLabel5.setBounds(5, 25, 400, 60);
+		noteLabel5.setVerticalAlignment(SwingConstants.TOP);
+		noteLabel5.setHorizontalAlignment(SwingConstants.LEFT);
+		noteLabel5.setForeground(Color.DARK_GRAY);
+		noteLabel5.setFont(new Font("Roboto", Font.PLAIN, 15));
+		optionPanel10.add(noteLabel5);
 
 		// save forward tracks with overlay checkbox
 
@@ -144,25 +165,23 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		saveCheckBox2.setEnabled(false);
 		saveCheckBox2.setHorizontalAlignment(SwingConstants.LEFT);
 		saveCheckBox2.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox2.setBackground(Color.WHITE);
+		saveCheckBox2.setBackground(new Color(252, 252, 252));
 		saveCheckBox2.setBounds(0, 0, 400, 20);
 
 		optionPanel1 = new JPanel();
-		optionPanel1.setBounds(0, 0, 405, 115);
+		optionPanel1.setBounds(0, 0, 405, 120);
 		optionPanel1.setOpaque(false);
 		optionPanel1.setBackground(new Color(238, 238, 238));
 		optionPanel1.setLayout(null);
 
 		JLabel instructionLabel2 = new JLabel("<html> Select the display color for each motion track </html>");
-		instructionLabel2.setVisible(false);
 		instructionLabel2.setBounds(5, 5, 306, 18);
-		optionPanel1.add(instructionLabel2);
 		instructionLabel2.setVerticalAlignment(SwingConstants.TOP);
 		instructionLabel2.setHorizontalAlignment(SwingConstants.LEFT);
 		instructionLabel2.setForeground(Color.DARK_GRAY);
 		instructionLabel2.setFont(new Font("Roboto", Font.PLAIN, 15));
+		optionPanel1.add(instructionLabel2);
 
-		// generateSaveOptionList(optionPanel1, saveList1, 320, 5, true);
 		saveOption1 = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
 		saveOption1.show(optionPanel1, 320, 5, true);
 		colorOption1 = new ColorOption();
@@ -173,7 +192,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		temporalSegmentLabel1.setHorizontalAlignment(SwingConstants.LEFT);
 		temporalSegmentLabel1.setVisible(false);
 		temporalSegmentLabel1.setFont(new Font("Roboto", Font.PLAIN, 15));
-		temporalSegmentLabel1.setBounds(5, 90, 295, 20);
+		temporalSegmentLabel1.setBounds(5, 95, 295, 20);
 		optionPanel1.add(temporalSegmentLabel1);
 
 		temporalSegmentField1 = new JFormattedTextField(integerFormat) {
@@ -196,7 +215,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		temporalSegmentField1.setVisible(false);
 		temporalSegmentField1.setHorizontalAlignment(SwingConstants.CENTER);
 		temporalSegmentField1.setFont(new Font("Roboto", Font.PLAIN, 15));
-		temporalSegmentField1.setBounds(290, 92, 70, 18);
+		temporalSegmentField1.setBounds(290, 97, 70, 18);
 		optionPanel1.add(temporalSegmentField1);
 
 		// save backward tracks checkbox
@@ -204,8 +223,29 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		saveCheckBox4 = new JCheckBox("<html>Backward motion tracks (.mat) </html>");
 		saveCheckBox4.setHorizontalAlignment(SwingConstants.LEFT);
 		saveCheckBox4.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox4.setBackground(Color.WHITE);
+		saveCheckBox4.setBackground(new Color(252, 252, 252));
 		saveCheckBox4.setBounds(0, 0, 400, 20);
+
+		optionPanel11 = new JPanel();
+		optionPanel11.setBounds(0, 0, 405, 85);
+		optionPanel11.setOpaque(false);
+		optionPanel11.setBackground(new Color(238, 238, 238));
+		optionPanel11.setLayout(null);
+
+		saveCheckBox14 = new JCheckBox("<html>Compute dense tracks</html>");
+		saveCheckBox14.setHorizontalAlignment(SwingConstants.LEFT);
+		saveCheckBox14.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox14.setBounds(5, 5, 300, 20);
+		optionPanel11.add(saveCheckBox14);
+
+		noteLabel6 = new JLabel(
+				"<html> Note: Dense superpixel tracking is the preferred tracking approach when one expects the video to contain significant movement</html>");
+		noteLabel6.setBounds(5, 25, 400, 60);
+		noteLabel6.setVerticalAlignment(SwingConstants.TOP);
+		noteLabel6.setHorizontalAlignment(SwingConstants.LEFT);
+		noteLabel6.setForeground(Color.DARK_GRAY);
+		noteLabel6.setFont(new Font("Roboto", Font.PLAIN, 15));
+		optionPanel11.add(noteLabel6);
 
 		// save backward tracks with overlay checkbox
 
@@ -213,17 +253,15 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		saveCheckBox5.setHorizontalAlignment(SwingConstants.LEFT);
 		saveCheckBox5.setFont(new Font("Roboto", Font.PLAIN, 15));
 		saveCheckBox5.setEnabled(false);
-		saveCheckBox5.setBackground(Color.WHITE);
+		saveCheckBox5.setBackground(new Color(252, 252, 252));
 		saveCheckBox5.setBounds(0, 0, 400, 20);
-		// bigPanel.add(saveCheckBox5);
 
 		optionPanel2 = new JPanel();
 		optionPanel2.setOpaque(false);
-		optionPanel2.setBounds(0, 0, 405, 135);
+		optionPanel2.setBounds(0, 0, 405, 140);
 		optionPanel2.setBackground(new Color(238, 238, 238));
 		optionPanel2.setLayout(null);
 
-		// generateSaveOptionList(optionPanel2, saveList2, 320, 5, true);
 		saveOption2 = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
 		saveOption2.show(optionPanel2, 320, 5, true);
 		colorOption2 = new ColorOption();
@@ -240,7 +278,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		temporalSegmentLabel2.setVerticalAlignment(SwingConstants.TOP);
 		temporalSegmentLabel2.setHorizontalAlignment(SwingConstants.LEFT);
 		temporalSegmentLabel2.setFont(new Font("Roboto", Font.PLAIN, 15));
-		temporalSegmentLabel2.setBounds(5, 90, 295, 20);
+		temporalSegmentLabel2.setBounds(5, 95, 295, 20);
 		optionPanel2.add(temporalSegmentLabel2);
 
 		temporalSegmentField2 = new JFormattedTextField(integerFormat) {
@@ -262,7 +300,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		temporalSegmentField2.setText(String.valueOf(ComputeTracksParameters.getBackwardTracksTemporalSegment()));
 		temporalSegmentField2.setHorizontalAlignment(SwingConstants.CENTER);
 		temporalSegmentField2.setFont(new Font("Roboto", Font.PLAIN, 15));
-		temporalSegmentField2.setBounds(290, 92, 70, 18);
+		temporalSegmentField2.setBounds(290, 97, 70, 18);
 		optionPanel2.add(temporalSegmentField2);
 
 		noteLabel = new JLabel("Note: The tracks are plotted on the reversed video");
@@ -270,7 +308,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		noteLabel.setVerticalAlignment(SwingConstants.TOP);
 		noteLabel.setHorizontalAlignment(SwingConstants.LEFT);
 		noteLabel.setVisible(false);
-		noteLabel.setBounds(5, 110, 400, 20);
+		noteLabel.setBounds(5, 115, 400, 20);
 		optionPanel2.add(noteLabel);
 
 		// save motion flow checkbox
@@ -278,7 +316,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		saveCheckBox3 = new JCheckBox("<html> Motion field</html>");
 		saveCheckBox3.setHorizontalAlignment(SwingConstants.LEFT);
 		saveCheckBox3.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox3.setBackground(Color.WHITE);
+		saveCheckBox3.setBackground(new Color(252, 252, 252));
 		saveCheckBox3.setBounds(0, 0, 442, 20);
 
 		optionPanel3 = new JPanel();
@@ -302,7 +340,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		saveCheckBox6 = new JCheckBox("<html>MOSES mesh (.mat)</html>");
 		saveCheckBox6.setHorizontalAlignment(SwingConstants.LEFT);
 		saveCheckBox6.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox6.setBackground(Color.WHITE);
+		saveCheckBox6.setBackground(new Color(252, 252, 252));
 		saveCheckBox6.setBounds(0, 0, 442, 20);
 
 		optionPanel4 = new JPanel();
@@ -375,7 +413,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 		saveCheckBox7 = new JCheckBox("Visualize MOSES mesh");
 		saveCheckBox7.setEnabled(false);
-		saveCheckBox7.setBackground(Color.WHITE);
+		saveCheckBox7.setBackground(new Color(252, 252, 252));
 		saveCheckBox7.setFont(new Font("Roboto", Font.PLAIN, 15));
 		saveCheckBox7.setBounds(0, 0, 196, 20);
 
@@ -438,7 +476,6 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		noteLabel2.setBounds(5, 180, 400, 36);
 		optionPanel5.add(noteLabel2);
 
-		// generateSaveOptionList(optionPanel5, saveList3, 10, 140, false);
 		saveOption3 = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
 		saveOption3.show(optionPanel5, 10, 140, false);
 		colorOption3 = new ColorOption();
@@ -449,7 +486,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		saveCheckBox8 = new JCheckBox("<html>Radial mesh (.mat)</html>");
 		saveCheckBox8.setHorizontalAlignment(SwingConstants.LEFT);
 		saveCheckBox8.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox8.setBackground(Color.WHITE);
+		saveCheckBox8.setBackground(new Color(252, 252, 252));
 		saveCheckBox8.setBounds(0, 0, 442, 20);
 
 		optionPanel6 = new JPanel();
@@ -520,7 +557,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 		saveCheckBox9 = new JCheckBox("Visualize radial mesh");
 		saveCheckBox9.setEnabled(false);
-		saveCheckBox9.setBackground(Color.WHITE);
+		saveCheckBox9.setBackground(new Color(252, 252, 252));
 		saveCheckBox9.setFont(new Font("Roboto", Font.PLAIN, 15));
 		saveCheckBox9.setBounds(0, 0, 196, 20);
 
@@ -596,7 +633,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		saveCheckBox10 = new JCheckBox("<html>K nearest neighbors mesh (.mat)</html>");
 		saveCheckBox10.setHorizontalAlignment(SwingConstants.LEFT);
 		saveCheckBox10.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox10.setBackground(Color.WHITE);
+		saveCheckBox10.setBackground(new Color(252, 252, 252));
 		saveCheckBox10.setBounds(0, 0, 442, 20);
 
 		optionPanel8 = new JPanel();
@@ -669,7 +706,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 		saveCheckBox11 = new JCheckBox("Visualize K nearest neighbors mesh");
 		saveCheckBox11.setEnabled(false);
-		saveCheckBox11.setBackground(Color.WHITE);
+		saveCheckBox11.setBackground(new Color(252, 252, 252));
 		saveCheckBox11.setFont(new Font("Roboto", Font.PLAIN, 15));
 		saveCheckBox11.setBounds(0, 0, 300, 20);
 
@@ -732,7 +769,6 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		noteLabel4.setBounds(5, 180, 400, 36);
 		optionPanel9.add(noteLabel4);
 
-		// generateSaveOptionList(optionPanel9, saveList5, 10, 140, false);
 		saveOption5 = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
 		saveOption5.show(optionPanel9, 10, 140, false);
 		colorOption5 = new ColorOption();
@@ -760,7 +796,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		});
 		cancelButton.setVerticalTextPosition(SwingConstants.CENTER);
 		cancelButton.setHorizontalTextPosition(SwingConstants.CENTER);
-		cancelButton.setForeground(Color.WHITE);
+		cancelButton.setForeground(new Color(252, 252, 252));
 		cancelButton.setFont(new Font("Arial", Font.BOLD, 15));
 		cancelButton.setBackground(new Color(13, 59, 102));
 		add(cancelButton);
@@ -786,7 +822,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		});
 		backButton.setVerticalTextPosition(SwingConstants.CENTER);
 		backButton.setHorizontalTextPosition(SwingConstants.CENTER);
-		backButton.setForeground(Color.WHITE);
+		backButton.setForeground(new Color(252, 252, 252));
 		backButton.setFont(new Font("Arial", Font.BOLD, 15));
 		backButton.setBackground(new Color(13, 59, 102));
 		add(backButton);
@@ -808,8 +844,10 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 						// add parameters
 
-						if (saveCheckBox1.isSelected())
+						if (saveCheckBox1.isSelected()) {
 							ComputeTracksParameters.setOutput("forward_tracks");
+							ComputeTracksParameters.setDenseForwardTracks(saveCheckBox13.isSelected());
+						}
 						if (saveCheckBox2.isSelected()) {
 							ComputeTracksParameters.setOutput("forward_tracks_visualisation");
 							ComputeTracksParameters.setSaveOption("forward_tracks_save_options", saveOption1);
@@ -823,8 +861,10 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 							ComputeTracksParameters.setSaveOption("motion_field_save_options", saveOption6);
 						}
 
-						if (saveCheckBox4.isSelected())
+						if (saveCheckBox4.isSelected()) {
 							ComputeTracksParameters.setOutput("backward_tracks");
+							ComputeTracksParameters.setDenseBackwardTracks(saveCheckBox14.isSelected());
+						}
 						if (saveCheckBox5.isSelected()) {
 							ComputeTracksParameters.setOutput("backward_tracks_visualisation");
 							ComputeTracksParameters.setSaveOption("backward_tracks_save_options", saveOption2);
@@ -911,7 +951,6 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 							@Override
 							public void propertyChange(PropertyChangeEvent evt) {
 								if (swingWorker.isDone()) {
-									// display menuPanel and close current panel
 									parentFrame.empty();
 									parentFrame.menuPanel = new MenuPanel(parentFrame);
 									parentFrame.getContentPane().add(parentFrame.menuPanel);
@@ -933,7 +972,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 		nextButton.setVerticalTextPosition(SwingConstants.CENTER);
 		nextButton.setHorizontalTextPosition(SwingConstants.CENTER);
-		nextButton.setForeground(Color.WHITE);
+		nextButton.setForeground(new Color(252, 252, 252));
 		nextButton.setFont(new Font("Arial", Font.BOLD, 15));
 		nextButton.setBackground(new Color(13, 59, 102));
 		add(nextButton);
@@ -967,9 +1006,11 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 		CheckBoxList checkBoxList = new CheckBoxList(bigPanel);
 		checkBoxList.addCheckBox(saveCheckBox1);
+		checkBoxList.addPanelChild(saveCheckBox1, optionPanel10);
 		checkBoxList.addCheckBoxChild(saveCheckBox1, saveCheckBox2);
 		checkBoxList.addPanelChild(saveCheckBox2, optionPanel1);
 		checkBoxList.addCheckBox(saveCheckBox4);
+		checkBoxList.addPanelChild(saveCheckBox4, optionPanel11);
 		checkBoxList.addCheckBoxChild(saveCheckBox4, saveCheckBox5);
 		checkBoxList.addPanelChild(saveCheckBox5, optionPanel2);
 		checkBoxList.addCheckBox(saveCheckBox3);
