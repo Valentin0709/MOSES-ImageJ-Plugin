@@ -90,6 +90,5 @@
 			<groupId>net.imagej</groupId>
 			<artifactId>imagej</artifactId>
 		</dependency>
-		
 	</dependencies>
 </project>

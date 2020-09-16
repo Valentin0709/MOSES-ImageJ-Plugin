@@ -184,7 +184,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 		saveOption1 = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
 		saveOption1.show(optionPanel1, 320, 5, true);
-		colorOption1 = new ColorOption();
+		colorOption1 = new ColorOption(ComputeTracksParameters.getSelectedChannels());
 		colorOption1.show(optionPanel1, 10, 25, 3);
 
 		JLabel temporalSegmentLabel1 = new JLabel("Plot tracks in temporal segments of length:");
@@ -264,7 +264,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 		saveOption2 = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
 		saveOption2.show(optionPanel2, 320, 5, true);
-		colorOption2 = new ColorOption();
+		colorOption2 = new ColorOption(ComputeTracksParameters.getSelectedChannels());
 		colorOption2.show(optionPanel2, 10, 25, 3);
 
 		JLabel instructionLabel3 = new JLabel("<html> Select the display color for each motion track </html>");
@@ -478,7 +478,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 		saveOption3 = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
 		saveOption3.show(optionPanel5, 10, 140, false);
-		colorOption3 = new ColorOption();
+		colorOption3 = new ColorOption(ComputeTracksParameters.getSelectedChannels());
 		colorOption3.show(optionPanel5, 5, 25, 2);
 
 		// save radial mesh
@@ -625,7 +625,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		// generateSaveOptionList(optionPanel7, saveList4, 10, 140, false);
 		saveOption4 = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
 		saveOption4.show(optionPanel7, 10, 140, false);
-		colorOption4 = new ColorOption();
+		colorOption4 = new ColorOption(ComputeTracksParameters.getSelectedChannels());
 		colorOption4.show(optionPanel7, 5, 25, 2);
 
 		// save K nearest neighbors mesh
@@ -771,7 +771,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 
 		saveOption5 = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
 		saveOption5.show(optionPanel9, 10, 140, false);
-		colorOption5 = new ColorOption();
+		colorOption5 = new ColorOption(ComputeTracksParameters.getSelectedChannels());
 		colorOption5.show(optionPanel9, 5, 25, 2);
 
 		// buttons

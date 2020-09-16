@@ -1,3 +1,4 @@
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.io.BufferedReader;
@@ -22,6 +23,7 @@ import ij.ImagePlus;
 public class Globals {
 	public static int frameHight = 500, frameWidth = 500;
 	public static int installStatus;
+	public static ImagePlus lastImage;
 
 	// method that returns file extension from file path
 
@@ -49,9 +51,9 @@ public class Globals {
 	// method that returns file directory
 
 	public static String getDirectory(String filePath) {
-		String fileName = filePath.substring(0, filePath.lastIndexOf("\\") + 1);
+		String fileDir = filePath.substring(0, filePath.lastIndexOf("\\") + 1);
 
-		return fileName.replaceAll("\\s+", "");
+		return fileDir;
 	}
 
 	// method that imports a file from the 'open file' window provided by the
@@ -78,8 +80,8 @@ public class Globals {
 				String filePath = file.getPath();
 
 				if (open) {
-					ImagePlus image = new ImagePlus(filePath);
-					ui.show(image);
+					lastImage = new ImagePlus(filePath);
+					ui.show(lastImage);
 				}
 
 				return filePath;
@@ -89,7 +91,7 @@ public class Globals {
 			return null;
 	}
 
-	public static boolean checkExtension(String filePathh, ArrayList<String> extensions) {
+	public static boolean checkExtension(String filePathh, List<String> extensions) {
 		boolean validExtension = false;
 		for (int i = 0; i < extensions.size(); i++) {
 			String ext = extensions.get(i);
@@ -279,5 +281,41 @@ public class Globals {
 
 		SwingUtilities.getAncestorOfClass(JFrame.class, panel).validate();
 		SwingUtilities.getAncestorOfClass(JFrame.class, panel).repaint();
+	}
+
+	public static Color nameToColor(String name) {
+		if (name.equals("white"))
+			return Color.white;
+		if (name.equals("black"))
+			return Color.black;
+		if (name.equals("red"))
+			return Color.red;
+		if (name.equals("green"))
+			return Color.green;
+		if (name.equals("blue"))
+			return Color.blue;
+		if (name.equals("yellow"))
+			return Color.yellow;
+		return Color.white;
+	}
+
+	public static List<String> convertStringList(List<Integer> list) {
+		List<String> result = new ArrayList<String>();
+		for (Integer x : list)
+			result.add(String.valueOf(x));
+
+		return result;
+	}
+
+	public static List<File> getFiles(File[] files, List<String> validExtensions, boolean deepSearch) {
+		List<File> result = new ArrayList<File>();
+
+		for (File file : files) {
+			if (file.isDirectory() && deepSearch)
+				result.addAll(getFiles(file.listFiles(), validExtensions, deepSearch));
+			else if (checkExtension(file.getAbsolutePath(), validExtensions))
+				result.add(file);
+		}
+		return result;
 	}
 }

@@ -200,6 +200,15 @@ public class PythonScript {
 		indent--;
 	}
 
+	public void startWhile(String cond) {
+		addScript("while(" + cond + "):");
+		indent++;
+	}
+
+	public void stopWhile() {
+		indent--;
+	}
+
 	public void startElse() {
 		addScript("else:");
 		indent++;
@@ -230,5 +239,14 @@ public class PythonScript {
 
 		return script;
 
+	}
+
+	public void startFunction(String name, List<String> parameters) {
+		addScript("def " + name + "(" + String.join(", ", parameters) + "):");
+		indent++;
+	}
+
+	public void stopFunction() {
+		indent--;
 	}
 }

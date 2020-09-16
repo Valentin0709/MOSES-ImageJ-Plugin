@@ -37,6 +37,7 @@ public class MOSES implements Command {
 		// display menu panel
 
 		mainFrame.empty();
+		mainFrame.menuPanel = new MenuPanel(mainFrame);
 		mainFrame.add(mainFrame.menuPanel);
 		mainFrame.validate();
 

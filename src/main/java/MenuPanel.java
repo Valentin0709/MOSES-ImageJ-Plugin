@@ -198,14 +198,14 @@ public class MenuPanel extends JPanel {
 		motionSaliencyMapButton.setForeground(Color.WHITE);
 		motionSaliencyMapButton.setFont(new Font("Arial", Font.BOLD, 20));
 		motionSaliencyMapButton.setBackground(new Color(13, 59, 102));
-		motionSaliencyMapButton.setBounds(10, 158, 230, 43);
+		motionSaliencyMapButton.setBounds(10, 160, 230, 43);
 		add(motionSaliencyMapButton);
 
 		JLabel titleLabel2 = new JLabel("Extract motion measurements", SwingConstants.CENTER);
 		titleLabel2.setVerticalTextPosition(SwingConstants.CENTER);
 		titleLabel2.setHorizontalTextPosition(SwingConstants.CENTER);
 		titleLabel2.setFont(new Font("Arial Black", Font.BOLD, 20));
-		titleLabel2.setBounds(0, 126, 500, 29);
+		titleLabel2.setBounds(0, 125, 500, 29);
 		add(titleLabel2);
 
 		JButton meshStrainCurveButton = new JButton("Mesh metrics");
@@ -227,6 +227,113 @@ public class MenuPanel extends JPanel {
 		meshStrainCurveButton.setBounds(260, 158, 230, 43);
 		add(meshStrainCurveButton);
 
+		JLabel titleLabel3 = new JLabel("Annotations", SwingConstants.CENTER);
+		titleLabel3.setVerticalTextPosition(SwingConstants.CENTER);
+		titleLabel3.setHorizontalTextPosition(SwingConstants.CENTER);
+		titleLabel3.setFont(new Font("Arial Black", Font.BOLD, 20));
+		titleLabel3.setBounds(-12, 210, 500, 29);
+		add(titleLabel3);
+
+		JButton CreateAnnotationButton = new JButton("New mask");
+		CreateAnnotationButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				ArrayList<String> validExtensions = new ArrayList<String>();
+				validExtensions.addAll(Arrays.asList(".tif", ".tiff", ".png", ".jpeg"));
+
+				JFrame dialog = new JFrame();
+
+				if (parentFrame.imageDisplayService.getActiveDataset() == null) { // checks if any files are opened
+
+					// display dialog box
+
+					Object[] options = { "Cancel", "Import now" };
+					int n = JOptionPane.showOptionDialog(dialog,
+							"No file selected. Please import an image to continue.", "MOSES", JOptionPane.YES_NO_OPTION,
+							JOptionPane.WARNING_MESSAGE, null, options, options[0]);
+
+					// display import file window
+
+					if (n == 1) {
+						String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
+
+						if (importedFilePath != null)
+							newAnnotation();
+						else {
+
+							// display error dialog box
+
+							JFrame errorDialog = new JFrame();
+							Object[] options2 = { "Ok" };
+							JOptionPane.showOptionDialog(dialog,
+									"Current selected file has an invalid format. Please import an image to continue.",
+									"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options2,
+									options2[0]);
+						}
+					}
+				} else {
+
+					String openFilePath = parentFrame.imageDisplayService.getActiveDataset().getSource();
+
+					if (Globals.checkExtension(openFilePath, validExtensions))
+						newAnnotation();
+					else {
+						// display dialog box
+
+						Object[] options = { "Cancel", "Import now" };
+						int n = JOptionPane.showOptionDialog(dialog,
+								"Current selected file has an invalid format. Please import an image to continue.",
+								"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options,
+								options[0]);
+
+						// display import file window
+
+						if (n == 1) {
+							String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
+
+							if (importedFilePath != null)
+								newAnnotation();
+							else {
+
+								// display error dialog box
+
+								Object[] options2 = { "Ok" };
+								JOptionPane.showOptionDialog(dialog,
+										"Current selected file has an invalid format. Please import an image to continue.",
+										"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options2,
+										options2[0]);
+							}
+						}
+					}
+				}
+			}
+
+		});
+		CreateAnnotationButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		CreateAnnotationButton.setForeground(Color.WHITE);
+		CreateAnnotationButton.setFont(new Font("Arial", Font.BOLD, 20));
+		CreateAnnotationButton.setBackground(new Color(13, 59, 102));
+		CreateAnnotationButton.setBounds(10, 245, 230, 43);
+		add(CreateAnnotationButton);
+
+		JButton btnCreateVisualisationFrom = new JButton("<html>Visualisation from mask</html>");
+		btnCreateVisualisationFrom.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				VisualisationFromMaskParameters.initialise();
+				VisualisationFromMaskParameters.setBatchMode(batchModeCheckbox.isSelected());
+
+				parentFrame.empty();
+				parentFrame.visualisationFromMaskPanel1 = new VisualisationFromMaskPanel1(parentFrame);
+				parentFrame.getContentPane().add(parentFrame.visualisationFromMaskPanel1);
+				parentFrame.validate();
+			}
+		});
+		btnCreateVisualisationFrom.setHorizontalTextPosition(SwingConstants.CENTER);
+		btnCreateVisualisationFrom.setForeground(Color.WHITE);
+		btnCreateVisualisationFrom.setFont(new Font("Arial", Font.BOLD, 17));
+		btnCreateVisualisationFrom.setBackground(new Color(13, 59, 102));
+		btnCreateVisualisationFrom.setBounds(260, 245, 230, 43);
+		add(btnCreateVisualisationFrom);
+
 	}
 
 	public void computeTracks(String filePath) {
@@ -242,24 +349,45 @@ public class MenuPanel extends JPanel {
 
 			public void run() {
 
-				// create temporary python script file
-
 				String temporaryDirectorPath = System.getProperty("java.io.tmpdir");
 				String scriptPath = temporaryDirectorPath + "open_file.py";
 				File file = new File(scriptPath);
 
+				PythonScript script = new PythonScript("Read file");
+				script.addParameter(
+						Arrays.asList(new Parameter("filePath", "str", ComputeTracksParameters.getFilePath())));
+				script.importModule("sys");
+				script.importModuleFrom("read_multiimg_PIL", "MOSES.Utility_Functions.file_io");
+				script.addScript(script.createParameterDictionary());
+				script.addScript(PythonScript.setValue("vidstack",
+						PythonScript.callFunction("read_multiimg_PIL", "parameters.get('filePath')")));
+				script.startIf("len(vidstack.shape) == 3");
+				script.addScript(PythonScript.setValue("vidstack", "vidstack[..., None]"));
+				script.stopIf();
+				script.addScript(PythonScript.setValue(Arrays.asList("n_frame", "n_rows", "n_cols", "n_channels"),
+						"vidstack.shape"));
+
+				script.addScript(PythonScript.print("n_frame"));
+				script.addScript(PythonScript.print("n_rows"));
+				script.addScript(PythonScript.print("n_cols"));
+				script.addScript(PythonScript.print("n_channels"));
+
 				try {
 					FileWriter writer = new FileWriter(file);
-					writer.write("import sys\r\n" + "from MOSES.Utility_Functions.file_io import read_multiimg_PIL\r\n"
-							+ "\r\n" + "infile = sys.argv[1]\r\n" + "vidstack = read_multiimg_PIL(infile)\r\n"
-							+ "n_frame, n_rows, n_cols, n_channels = vidstack.shape\r\n" + "\r\n" + "print(n_frame)\r\n"
-							+ "print(n_rows)\r\n" + "print(n_cols)\r\n" + "print(n_channels)\r\n");
+					writer.write(script.getScript());
 					writer.close();
-				} catch (IOException e2) {
-					IJ.handleException(e2);
+				} catch (IOException e) {
+					IJ.handleException(e);
 				}
 
-				ProcessBuilder pb = new ProcessBuilder("python", scriptPath, ComputeTracksParameters.getFilePath());
+				ArrayList<String> command = new ArrayList<>();
+				command.add("python");
+				command.add(scriptPath);
+				for (Parameter parameter : script.getParameters())
+					command.add(parameter.getValue());
+
+				ProcessBuilder pb = new ProcessBuilder(command);
+
 				try {
 					Process p = pb.start();
 					BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -306,6 +434,13 @@ public class MenuPanel extends JPanel {
 		parentFrame.empty();
 		parentFrame.saliencyMapPanel = new SaliencyMapPanel(parentFrame);
 		parentFrame.getContentPane().add(parentFrame.saliencyMapPanel);
+		parentFrame.validate();
+	}
+
+	public void newAnnotation() {
+		parentFrame.empty();
+		parentFrame.newAnnotationPanel = new NewAnnotationPanel(parentFrame);
+		parentFrame.getContentPane().add(parentFrame.newAnnotationPanel);
 		parentFrame.validate();
 	}
 }

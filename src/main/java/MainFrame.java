@@ -18,12 +18,15 @@ public class MainFrame extends JFrame {
 
 	// panels
 
-	public MenuPanel menuPanel = new MenuPanel(this);
-	public ComputeTracksPanel1 computeTracksPanel1 = new ComputeTracksPanel1(this);
-	public ComputeTracksPanel2 computeTracksPanel2 = new ComputeTracksPanel2(this);
-	public ComputeTracksPanel3 computeTracksPanel3 = new ComputeTracksPanel3(this);
-	public SaliencyMapPanel saliencyMapPanel = new SaliencyMapPanel(this);
-	public MeshMetricsPanel meshMetricsPanel = new MeshMetricsPanel(this);
+	public MenuPanel menuPanel;
+	public ComputeTracksPanel1 computeTracksPanel1;
+	public ComputeTracksPanel2 computeTracksPanel2;
+	public ComputeTracksPanel3 computeTracksPanel3;
+	public SaliencyMapPanel saliencyMapPanel;
+	public MeshMetricsPanel meshMetricsPanel;
+	public NewAnnotationPanel newAnnotationPanel;
+	public VisualisationFromMaskPanel1 visualisationFromMaskPanel1;
+	public VisualisationFromMaskPanel2 visualisationFromMaskPanel2;
 
 	public MainFrame() {
 

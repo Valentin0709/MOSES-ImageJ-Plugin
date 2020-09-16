@@ -273,6 +273,10 @@ public class ComputeTracksParameters {
 		return selectedChannels.get(index);
 	}
 
+	public static List<Integer> getSelectedChannels() {
+		return selectedChannels;
+	}
+
 	public static void setMOSESMeshForwardTracks(boolean b) {
 		MOSESMeshForwardTracks = b;
 	}
@@ -355,9 +359,9 @@ public class ComputeTracksParameters {
 		if (isOutput("forward_tracks_visualisation"))
 			outputList.add("forward_tracks_visualisation");
 		if (isOutput("backward_tracks"))
-			outputList.add("forward_tracks");
+			outputList.add("backward_tracks");
 		if (isOutput("backward_tracks_visualisation"))
-			outputList.add("forward_tracks_visualisation");
+			outputList.add("backward_tracks_visualisation");
 		if (isOutput("motion_field"))
 			outputList.add("motion_field");
 		if (isOutput("MOSES_mesh"))

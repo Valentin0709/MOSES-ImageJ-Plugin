@@ -11,11 +11,16 @@ import javax.swing.SwingConstants;
 
 public class ColorOption {
 	List<JComboBox> comboBoxGroup;
+	List<Integer> channels;
+
+	public ColorOption(List<Integer> list) {
+		channels = list;
+	}
 
 	public void show(JPanel panel, int x, int y, int rows) {
 		comboBoxGroup = new ArrayList<JComboBox>();
-		for (int i = 0; i < ComputeTracksParameters.getNumberSelectedChannels(); i++) {
-			int channelIndex = ComputeTracksParameters.getSelectedChannels(i);
+		for (int i = 0; i < channels.size(); i++) {
+			int channelIndex = channels.get(i);
 
 			JComboBox comboBox = new JComboBox();
 			comboBox.setModel(new DefaultComboBoxModel(
