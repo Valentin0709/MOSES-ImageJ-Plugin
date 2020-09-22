@@ -47,9 +47,9 @@ public class MatlabMetadata {
 		script.addScript(PythonScript.print("str(file['metadata'][0][1][9])"));
 		script.newLine();
 
-		script.addScript(PythonScript.setValue("fileType", "str(file['metadata'][0][0][0][3][0])"));
+		script.addScript(PythonScript.setValue("fileType", "str(file['metadata'][0][0][0][4][0])"));
 		script.startIf("fileType == 'MOSES_mesh' or fileType == 'radial_mesh' or fileType == 'neighbor_mesh'");
-		script.addScript(PythonScript.print("str(file['metadata'][0][2])"));
+		script.addScript(PythonScript.print("str(file['metadata'][0][2][0][0])"));
 		script.stopIf();
 
 		try {
@@ -99,17 +99,21 @@ public class MatlabMetadata {
 		flags = Integer.parseInt(metadata.get(15).replaceAll(" ", ""));
 
 		if (fileType.equals("MOSES_mesh"))
-			MOSESMeshDistanceThreshold = Double.parseDouble(metadata.get(15).replaceAll(" ", ""));
+			MOSESMeshDistanceThreshold = Double.parseDouble(metadata.get(16).replaceAll(" ", ""));
 		if (fileType.equals("radial_mesh"))
-			radialMeshDistanceThresholda = Double.parseDouble(metadata.get(15).replaceAll(" ", ""));
+			radialMeshDistanceThresholda = Double.parseDouble(metadata.get(16).replaceAll(" ", ""));
 		if (fileType.equals("neighbor_mesh"))
-			KNeighbor = Integer.parseInt(metadata.get(15).replaceAll(" ", ""));
+			KNeighbor = Integer.parseInt(metadata.get(16).replaceAll(" ", ""));
 
 		file.delete();
 	}
 
 	public String getParentFile() {
 		return parentFile;
+	}
+
+	public double getMOSESMeshDistanceThreshold() {
+		return MOSESMeshDistanceThreshold;
 	}
 
 	public String getFileType() {
@@ -128,7 +132,7 @@ public class MatlabMetadata {
 		return channels;
 	}
 
-	public List<String> metadataList() {
+	public List<String> tracksParametersList() {
 		List<String> result = new ArrayList<String>();
 
 		result.add("channels = [" + String.join(";", Globals.convertStringList(channels)) + "]");

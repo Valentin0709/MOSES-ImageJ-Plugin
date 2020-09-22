@@ -3,8 +3,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,74 +16,47 @@ import ij.IJ;
 
 public class MeshMetrics extends SwingWorker<String, String> {
 	private ProgressPanel progress;
-	private int fileNumber;
 	private Process process;
 	private PythonScript script;
-	private File configFile, meshStrainCurveCSVFile, stabilityIndexCSVFile;
-	String currentFilePath;
-	List<String> subfiles;
+	String timestamp;
+	private File CSVSaveFolder, meshStrainCurveCSVFile, stabilityIndexCSVFile;
+	String meshPath, tracksPath;
+	int fileNumber;
+	MatlabMetadata trackMetadata;
 
 	public MeshMetrics(ProgressPanel p) {
 		progress = p;
-		fileNumber = 0;
 	}
 
-	private void createConfigFile() {
-		SimpleDateFormat formatter = new SimpleDateFormat("HH'-'mm'-'dd'-'MM'-'yyyy");
-		configFile = new File(MeshMetricsParameters.getSaveDirectory() + "MOSES_config_file" + "_"
-				+ formatter.format(new Date(System.currentTimeMillis())) + ".txt");
+	private void recordHistory() {
+		File commandsHistoryFile = new File(MeshMetricsParameters.getWorkspace() + "/workspace_history.csv");
 
-		try {
-			configFile.createNewFile();
-		} catch (IOException e) {
-			IJ.handleException(e);
-		}
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList(""));
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Action:", "mesh metrics"));
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Timestamp:", timestamp));
 
-		String configFileHeader = "MOSES config file \r\n";
-		configFileHeader += "@Action: mesh_metrics \r\n\r\n";
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Motion tracks:"));
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList(String.join(", ", MeshMetricsParameters.getTracksPaths())));
 
-		configFileHeader += "@Outputs:\r\n";
-		List<String> outputs = MeshMetricsParameters.getOutputList();
-		for (String output : outputs)
-			configFileHeader += "\t" + output + "\r\n";
-		configFileHeader += "\r\n";
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("MOSES meshes:"));
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList(String.join(", ", MeshMetricsParameters.getMeshPaths())));
 
-		configFileHeader += "@Parameters: \r\n";
-		List<String> parameters = MeshMetricsParameters.getParametersList();
-		for (String parameter : parameters)
-			configFileHeader += "\t" + parameter + "\r\n";
-		configFileHeader += "\r\n";
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Outputs:"));
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList(String.join(", ", MeshMetricsParameters.getOutputList())));
 
-		FileWriter configFileWriter;
-		try {
-			configFileWriter = new FileWriter(configFile, true);
-			configFileWriter.write(configFileHeader);
-			configFileWriter.flush();
-			configFileWriter.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void writeCSV(File f, List<String> row) {
-		try {
-			FileWriter csvWriter = new FileWriter(f, true);
-
-			csvWriter.append(String.join(",", row));
-			csvWriter.append("\n");
-			csvWriter.flush();
-			csvWriter.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Parameters:"));
+		Globals.writeCSV(commandsHistoryFile,
+				Arrays.asList(String.join(", ", MeshMetricsParameters.getParametersList())));
 	}
 
 	private void getMeshStrainCurve() {
 		List<Parameter> parameters = new ArrayList<Parameter>();
-		parameters.addAll(Arrays.asList(new Parameter("filePath", "str", currentFilePath),
-				new Parameter("subfiles", "str", String.join(",", subfiles))));
+		parameters.addAll(Arrays.asList(new Parameter("meshPath", "str", meshPath),
+				new Parameter("tracksPath", "str", tracksPath)));
 
 		addScriptHeader();
+
+		script.addScript(PythonScript.print(PythonScript.addString("-Computing mesh strain curve...")));
 
 		script.addCommnet("define parameters dictionary");
 		script.addParameter(parameters);
@@ -93,34 +64,48 @@ public class MeshMetrics extends SwingWorker<String, String> {
 		script.newLine();
 
 		script.addCommnet("import file");
-		script.addScript(
-				PythonScript.setValue("file", PythonScript.callFunction("spio.loadmat", "parameters.get('filePath')")));
-		script.addScript(PythonScript.setValue("subfiles", "parameters.get('subfiles').split(',')"));
+		script.addScript(PythonScript.setValue("meshFile",
+				PythonScript.callFunction("spio.loadmat", "parameters.get('meshPath')")));
+		script.addScript(PythonScript.setValue("meshFileInfo",
+				PythonScript.callFunction("spio.whosmat", "parameters.get('meshPath')")));
+		script.addScript(PythonScript.setValue("tracksFile",
+				PythonScript.callFunction("spio.loadmat", "parameters.get('tracksPath')")));
+		script.addScript(PythonScript.setValue("tracksFile",
+				PythonScript.callFunction("spio.whosmat", "parameters.get('tracksPath')")));
 
 		script.addCommnet("compute mesh strain curve");
-		for (int i = 0; i < subfiles.size(); i++) {
-			script.addScript(PythonScript.print(PythonScript.addString("-Computing mesh strain curve for ")
-					+ " + subfiles[" + i + "] + " + PythonScript.addString(" ...")));
-			script.addScript(PythonScript.setValue("mesh_strain_time", "file[subfiles[" + i + "]]"));
+		List<Integer> channels = trackMetadata.getChannels();
+		for (int i = 0; i < channels.size(); i++) {
+			int channelIndex = channels.get(i) + 1;
+
+			script.addScript(PythonScript.setValue("mesh_strain_time_" + channelIndex,
+					"meshFile[meshFileInfo[" + (i * 2 + 1) + "][0]]"));
 
 			if (MeshMetricsParameters.getNormaliseValues())
-				script.addScript(PythonScript.setValue("mesh_strain_" + i, PythonScript.callFunction(
-						"compute_MOSES_mesh_strain_curve", Arrays.asList("mesh_strain_time", "normalise = True"))));
+				script.addScript(PythonScript.setValue("mesh_strain_" + channelIndex,
+						PythonScript.callFunction("compute_MOSES_mesh_strain_curve",
+								Arrays.asList("mesh_strain_time_" + channelIndex, "normalise = True"))));
 			else
-				script.addScript(PythonScript.setValue("mesh_strain_" + i, PythonScript.callFunction(
-						"compute_MOSES_mesh_strain_curve", Arrays.asList("mesh_strain_time", "normalise = False"))));
+				script.addScript(PythonScript.setValue("mesh_strain_" + channelIndex,
+						PythonScript.callFunction("compute_MOSES_mesh_strain_curve",
+								Arrays.asList("mesh_strain_time_" + channelIndex, "normalise = False"))));
 
 			script.newLine();
 
-			script.startFor("k", "len(mesh_strain_" + i + ")");
-			script.addScript("print('.' + subfiles[" + i + "] + ',' + str(mesh_strain_" + i + "[k]))");
+			script.startFor("k", "len(mesh_strain_" + channelIndex + ")");
+			script.addScript("print('.' + str(" + channelIndex + ") + ',' + str(mesh_strain_" + channelIndex + "[k]))");
 			script.stopFor();
 		}
+
 		if (MeshMetricsParameters.getAverageValues()) {
-			script.addScript(PythonScript.setValue("mesh_strain_av", "mesh_strain_0"));
-			for (int i = 1; i < subfiles.size(); i++)
-				script.addScript(PythonScript.setValue("mesh_strain_av", "mesh_strain_av + mesh_strain_" + i));
-			script.addScript(PythonScript.setValue("mesh_strain_av", "mesh_strain_av / len(subfiles)"));
+			List<String> meshStrainList = new ArrayList<String>();
+			for (int i = 0; i < channels.size(); i++) {
+				int channelIndex = channels.get(i) + 1;
+				meshStrainList.add("mesh_strain_" + channelIndex);
+			}
+
+			script.addScript(PythonScript.setValue("mesh_strain_av",
+					"(" + String.join("+", meshStrainList) + ")/ " + channels.size()));
 
 			script.startFor("k", "len(mesh_strain_av)");
 			script.addScript("print('.' + 'video average' + ',' + str(mesh_strain_av[k]))");
@@ -130,11 +115,13 @@ public class MeshMetrics extends SwingWorker<String, String> {
 
 	private void getStabilityIndex() {
 		List<Parameter> parameters = new ArrayList<Parameter>();
-		parameters.addAll(Arrays.asList(new Parameter("filePath", "str", currentFilePath),
-				new Parameter("subfiles", "str", String.join(",", subfiles)),
+		parameters.addAll(Arrays.asList(new Parameter("meshPath", "str", meshPath),
+				new Parameter("tracksPath", "str", tracksPath),
 				new Parameter("lastFrames", "int", MeshMetricsParameters.getLastFrames())));
 
 		addScriptHeader();
+
+		script.addScript(PythonScript.print(PythonScript.addString("-Computing mesh stability index...")));
 
 		script.addCommnet("define parameters dictionary");
 		script.addParameter(parameters);
@@ -142,25 +129,41 @@ public class MeshMetrics extends SwingWorker<String, String> {
 		script.newLine();
 
 		script.addCommnet("import file");
-		script.addScript(
-				PythonScript.setValue("file", PythonScript.callFunction("spio.loadmat", "parameters.get('filePath')")));
-		script.addScript(PythonScript.setValue("subfiles", "parameters.get('subfiles').split(',')"));
-		script.newLine();
+		script.addScript(PythonScript.setValue("meshFile",
+				PythonScript.callFunction("spio.loadmat", "parameters.get('meshPath')")));
+		script.addScript(PythonScript.setValue("meshFileInfo",
+				PythonScript.callFunction("spio.whosmat", "parameters.get('meshPath')")));
+		script.addScript(PythonScript.setValue("tracksFile",
+				PythonScript.callFunction("spio.loadmat", "parameters.get('tracksPath')")));
+		script.addScript(PythonScript.setValue("tracksFile",
+				PythonScript.callFunction("spio.whosmat", "parameters.get('tracksPath')")));
+
+		List<Integer> channels = trackMetadata.getChannels();
+		List<String> meshStrainTimeList = new ArrayList<String>();
+		for (int i = 0; i < channels.size(); i++)
+			meshStrainTimeList.add("meshFile[meshFileInfo[" + (i * 2 + 1) + "][0]]");
+
+		script.addScript(PythonScript.setValue("mesh_strain_time_av",
+				"(" + String.join("+", meshStrainTimeList) + ") / " + channels.size()));
 
 		script.addScript(PythonScript.setValue(Arrays.asList("mesh_stability_index", "normalised_mesh_strain_curve"),
-				PythonScript.callFunction("compute_MOSES_mesh_stability_index", Arrays.asList("file[subfiles[0]]",
-						"file[subfiles[1]]", "last_frames = parameters.get('lastFrames')"))));
+				PythonScript.callFunction("compute_MOSES_mesh_stability_index", Arrays.asList("mesh_strain_time_av",
+						"mesh_strain_time_av", "last_frames = parameters.get('lastFrames')"))));
 		script.addScript("print('*%.3f' %(mesh_stability_index))");
 
 	}
 
-	@Override
-	protected String doInBackground() throws Exception {
-		publish("-Processing parameters...");
+	private void folderPaths() {
+		CSVSaveFolder = new File(MeshMetricsParameters.getWorkspace() + "/"
+				+ Globals.getParentProject(tracksPath, MeshMetricsParameters.getWorkspace())
+				+ "/data_analysis/CSV_files/" + timestamp);
+		CSVSaveFolder.mkdirs();
 
 		// mesh curve file
 		if (MeshMetricsParameters.isOutput("mesh_strain_curve")) {
-			meshStrainCurveCSVFile = new File(MeshMetricsParameters.getSaveDirectory() + "MOSES_mesh_strain_curve.csv");
+			meshStrainCurveCSVFile = new File(CSVSaveFolder.getAbsoluteFile() + "/"
+					+ Globals.getParentProject(tracksPath, MeshMetricsParameters.getWorkspace())
+					+ "_MOSES_mesh_strain_curve.csv");
 
 			try {
 				meshStrainCurveCSVFile.createNewFile();
@@ -168,21 +171,23 @@ public class MeshMetrics extends SwingWorker<String, String> {
 				IJ.handleException(e);
 			}
 
-			try {
-				FileWriter csvWriter = new FileWriter(meshStrainCurveCSVFile, true);
+			Globals.writeCSV(meshStrainCurveCSVFile, Arrays.asList("Project name:",
+					Globals.getParentProject(tracksPath, MeshMetricsParameters.getWorkspace())));
+			Globals.writeCSV(meshStrainCurveCSVFile,
+					Arrays.asList("Tracks parameters:", String.join(", ", trackMetadata.tracksParametersList())));
+			Globals.writeCSV(meshStrainCurveCSVFile,
+					Arrays.asList("Mesh parameters:", "MOSES mesh distance threshold = "
+							+ String.valueOf(trackMetadata.getMOSESMeshDistanceThreshold())));
 
-				csvWriter.append(String.join(",", Arrays.asList("File", "Output", "Mesh strain curve")));
-				csvWriter.append("\n");
-				csvWriter.flush();
-				csvWriter.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			Globals.writeCSV(meshStrainCurveCSVFile, Arrays.asList(""));
+			Globals.writeCSV(meshStrainCurveCSVFile, Arrays.asList("Channel", "Mesh strain curve"));
 		}
 
 		// stability index file
 		if (MeshMetricsParameters.isOutput("stability_index")) {
-			stabilityIndexCSVFile = new File(MeshMetricsParameters.getSaveDirectory() + "MOSES_stability_index.csv");
+			stabilityIndexCSVFile = new File(CSVSaveFolder.getAbsoluteFile() + "/"
+					+ Globals.getParentProject(tracksPath, MeshMetricsParameters.getWorkspace())
+					+ "_MOSES_stability_index.csv");
 
 			try {
 				stabilityIndexCSVFile.createNewFile();
@@ -190,23 +195,34 @@ public class MeshMetrics extends SwingWorker<String, String> {
 				IJ.handleException(e);
 			}
 
-			try {
-				FileWriter csvWriter = new FileWriter(stabilityIndexCSVFile, true);
+			Globals.writeCSV(stabilityIndexCSVFile, Arrays.asList("Project name:",
+					Globals.getParentProject(tracksPath, MeshMetricsParameters.getWorkspace())));
+			Globals.writeCSV(stabilityIndexCSVFile,
+					Arrays.asList("Tracks parameters:", String.join(", ", trackMetadata.tracksParametersList())));
+			Globals.writeCSV(stabilityIndexCSVFile, Arrays.asList("Mesh parameters:", "MOSES mesh distance threshold = "
+					+ String.valueOf(trackMetadata.getMOSESMeshDistanceThreshold())));
+			Globals.writeCSV(stabilityIndexCSVFile,
+					Arrays.asList("Last frames:", String.valueOf(MeshMetricsParameters.getLastFrames())));
 
-				csvWriter.append(String.join(",", Arrays.asList("File", "Stability index")));
-				csvWriter.append("\n");
-				csvWriter.flush();
-				csvWriter.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			Globals.writeCSV(stabilityIndexCSVFile, Arrays.asList(""));
+			Globals.writeCSV(stabilityIndexCSVFile, Arrays.asList("Mesh stability index"));
 		}
+	}
 
-		for (String filePath : MeshMetricsParameters.getMOSESMeshFilePaths()) {
-			currentFilePath = filePath;
-			progress.setFileName(Globals.getName(filePath));
-			fileNumber++;
-			subfiles = MeshMetricsParameters.getMOSESMeshSubfiles(filePath);
+	@Override
+	protected String doInBackground() throws Exception {
+		publish("-Processing parameters...");
+		timestamp = Globals.getFormattedDate();
+		recordHistory();
+
+		fileNumber = 1;
+		for (Pair<String, String> filePathsPair : MeshMetricsParameters.getFiles()) {
+			meshPath = filePathsPair.getL();
+			tracksPath = filePathsPair.getR();
+			trackMetadata = new MatlabMetadata(tracksPath);
+
+			progress.setFileName(Globals.getName(meshPath));
+			folderPaths();
 
 			if (MeshMetricsParameters.isOutput("mesh_strain_curve") && !this.isCancelled()) {
 				script = new PythonScript("Mesh strain curve");
@@ -216,15 +232,14 @@ public class MeshMetrics extends SwingWorker<String, String> {
 			}
 
 			if (MeshMetricsParameters.isOutput("stability_index") && !this.isCancelled()) {
-				if (subfiles.size() == 2) {
-					script = new PythonScript("Stability index");
-					getStabilityIndex();
+				script = new PythonScript("Stability index");
+				getStabilityIndex();
 
-					runScript();
-				} else
-					publish("+Warning: Stability index was not computed for " + Globals.getName(filePath)
-							+ ". Please check if the file contains the right number of mesh strain .");
+				runScript();
 			}
+
+			fileNumber++;
+
 		}
 
 		return "Done.";
@@ -270,9 +285,6 @@ public class MeshMetrics extends SwingWorker<String, String> {
 		command.add(scriptPath);
 		for (Parameter parameter : script.getParameters())
 			command.add(parameter.getValue());
-
-//		IJ.log(script.getScript());
-//		IJ.log(String.valueOf(command));
 
 		// run process
 		ProcessBuilder pb = new ProcessBuilder(command);
@@ -337,12 +349,11 @@ public class MeshMetrics extends SwingWorker<String, String> {
 			if (messageScope == '.') {
 				validMessage = false;
 				String[] splitMessage = m.split(",");
-				writeCSV(meshStrainCurveCSVFile,
-						Arrays.asList(Globals.getName(currentFilePath), splitMessage[0], splitMessage[1]));
+				Globals.writeCSV(meshStrainCurveCSVFile, Arrays.asList(splitMessage[0], splitMessage[1]));
 			}
 			if (messageScope == '*') {
 				validMessage = false;
-				writeCSV(stabilityIndexCSVFile, Arrays.asList(Globals.getName(currentFilePath), m));
+				Globals.writeCSV(stabilityIndexCSVFile, Arrays.asList(m));
 			}
 
 			if (validMessage) {

@@ -58,7 +58,6 @@ public class SaliencyMapParameters {
 			for (ProjectImageAnnotationTracks imt : files)
 				if (Globals.getNameWithoutExtension(path).equals(imt.getProjectName())) {
 					imt.setImagePath(path);
-					break;
 				}
 		}
 	}
@@ -83,7 +82,7 @@ public class SaliencyMapParameters {
 		return result;
 	}
 
-	public static void deleteFiles() {
+	public static void trimFiles() {
 		for (ProjectImageAnnotationTracks imt : files)
 			if (imt.getImagePath() == null || imt.getTrackPath() == null)
 				files.remove(imt);

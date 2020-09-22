@@ -13,7 +13,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -26,8 +25,6 @@ import ij.IJ;
 
 public class MenuPanel extends JPanel {
 	public MainFrame parentFrame;
-
-	JCheckBox batchModeCheckbox;
 	List<String> filePaths;
 
 	public MenuPanel(MainFrame parentFrame) {
@@ -68,12 +65,6 @@ public class MenuPanel extends JPanel {
 		instructionLabel1.setFont(new Font("Roboto", Font.PLAIN, 15));
 		instructionLabel1.setBounds(0, 92, 500, 24);
 		add(instructionLabel1);
-
-		batchModeCheckbox = new JCheckBox("Batch mode");
-		batchModeCheckbox.setFont(new Font("Roboto", Font.PLAIN, 15));
-		batchModeCheckbox.setBounds(196, 436, 111, 24);
-		batchModeCheckbox.setBackground(new Color(252, 252, 252));
-		add(batchModeCheckbox);
 		add(titleLabel);
 
 		// compute superpixel tracks button
@@ -152,7 +143,6 @@ public class MenuPanel extends JPanel {
 		meshStrainCurveButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				MeshMetricsParameters.initialise();
-				MeshMetricsParameters.setBatchMode(batchModeCheckbox.isSelected());
 
 				parentFrame.empty();
 				parentFrame.meshMetricsPanel = new MeshMetricsPanel(parentFrame);
@@ -182,69 +172,32 @@ public class MenuPanel extends JPanel {
 
 				JFrame dialog = new JFrame();
 
-				if (parentFrame.imageDisplayService.getActiveDataset() == null) { // checks if any files are opened
+				// display dialog box
 
-					// display dialog box
+				Object[] options = { "Cancel", "Import now" };
+				int n = JOptionPane.showOptionDialog(dialog, "Please import an image to continue.", "MOSES",
+						JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
 
-					Object[] options = { "Cancel", "Import now" };
-					int n = JOptionPane.showOptionDialog(dialog,
-							"No file selected. Please import an image to continue.", "MOSES", JOptionPane.YES_NO_OPTION,
-							JOptionPane.WARNING_MESSAGE, null, options, options[0]);
+				// display import file window
 
-					// display import file window
+				if (n == 1) {
+					String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
 
-					if (n == 1) {
-						String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
-
-						if (importedFilePath != null)
-							newAnnotation();
-						else {
-
-							// display error dialog box
-
-							JFrame errorDialog = new JFrame();
-							Object[] options2 = { "Ok" };
-							JOptionPane.showOptionDialog(dialog,
-									"Current selected file has an invalid format. Please import an image to continue.",
-									"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options2,
-									options2[0]);
-						}
-					}
-				} else {
-
-					String openFilePath = parentFrame.imageDisplayService.getActiveDataset().getSource();
-
-					if (Globals.checkExtension(openFilePath, validExtensions))
+					if (importedFilePath != null)
 						newAnnotation();
 					else {
-						// display dialog box
 
-						Object[] options = { "Cancel", "Import now" };
-						int n = JOptionPane.showOptionDialog(dialog,
+						// display error dialog box
+
+						JFrame errorDialog = new JFrame();
+						Object[] options2 = { "Ok" };
+						JOptionPane.showOptionDialog(errorDialog,
 								"Current selected file has an invalid format. Please import an image to continue.",
-								"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options,
-								options[0]);
-
-						// display import file window
-
-						if (n == 1) {
-							String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
-
-							if (importedFilePath != null)
-								newAnnotation();
-							else {
-
-								// display error dialog box
-
-								Object[] options2 = { "Ok" };
-								JOptionPane.showOptionDialog(dialog,
-										"Current selected file has an invalid format. Please import an image to continue.",
-										"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options2,
-										options2[0]);
-							}
-						}
+								"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options2,
+								options2[0]);
 					}
 				}
+
 			}
 
 		});
@@ -253,10 +206,12 @@ public class MenuPanel extends JPanel {
 		CreateAnnotationButton.setFont(new Font("Arial", Font.BOLD, 20));
 		CreateAnnotationButton.setBackground(new Color(13, 59, 102));
 		CreateAnnotationButton.setBounds(10, 245, 230, 43);
+
 		add(CreateAnnotationButton);
 
 		JButton customVisualisationButton = new JButton("<html>Custom visualisation</html>");
 		customVisualisationButton.addActionListener(new ActionListener() {
+
 			public void actionPerformed(ActionEvent e) {
 				VisualisationFromMaskParameters.initialise();
 
@@ -279,6 +234,7 @@ public class MenuPanel extends JPanel {
 		lblCreateANew.setHorizontalAlignment(SwingConstants.CENTER);
 		lblCreateANew.setFont(new Font("Roboto", Font.PLAIN, 15));
 		lblCreateANew.setBounds(12, 286, 476, 43);
+
 		add(lblCreateANew);
 
 	}

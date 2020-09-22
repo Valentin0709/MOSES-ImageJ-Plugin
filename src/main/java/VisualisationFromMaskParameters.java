@@ -1,22 +1,31 @@
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class VisualisationFromMaskParameters {
-	private static boolean showLabels, showAnnotations, completeVis, longestTracksVis, allTracksVis;
+	private static boolean showLabels, showAnnotations;
 	private static List<ProjectImageAnnotationTracks> files;
-	private static List<Integer> channels;
 	private static String saveDirectory, workspacePath, colorPalette;
 	private static int tracksTemporalSegment, fontSize;
 	private static SaveOption saveOption;
+	private static List<String> outputNames;
+	private static Map<String, Boolean> outputs = new HashMap<String, Boolean>();
 
 	public static void initialise() {
-		allTracksVis = completeVis = longestTracksVis = showLabels = showAnnotations = false;
+		showLabels = showAnnotations = false;
 		saveDirectory = workspacePath = colorPalette = null;
 		tracksTemporalSegment = 5;
 		fontSize = 12;
 		colorPalette = "bright";
 		files = new ArrayList<ProjectImageAnnotationTracks>();
-		channels = new ArrayList<Integer>();
+
+		outputNames = new ArrayList<String>();
+		outputNames.addAll(Arrays.asList("complete_visualisation", "longest_track", "all_tracks"));
+
+		for (String outputName : outputNames)
+			outputs.put(outputName, false);
 	}
 
 	public static List<String> getProjectNames() {
@@ -29,6 +38,9 @@ public class VisualisationFromMaskParameters {
 	}
 
 	public static void setImagePaths(List<String> paths) {
+		for (ProjectImageAnnotationTracks imt : files)
+			imt.setImagePath(null);
+
 		for (String path : paths) {
 			for (ProjectImageAnnotationTracks imt : files)
 				if (Globals.getNameWithoutExtension(path).equals(imt.getProjectName())) {
@@ -60,6 +72,9 @@ public class VisualisationFromMaskParameters {
 	}
 
 	public static void setAnnotationPaths(List<String> paths) {
+		for (ProjectImageAnnotationTracks imt : files)
+			imt.setAnnotationPath(null);
+
 		for (String path : paths) {
 			for (ProjectImageAnnotationTracks imt : files)
 				if (Globals.getParentProject(path, workspacePath).equals(imt.getProjectName())) {
@@ -119,10 +134,6 @@ public class VisualisationFromMaskParameters {
 		return files;
 	}
 
-	public static List<Integer> getChannels() {
-		return channels;
-	}
-
 	public static void setSaveDirectory(String path) {
 		saveDirectory = path;
 	}
@@ -145,22 +156,6 @@ public class VisualisationFromMaskParameters {
 
 	public static boolean getSaveOption(String ext) {
 		return saveOption.getOption(ext);
-	}
-
-	public static void setCompleteVisualisation(boolean b) {
-		completeVis = b;
-	}
-
-	public static boolean isCompleteVisualisation() {
-		return completeVis;
-	}
-
-	public static void setLongestTracksVisualisation(boolean b) {
-		longestTracksVis = b;
-	}
-
-	public static boolean isLongestTracksVisualisation() {
-		return longestTracksVis;
 	}
 
 	public static void setWorkspace(String path) {
@@ -203,12 +198,45 @@ public class VisualisationFromMaskParameters {
 		return fontSize;
 	}
 
-	public static void setAllTracksVisualisation(boolean b) {
-		allTracksVis = b;
+	public static void setOutput(String s) {
+		outputs.put(s, true);
 	}
 
-	public static boolean isAllTracksVisualisation() {
-		return allTracksVis;
+	public static boolean isOutput(String s) {
+		return outputs.get(s);
+	}
+
+	public static List<String> getOutputList() {
+		List<String> outputList = new ArrayList<String>();
+
+		for (String outputName : outputNames)
+			if (isOutput(outputName))
+				outputList.add(outputName);
+
+		return outputList;
+	}
+
+	public static void trimFiles() {
+		for (ProjectImageAnnotationTracks imt : files)
+			if (imt.getImagePath() == null || imt.getTrackPath() == null || imt.getAnnotationPath() == null)
+				files.remove(imt);
+	}
+
+	public static List<String> getParametersList() {
+		List<String> outputList = new ArrayList<String>();
+
+		outputList.add("show labels = " + showLabels);
+		outputList.add("show annotations = " + showAnnotations);
+		outputList.add("fontsize = " + fontSize);
+		outputList.add("color palette = " + colorPalette);
+
+		if (isOutput("complete_visualisation")) {
+			outputList.add(
+					"complete_visualisation save options = [" + String.join("; ", saveOption.getOptionList()) + "]");
+			outputList.add("complete_visualisation tracks temporal segment length = " + tracksTemporalSegment);
+		}
+
+		return outputList;
 	}
 
 }

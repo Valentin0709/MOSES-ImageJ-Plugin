@@ -149,6 +149,10 @@ public class VisualisationFromMaskPanel2 extends JPanel {
 
 						if (annotationPaths.size() > 0)
 							showSelectedAnnotations();
+						else {
+							selectedAnnotationsLabel.setText("No annotations selected");
+							ok1 = false;
+						}
 
 					}
 				});

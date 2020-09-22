@@ -20,8 +20,6 @@ import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import ij.IJ;
-
 public class NewAnnotationPanel extends JLayeredPane {
 	private MainFrame parentFrame;
 	private NewAnnotationPanel self = this;
@@ -125,32 +123,35 @@ public class NewAnnotationPanel extends JLayeredPane {
 				if (rm.roiCount() > 0) {
 					JFrame dialog = new JFrame();
 					Object[] options = { "Ok" };
-					JOptionPane.showOptionDialog(dialog, "Please select a MOSES workspace", "MOSES",
+					int n = JOptionPane.showOptionDialog(dialog,
+							"Plese select the workspace where you want to save the file.", "MOSES",
 							JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
 
-					String saveDirectory = IJ.getDirectory("Choose saving directory");
+					if (n == 0) {
+						String workspacePath = Globals.getWorkspace();
 
-					if (saveDirectory != null) {
-						String annotationFolderPath = saveDirectory + "/" + Globals.lastImage.getShortTitle() + "/"
-								+ "annotations" + "/" + Globals.getFormattedDate();
-						File annotationFolder = new File(annotationFolderPath);
-						annotationFolder.mkdirs();
+						if (workspacePath != null) {
+							String annotationFolderPath = workspacePath + "/" + Globals.lastImage.getShortTitle() + "/"
+									+ "annotations" + "/" + Globals.getFormattedDate();
+							File annotationFolder = new File(annotationFolderPath);
+							annotationFolder.mkdirs();
 
-						rm.saveAnnotation(annotationFolderPath);
+							rm.saveAnnotation(annotationFolderPath);
 
-						if (overlayCheckBox.isSelected())
-							rm.saveOverlay(annotationFolderPath);
+							if (overlayCheckBox.isSelected())
+								rm.saveOverlay(annotationFolderPath);
 
-						if (maskCheckBox.isSelected())
-							rm.saveMask(annotationFolderPath);
+							if (maskCheckBox.isSelected())
+								rm.saveMask(annotationFolderPath);
 
-						rm.closeImage();
+							rm.closeImage();
 
-						parentFrame.empty();
-						parentFrame.menuPanel = new MenuPanel(parentFrame);
-						parentFrame.getContentPane().add(parentFrame.menuPanel);
-						parentFrame.validate();
+							parentFrame.empty();
+							parentFrame.menuPanel = new MenuPanel(parentFrame);
+							parentFrame.getContentPane().add(parentFrame.menuPanel);
+							parentFrame.validate();
 
+						}
 					}
 				} else {
 					JFrame dialog = new JFrame();
@@ -158,6 +159,7 @@ public class NewAnnotationPanel extends JLayeredPane {
 					JOptionPane.showOptionDialog(dialog, "No annotations to save.", "MOSES", JOptionPane.YES_NO_OPTION,
 							JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
 				}
+
 			}
 		});
 		saveButton.setVerticalTextPosition(SwingConstants.CENTER);
@@ -166,6 +168,7 @@ public class NewAnnotationPanel extends JLayeredPane {
 		saveButton.setFont(new Font("Arial", Font.BOLD, 15));
 		saveButton.setBackground(new Color(13, 59, 102));
 		saveButton.setBounds(323, 430, 167, 30);
+
 		add(saveButton);
 
 		JButton cancelButton = new JButton("Cancel");

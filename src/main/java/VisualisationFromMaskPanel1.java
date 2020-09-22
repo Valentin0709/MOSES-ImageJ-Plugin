@@ -149,6 +149,10 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 
 							}
 						});
+					} else {
+						selectedTracksLabel.setText("<html>" + "No motion tracks selected" + "</html>");
+						ok1 = false;
+
 					}
 				}
 			}
@@ -181,7 +185,7 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 		scrollPane1.setBounds(5, 50, 470, 95);
 		step1Panel.add(scrollPane1);
 
-		selectedTracksLabel = new JLabel("No projects selected");
+		selectedTracksLabel = new JLabel("No motion tracks selected");
 		selectedTracksLabel.setVerticalAlignment(SwingConstants.TOP);
 		selectedTracksLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
 		scrollPane1.setViewportView(selectedTracksLabel);
@@ -221,6 +225,10 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 
 					if (VisualisationFromMaskParameters.getImagePaths().size() > 0)
 						showSelectedImages();
+					else {
+						selectedImagesLabel.setText("<html>" + "No images imported" + "</html>");
+						ok2 = false;
+					}
 				}
 			}
 		});

@@ -870,7 +870,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		saveCheckBox12.setFont(new Font("Roboto", Font.PLAIN, 15));
 		saveCheckBox12.setBounds(10, 325, 320, 20);
 		saveCheckBox12.setBackground(new Color(252, 252, 252));
-		bigPanel.add(saveCheckBox12);
+//		bigPanel.add(saveCheckBox12);
 
 		// generate checkbox list
 

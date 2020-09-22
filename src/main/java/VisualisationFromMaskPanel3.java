@@ -91,17 +91,17 @@ public class VisualisationFromMaskPanel3 extends JLayeredPane {
 				if (saveCheckBox1.isSelected() || saveCheckBox2.isSelected() || saveCheckBox3.isSelected()) {
 
 					if (saveCheckBox1.isSelected()) {
-						VisualisationFromMaskParameters.setCompleteVisualisation(true);
+						VisualisationFromMaskParameters.setOutput("complete_visualisation");
 						VisualisationFromMaskParameters.setSaveOption(saveOption);
 						VisualisationFromMaskParameters
 								.setTracksTemporalSegment(Integer.parseInt(temporalSegmentField.getText()));
 					}
 
 					if (saveCheckBox2.isSelected())
-						VisualisationFromMaskParameters.setLongestTracksVisualisation(true);
+						VisualisationFromMaskParameters.setOutput("longest_track");
 
 					if (saveCheckBox3.isSelected())
-						VisualisationFromMaskParameters.setAllTracksVisualisation(true);
+						VisualisationFromMaskParameters.setOutput("all_tracks");
 
 					// loading bar panel
 					ProgressPanel progress = new ProgressPanel(self, 40, 200);

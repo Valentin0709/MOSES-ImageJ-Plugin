@@ -23,12 +23,40 @@ public class VisualisationFromMask extends SwingWorker<String, String> {
 	private int fileNumber;
 	private PythonScript script;
 	private Process process;
-	private String annotationPath, trackPath, projectName, resizedImagePath;
+	private String annotationPath, trackPath, projectName, resizedImagePath, timestamp;
 	private MatlabMetadata trackMetadata;
 	private File imageSequenceFolder, saveFolder;
 
 	public VisualisationFromMask(ProgressPanel p) {
 		progress = p;
+	}
+
+	private void recordHistory() {
+		File commandsHistoryFile = new File(VisualisationFromMaskParameters.getWorkspace() + "/workspace_history.csv");
+
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList(""));
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Action:", "custom visualisation"));
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Timestamp:", timestamp));
+
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Motion tracks:"));
+		Globals.writeCSV(commandsHistoryFile,
+				Arrays.asList(String.join(", ", VisualisationFromMaskParameters.getTracksPaths())));
+
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Images:"));
+		Globals.writeCSV(commandsHistoryFile,
+				Arrays.asList(String.join(", ", VisualisationFromMaskParameters.getImagePaths())));
+
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Annotation files:"));
+		Globals.writeCSV(commandsHistoryFile,
+				Arrays.asList(String.join(", ", VisualisationFromMaskParameters.getAnnotationPaths())));
+
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Outputs:"));
+		Globals.writeCSV(commandsHistoryFile,
+				Arrays.asList(String.join(", ", VisualisationFromMaskParameters.getOutputList())));
+
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Parameters:"));
+		Globals.writeCSV(commandsHistoryFile,
+				Arrays.asList(String.join(", ", VisualisationFromMaskParameters.getParametersList())));
 	}
 
 	private void addScriptHeader() {
@@ -505,10 +533,10 @@ public class VisualisationFromMask extends SwingWorker<String, String> {
 
 	public void folderPaths() {
 		saveFolder = new File(VisualisationFromMaskParameters.getWorkspace() + "/" + projectName
-				+ "/data_analysis/images/" + Globals.getFormattedDate());
+				+ "/data_analysis/images/" + timestamp);
 		saveFolder.mkdirs();
 
-		if (VisualisationFromMaskParameters.isCompleteVisualisation()) {
+		if (VisualisationFromMaskParameters.isOutput("complete_visualisation")) {
 			String imageSequenceFolderPath = saveFolder.getAbsolutePath() + "/" + projectName
 					+ "_tracks_visualisation_image_sequence";
 			imageSequenceFolder = new File(imageSequenceFolderPath);
@@ -519,8 +547,11 @@ public class VisualisationFromMask extends SwingWorker<String, String> {
 
 	@Override
 	protected String doInBackground() throws Exception {
-		fileNumber = 1;
+		timestamp = Globals.getFormattedDate();
+		VisualisationFromMaskParameters.trimFiles();
+		recordHistory();
 
+		fileNumber = 1;
 		for (ProjectImageAnnotationTracks imt : VisualisationFromMaskParameters.getFiles()) {
 			String imagePath = imt.getImagePath();
 			annotationPath = imt.getAnnotationPath();
@@ -546,7 +577,7 @@ public class VisualisationFromMask extends SwingWorker<String, String> {
 
 				folderPaths();
 
-				if (VisualisationFromMaskParameters.isCompleteVisualisation() && !this.isCancelled()) {
+				if (VisualisationFromMaskParameters.isOutput("complete_visualisation") && !this.isCancelled()) {
 					script = new PythonScript("Complete tracks visualisation");
 					createVisualisation();
 					runScript();
@@ -554,13 +585,13 @@ public class VisualisationFromMask extends SwingWorker<String, String> {
 					executeSaveOption(imageSequenceFolder, saveFolder, "tracks_visualisation");
 				}
 
-				if (VisualisationFromMaskParameters.isLongestTracksVisualisation() && !this.isCancelled()) {
+				if (VisualisationFromMaskParameters.isOutput("longest_track") && !this.isCancelled()) {
 					script = new PythonScript("Longest tracks visualisation");
 					longestTracksVisualisation();
 					runScript();
 				}
 
-				if (VisualisationFromMaskParameters.isAllTracksVisualisation() && !this.isCancelled()) {
+				if (VisualisationFromMaskParameters.isOutput("all_tracks") && !this.isCancelled()) {
 					script = new PythonScript("All tracks visualisation");
 					allTracksVisualisation();
 					runScript();

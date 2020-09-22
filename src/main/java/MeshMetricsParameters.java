@@ -5,20 +5,19 @@ import java.util.List;
 import java.util.Map;
 
 public class MeshMetricsParameters {
-	private static List<String> MOSESMeshFilePaths;
+	private static List<Pair<String, String>> files;
 	private static List<String> outputNames;
-	private static Map<String, List<String>> MOSESMeshSubfiles;
 	private static Map<String, Boolean> outputs = new HashMap<String, Boolean>();
 	private static Map<String, SaveOption> saveOptions = new HashMap<String, SaveOption>();
-	private static String saveDirectory;
-	private static boolean batchMode, normaliseValues, averageValues;
-	private static int fileCount, lastFrames;
+	private static String workspacePath;
+	private static boolean normaliseValues, averageValues;
+	private static int lastFrames;
 
 	public static void initialise() {
-		resetMOSESMesh();
-		batchMode = false;
 		normaliseValues = averageValues = false;
 		lastFrames = 5;
+
+		files = new ArrayList<Pair<String, String>>();
 
 		outputNames = new ArrayList<String>();
 		outputNames.addAll(Arrays.asList("config_file", "mesh_strain_curve", "stability_index"));
@@ -27,34 +26,34 @@ public class MeshMetricsParameters {
 			outputs.put(outputName, false);
 	}
 
-	public static void resetMOSESMesh() {
-		MOSESMeshFilePaths = new ArrayList<String>();
-		MOSESMeshSubfiles = new HashMap<String, List<String>>();
-		fileCount = 0;
+	public static void resetFiles() {
+		files = new ArrayList<Pair<String, String>>();
 	}
 
-	public static void addMOSESMeshFilePath(String s) {
-		MOSESMeshFilePaths.add(s);
-		MOSESMeshSubfiles.put(s, new ArrayList<String>());
-		fileCount++;
+	public static void setPair(String meshPath, String tracksPath) {
+		files.add(new Pair<>(meshPath, tracksPath));
 	}
 
-	public static void addMOSESMeshFilePath(List<String> list) {
-		for (String s : list) {
-			MOSESMeshFilePaths.add(s);
-			MOSESMeshSubfiles.put(s, new ArrayList<String>());
-			fileCount++;
-		}
+	public static List<Pair<String, String>> getFiles() {
+		return files;
 	}
 
-	public static void addMOSESMeshSubfile(String parentFile, String s) {
-		List<String> subfiles = MOSESMeshSubfiles.get(parentFile);
-		subfiles.add(s);
-		MOSESMeshSubfiles.put(parentFile, subfiles);
+	public static List<String> getMeshPaths() {
+		List<String> meshPaths = new ArrayList<String>();
+
+		for (Pair<String, String> file : files)
+			meshPaths.add(file.getL());
+
+		return meshPaths;
 	}
 
-	public static void setBatchMode(boolean b) {
-		batchMode = b;
+	public static List<String> getTracksPaths() {
+		List<String> tracksPaths = new ArrayList<String>();
+
+		for (Pair<String, String> file : files)
+			tracksPaths.add(file.getR());
+
+		return tracksPaths;
 	}
 
 	public static boolean getNormaliseValues() {
@@ -73,16 +72,12 @@ public class MeshMetricsParameters {
 		averageValues = b;
 	}
 
-	public static boolean getBatchMode() {
-		return batchMode;
+	public static void setWorkspace(String s) {
+		workspacePath = s;
 	}
 
-	public static void setSaveDirectory(String s) {
-		saveDirectory = s;
-	}
-
-	public static String getSaveDirectory() {
-		return saveDirectory;
+	public static String getWorkspace() {
+		return workspacePath;
 	}
 
 	public static void setOutput(String s) {
@@ -94,15 +89,7 @@ public class MeshMetricsParameters {
 	}
 
 	public static int getFileCount() {
-		return fileCount;
-	}
-
-	public static List<String> getMOSESMeshFilePaths() {
-		return MOSESMeshFilePaths;
-	}
-
-	public static List<String> getMOSESMeshSubfiles(String s) {
-		return MOSESMeshSubfiles.get(s);
+		return files.size();
 	}
 
 	public static void setSaveOption(String s, SaveOption saveOption) {
@@ -122,19 +109,6 @@ public class MeshMetricsParameters {
 		return lastFrames;
 	}
 
-	public static List<String> getSubfilesList() {
-		List<String> result = new ArrayList<String>();
-
-		for (String filePath : MOSESMeshFilePaths) {
-			List<String> subfiles = MOSESMeshSubfiles.get(filePath);
-			for (String subfile : subfiles)
-				result.add(Globals.getName(filePath) + " : " + subfile);
-
-		}
-
-		return result;
-	}
-
 	public static List<String> getOutputList() {
 		List<String> outputList = new ArrayList<String>();
 
@@ -147,6 +121,15 @@ public class MeshMetricsParameters {
 
 	public static List<String> getParametersList() {
 		List<String> outputList = new ArrayList<String>();
+
+		if (MeshMetricsParameters.isOutput("mesh_strain_curve")) {
+			outputList.add("mesh strain curve normalise values = " + normaliseValues);
+			outputList.add("mesh strain curve average values = " + averageValues);
+		}
+
+		if (MeshMetricsParameters.isOutput("stability_index"))
+			outputList.add("last frames = " + lastFrames);
+
 		return outputList;
 	}
 

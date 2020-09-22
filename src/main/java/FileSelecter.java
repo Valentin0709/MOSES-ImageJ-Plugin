@@ -54,10 +54,12 @@ public class FileSelecter extends JFrame {
 		this.setLocationRelativeTo(null);
 
 		progressBar = new JProgressBar();
+		progressBar.setString("Looking for files...");
 		progressBar.setBounds(75, 150, 430, 20);
 		getContentPane().add(progressBar);
 		progressBar.setVisible(false);
 		progressBar.setIndeterminate(true);
+		progressBar.setStringPainted(true);
 
 		instructionLabel = new JLabel("");
 		instructionLabel.setBounds(10, 10, 574, 40);
@@ -177,7 +179,7 @@ public class FileSelecter extends JFrame {
 								checkBox.setFont(new Font("Roboto", Font.PLAIN, 14));
 								checkBox.setBackground(new Color(252, 252, 252));
 								checkBox.setVerticalAlignment(SwingConstants.CENTER);
-								checkBox.setBounds(10, y, 300, 20);
+								checkBox.setBounds(10, y, 560, 20);
 
 								checkBox.addActionListener(new ActionListener() {
 									public void actionPerformed(ActionEvent e) {
@@ -284,15 +286,15 @@ public class FileSelecter extends JFrame {
 								checkBox.setFont(new Font("Roboto", Font.PLAIN, 14));
 								checkBox.setBackground(new Color(252, 252, 252));
 								checkBox.setVerticalAlignment(SwingConstants.CENTER);
-								checkBox.setBounds(10, y, 300, 20);
+								checkBox.setBounds(10, y, 560, 20);
 
 								checkBox.addActionListener(new ActionListener() {
 									public void actionPerformed(ActionEvent e) {
 										if (checkBox.isSelected()) {
 											for (Pair<String, JCheckBox> cb : checkBoxList)
-												if (checkBox != cb.getR()
-														&& Globals.getName(tracksFile.getAbsolutePath())
-																.equals(Globals.getName(cb.getL())))
+												if (checkBox != cb.getR() && Globals
+														.getParentProject(tracksFile.getAbsolutePath(), workspacePath)
+														.equals(Globals.getParentProject(cb.getL(), workspacePath)))
 													cb.getR().setSelected(false);
 										}
 									}
@@ -302,8 +304,8 @@ public class FileSelecter extends JFrame {
 								checkBoxPanel.add(checkBox);
 								y += 20;
 
-								JLabel metadataInfoLabel = new JLabel(
-										"<html>" + String.join(", ", tracksMetadata.metadataList()) + "</html>");
+								JLabel metadataInfoLabel = new JLabel("<html>"
+										+ String.join(", ", tracksMetadata.tracksParametersList()) + "</html>");
 								metadataInfoLabel.setFont(new Font("Roboto", Font.PLAIN, 12));
 								metadataInfoLabel.setBackground(new Color(252, 252, 252));
 								metadataInfoLabel.setVerticalAlignment(SwingConstants.CENTER);
@@ -341,6 +343,136 @@ public class FileSelecter extends JFrame {
 		}
 		TrackListSwingWorker trackListSwingWorker = new TrackListSwingWorker();
 		trackListSwingWorker.execute();
+	}
+
+	public void tracksAndMeshList(String workspacePath, List<String> projectNames, String instruction) {
+		instructionLabel.setText("<html>" + instruction + "</html>");
+		progressBar.setVisible(true);
+		checkBoxPanel.setVisible(false);
+
+		class TracksAndMeshList extends SwingWorker<String, String> {
+			protected String doInBackground() throws Exception {
+				int y = 5;
+				checkBoxList = new ArrayList<Pair<String, JCheckBox>>();
+				for (String projectName : projectNames) {
+
+					JLabel fileNameLabel = new JLabel(projectName);
+					fileNameLabel.setFont(new Font("Roboto", Font.BOLD, 14));
+					fileNameLabel.setBackground(new Color(252, 252, 252));
+					fileNameLabel.setVerticalAlignment(SwingConstants.CENTER);
+					fileNameLabel.setBounds(5, y, 300, 20);
+					checkBoxPanel.add(fileNameLabel);
+					y += 20;
+
+					String matlabFolderPath = workspacePath + "/" + projectName + "/data_analysis/matlab_files";
+					File matlabFolder = new File(matlabFolderPath);
+
+					List<File> matlabFiles = new ArrayList<File>();
+					List<File> trackFiles = new ArrayList<File>();
+					List<File> meshFiles = new ArrayList<File>();
+					if (matlabFolder.exists()) {
+						matlabFiles = Globals.getFiles(matlabFolder.listFiles(), Arrays.asList(".mat"), true);
+
+						for (File matlabFile : matlabFiles) {
+							MatlabMetadata matlabMetadata = new MatlabMetadata(matlabFile.getAbsolutePath());
+
+							if (matlabMetadata.getParentFile().equals(projectName)
+									&& matlabMetadata.getFileType().equals("tracks")) {
+								trackFiles.add(matlabFile);
+							}
+
+							if (matlabMetadata.getParentFile().equals(projectName)
+									&& matlabMetadata.getFileType().equals("MOSES_mesh")) {
+								meshFiles.add(matlabFile);
+							}
+						}
+
+						boolean ok = false;
+						for (File meshFile : meshFiles) {
+							MatlabMetadata meshFileMetadata = new MatlabMetadata(meshFile.getAbsolutePath());
+							for (File tracksFile : trackFiles) {
+								MatlabMetadata trackFileMetadata = new MatlabMetadata(tracksFile.getAbsolutePath());
+
+								if (meshFileMetadata.tracksParametersList()
+										.equals(trackFileMetadata.tracksParametersList())) {
+									ok = true;
+
+									JCheckBox checkBox = new JCheckBox(
+											"<html>" + Globals.getName(meshFile.getAbsolutePath()) + "<br>"
+													+ Globals.getName(tracksFile.getAbsolutePath()) + "</html>");
+									checkBox.setFont(new Font("Roboto", Font.PLAIN, 14));
+									checkBox.setBackground(new Color(252, 252, 252));
+									checkBox.setVerticalAlignment(SwingConstants.CENTER);
+									checkBox.setBounds(10, y, 560, 40);
+
+									checkBox.addActionListener(new ActionListener() {
+										public void actionPerformed(ActionEvent e) {
+											if (checkBox.isSelected()) {
+												for (Pair<String, JCheckBox> cb : checkBoxList)
+													if (checkBox != cb.getR())
+														cb.getR().setSelected(false);
+											}
+										}
+									});
+
+									checkBoxList.add(new Pair<>(
+											meshFile.getAbsolutePath() + "," + tracksFile.getAbsolutePath(), checkBox));
+									checkBoxPanel.add(checkBox);
+									y += 40;
+
+									JLabel metadataInfoLabel = new JLabel("<html>"
+											+ String.join(", ", trackFileMetadata.tracksParametersList()) + "</html>");
+									metadataInfoLabel.setFont(new Font("Roboto", Font.PLAIN, 12));
+									metadataInfoLabel.setBackground(new Color(252, 252, 252));
+									metadataInfoLabel.setVerticalAlignment(SwingConstants.CENTER);
+									metadataInfoLabel.setBounds(15, y, 560, 45);
+									checkBoxPanel.add(metadataInfoLabel);
+									y += 45;
+
+									JLabel metadataInfoLabel2 = new JLabel("MOSES mesh distance threshold = "
+											+ meshFileMetadata.getMOSESMeshDistanceThreshold());
+									metadataInfoLabel2.setFont(new Font("Roboto", Font.PLAIN, 12));
+									metadataInfoLabel2.setBackground(new Color(252, 252, 252));
+									metadataInfoLabel2.setVerticalAlignment(SwingConstants.CENTER);
+									metadataInfoLabel2.setBounds(15, y, 560, 20);
+									checkBoxPanel.add(metadataInfoLabel2);
+									y += 25;
+
+									break;
+								}
+							}
+						}
+
+						if (!ok) {
+							JLabel errorLabel = new JLabel(
+									"No compatible mesh - motion tracks pairs were found for this project.");
+							errorLabel.setFont(new Font("Roboto", Font.PLAIN, 14));
+							errorLabel.setBackground(new Color(252, 252, 252));
+							errorLabel.setForeground(new Color(252, 0, 0));
+							errorLabel.setVerticalAlignment(SwingConstants.CENTER);
+							errorLabel.setBounds(10, y, 560, 20);
+							checkBoxPanel.add(errorLabel);
+							y += 20;
+						}
+
+						y += 10;
+					}
+
+				}
+
+				checkBoxPanel.setPreferredSize(new Dimension(0, y + 10));
+
+				return "Done.";
+			}
+
+			protected void done() {
+				progressBar.setVisible(false);
+				checkBoxPanel.setVisible(true);
+			}
+		}
+
+		TracksAndMeshList tracksAndMeshListSwingWorker = new TracksAndMeshList();
+		tracksAndMeshListSwingWorker.execute();
 
 	}
 

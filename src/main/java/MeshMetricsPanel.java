@@ -7,8 +7,6 @@ import java.awt.event.FocusEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.JButton;
@@ -25,20 +23,19 @@ import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import ij.IJ;
-
 public class MeshMetricsPanel extends JLayeredPane {
 	private MainFrame parentFrame;
 	private MeshMetricsPanel self = this;
 
-	private JLabel importedFilesLabel, instructionLabel, instructionLabel2, noteLabel;
-	private JCheckBox saveCheckBox1, saveCheckBox2, saveCheckBox3, saveCheckBox4, saveCheckBox6, saveCheckBox11,
-			saveCheckBox12;
+	private JLabel importedFilesLabel, instructionLabel, noteLabel;
+	private JCheckBox saveCheckBox1, saveCheckBox2, saveCheckBox11, saveCheckBox12;
 	private JFormattedTextField lastFrameField;
-	private JPanel optionPanel1, optionPanel2, optionPanel3, optionPanel4, bigPanel;
+	private JPanel optionPanel1, optionPanel2, bigPanel;
 	private JScrollPane scrollPane2;
 
 	SaveOption saveOption1, saveOption2;
+
+	boolean ok1 = false;
 
 	private MeshMetrics swingWorker;
 	private boolean swingWorkerStarted = false;
@@ -79,36 +76,49 @@ public class MeshMetricsPanel extends JLayeredPane {
 		titleLabel.setBounds(0, 0, 500, 36);
 		add(titleLabel);
 
-		JButton importMotionTracksButton = new JButton("Import MOSES mesh");
+		JButton importMotionTracksButton = new JButton("Import MOSES mesh and motion tracks pairs");
 		importMotionTracksButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ArrayList<String> validExtensions = new ArrayList<String>();
-				validExtensions.addAll(Arrays.asList(".mat"));
+				JFrame dialog = new JFrame();
+				Object[] options = { "Ok" };
+				int n = JOptionPane.showOptionDialog(dialog, "Plese select the workspace you want to work with.",
+						"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
 
-				int n = 0;
-				if (MeshMetricsParameters.getBatchMode()) {
-					// display dialog box
-					JFrame dialog = new JFrame();
-					Object[] options = { "Cancel", "Import now" };
-					n = JOptionPane.showOptionDialog(dialog,
-							"Batch mode is enabled. Please select a file from the folder you want to analyse and input your preffered settings. MOSES will automatically import and compute the motion measurements for all the other files that have a valid format using the same settings.",
-							"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
-				}
-				if (!MeshMetricsParameters.getBatchMode() || n == 1) {
-					String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, false);
+				if (n == 0) {
+					String workspacePath = Globals.getWorkspace();
 
-					if (importedFilePath != null) {
-						import_MOSES_mesh(importedFilePath);
+					if (workspacePath != null) {
+						MeshMetricsParameters.setWorkspace(workspacePath);
+
+						FileSelecter selecter = new FileSelecter();
+						selecter.setSelectAllButton(false);
+						selecter.setVisible(true);
+						selecter.tracksAndMeshList(workspacePath, Globals.getProjectList(workspacePath),
+								"Select the MOSES mesh and motion tracks pairs you want to use.");
+
+						selecter.importButton.addActionListener(new ActionListener() {
+							public void actionPerformed(ActionEvent e) {
+								List<String> paths = selecter.getSelected();
+								selecter.dispose();
+
+								MeshMetricsParameters.resetFiles();
+								for (String path : paths) {
+									String meshPath = path.split(",")[0];
+									String tracksPath = path.split(",")[1];
+									MeshMetricsParameters.setPair(meshPath, tracksPath);
+								}
+
+								if (paths.size() > 0)
+									showSelectedPairs();
+
+							}
+						});
 					} else {
-						// display error dialog box
-						JFrame dialog = new JFrame();
-						Object[] options = { "Ok" };
-						JOptionPane.showOptionDialog(dialog,
-								"The selected file has an invalid file format. Please import a MATLAB file to continue.",
-								"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options,
-								options[0]);
+						importedFilesLabel.setText("<html>" + "No motion tracks selected" + "</html>");
+						ok1 = false;
 					}
 				}
+
 			}
 		});
 		importMotionTracksButton.setVerticalTextPosition(SwingConstants.CENTER);
@@ -116,7 +126,7 @@ public class MeshMetricsPanel extends JLayeredPane {
 		importMotionTracksButton.setForeground(Color.WHITE);
 		importMotionTracksButton.setFont(new Font("Arial", Font.BOLD, 15));
 		importMotionTracksButton.setBackground(new Color(13, 59, 102));
-		importMotionTracksButton.setBounds(57, 105, 386, 20);
+		importMotionTracksButton.setBounds(57, 82, 386, 20);
 		add(importMotionTracksButton);
 
 		JButton cancelButton = new JButton("Cancel");
@@ -144,49 +154,44 @@ public class MeshMetricsPanel extends JLayeredPane {
 		JButton finishButton = new JButton("Finish");
 		finishButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (saveCheckBox1.isEnabled()) {
 
-					String saveDirectory = IJ.getDirectory("Choose saving directory");
-					if (saveDirectory != null) {
-						MeshMetricsParameters.setSaveDirectory(saveDirectory);
-
-						if (saveCheckBox1.isSelected()) {
-							MeshMetricsParameters.setOutput("mesh_strain_curve");
-							MeshMetricsParameters.setNormaliseValues(saveCheckBox11.isSelected());
-							MeshMetricsParameters.setAverageValues(saveCheckBox12.isSelected());
-						}
-
-						if (saveCheckBox2.isSelected()) {
-							MeshMetricsParameters.setOutput("stability_index");
-							MeshMetricsParameters.setLastFrames(Integer.parseInt(lastFrameField.getText()));
-						}
-
-						// loading bar panel
-						ProgressPanel progress = new ProgressPanel(self, 40, 200);
-						self.add(progress);
-						self.setLayer(progress, 1);
-						progress.setVisibility(true);
-						Globals.setPanelEnabled(bigPanel, false);
-
-						// run process
-						class SwingWorkerListener implements PropertyChangeListener {
-							@Override
-							public void propertyChange(PropertyChangeEvent evt) {
-								if (swingWorker.isDone()) {
-									parentFrame.empty();
-									parentFrame.menuPanel = new MenuPanel(parentFrame);
-									parentFrame.getContentPane().add(parentFrame.menuPanel);
-									parentFrame.validate();
-								}
-
-							}
-						}
-
-						swingWorker = new MeshMetrics(progress);
-						swingWorkerStarted = true;
-						swingWorker.addPropertyChangeListener(new SwingWorkerListener());
-						swingWorker.execute();
+				if (saveCheckBox1.isSelected() || saveCheckBox2.isSelected()) {
+					if (saveCheckBox1.isSelected()) {
+						MeshMetricsParameters.setOutput("mesh_strain_curve");
+						MeshMetricsParameters.setNormaliseValues(saveCheckBox11.isSelected());
+						MeshMetricsParameters.setAverageValues(saveCheckBox12.isSelected());
 					}
+
+					if (saveCheckBox2.isSelected()) {
+						MeshMetricsParameters.setOutput("stability_index");
+						MeshMetricsParameters.setLastFrames(Integer.parseInt(lastFrameField.getText()));
+					}
+
+					// loading bar panel
+					ProgressPanel progress = new ProgressPanel(self, 40, 200);
+					self.add(progress);
+					self.setLayer(progress, 1);
+					progress.setVisibility(true);
+					Globals.setPanelEnabled(bigPanel, false);
+
+					// run process
+					class SwingWorkerListener implements PropertyChangeListener {
+						@Override
+						public void propertyChange(PropertyChangeEvent evt) {
+							if (swingWorker.isDone()) {
+								parentFrame.empty();
+								parentFrame.menuPanel = new MenuPanel(parentFrame);
+								parentFrame.getContentPane().add(parentFrame.menuPanel);
+								parentFrame.validate();
+							}
+
+						}
+					}
+
+					swingWorker = new MeshMetrics(progress);
+					swingWorkerStarted = true;
+					swingWorker.addPropertyChangeListener(new SwingWorkerListener());
+					swingWorker.execute();
 				}
 			}
 		});
@@ -201,10 +206,10 @@ public class MeshMetricsPanel extends JLayeredPane {
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setViewportBorder(null);
 		scrollPane.setBackground(new Color(252, 252, 252));
-		scrollPane.setBounds(10, 130, 480, 65);
+		scrollPane.setBounds(10, 105, 480, 91);
 		add(scrollPane);
 
-		importedFilesLabel = new JLabel("No files selected");
+		importedFilesLabel = new JLabel("No files imported");
 		importedFilesLabel.setLocation(7, 0);
 		importedFilesLabel.setBorder(null);
 		scrollPane.setViewportView(importedFilesLabel);
@@ -228,12 +233,12 @@ public class MeshMetricsPanel extends JLayeredPane {
 		bigPanel.setLayout(null);
 
 		JLabel instructionLabel0 = new JLabel(
-				"<html>Import the MOSES mesh file (MATLAB format) you wish to analyse, select the mesh strain variables, and then set your preferred options for computing the mesh metrics</html>");
+				"<html>To compute the mesh metrics you need to import a MOSES mesh and its corresponding motion tracks.</html>");
 		instructionLabel0.setVerticalAlignment(SwingConstants.TOP);
 		instructionLabel0.setHorizontalAlignment(SwingConstants.LEFT);
 		instructionLabel0.setForeground(Color.DARK_GRAY);
 		instructionLabel0.setFont(new Font("Roboto", Font.PLAIN, 15));
-		instructionLabel0.setBounds(10, 40, 480, 60);
+		instructionLabel0.setBounds(10, 40, 480, 41);
 		add(instructionLabel0);
 
 		// mesh curve
@@ -325,51 +330,17 @@ public class MeshMetricsPanel extends JLayeredPane {
 
 	}
 
-	public void import_MOSES_mesh(String s) {
-		MeshMetricsParameters.resetMOSESMesh();
-		SelectMatlabFilesWindow selectPanel = new SelectMatlabFilesWindow(
-				"<html>Select the MOSES mesh strain you want to use for extracting motion measurements</html>", s,
-				MeshMetricsParameters.getBatchMode());
-		MeshMetricsParameters.addMOSESMeshFilePath(selectPanel.fileList);
-		JFrame frame = new JFrame();
-		frame.getContentPane().add(selectPanel);
-		frame.pack();
-		frame.setResizable(false);
-		frame.setLocationRelativeTo(null);
-		frame.setVisible(true);
+	private void showSelectedPairs() {
+		String text = "Selected files: <br>";
 
-		selectPanel.importButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				for (Pair<String, JCheckBox> checkbox : selectPanel.checkBoxList) {
-					if (checkbox.getR().isSelected() && !checkbox.getR().getText().equals("metadata"))
-						MeshMetricsParameters.addMOSESMeshSubfile(checkbox.getL(), checkbox.getR().getText());
-				}
+		List<Pair<String, String>> filePathsPairs = MeshMetricsParameters.getFiles();
+		for (Pair<String, String> filePathsPair : filePathsPairs)
+			text += filePathsPair.getL() + ", " + filePathsPair.getR() + "<br>";
 
-				String importedFiles = "Selected meshes: <br>";
-				List<String> subfiles = MeshMetricsParameters.getSubfilesList();
-				for (String subfile : subfiles)
-					importedFiles += subfile + "<br>";
+		importedFilesLabel.setText("<html>" + text + "</html>");
 
-				if (subfiles.size() > 0) {
-					importedFilesLabel.setText("<html>" + importedFiles + "</html>");
-					saveCheckBox1.setEnabled(true);
-					saveCheckBox2.setEnabled(true);
-				} else {
-					importedFilesLabel.setText("No files selected");
-					saveCheckBox1.setEnabled(false);
-					saveCheckBox2.setEnabled(false);
-					saveCheckBox1.setSelected(false);
-					saveCheckBox2.setSelected(false);
-
-					JFrame dialog = new JFrame();
-					Object[] options = { "Ok" };
-					JOptionPane.showOptionDialog(dialog, "No file imported.", "MOSES", JOptionPane.YES_NO_OPTION,
-							JOptionPane.WARNING_MESSAGE, null, options, options[0]);
-				}
-
-				frame.dispose();
-			}
-		});
-
+		ok1 = true;
+		Globals.setPanelEnabled(bigPanel, true);
 	}
+
 }

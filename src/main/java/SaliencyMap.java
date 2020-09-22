@@ -32,6 +32,8 @@ public class SaliencyMap extends SwingWorker<String, String> {
 	public SaliencyMap(ProgressPanel p) {
 		progress = p;
 		fileNumber = scriptCount = 0;
+
+		imageSaveFolder = CSVSaveFolder = matlabSaveFolder = spacialTimeMotionSaliencyMapFolder = null;
 	}
 
 	private void recordHistory() {
@@ -62,8 +64,8 @@ public class SaliencyMap extends SwingWorker<String, String> {
 						&& SaliencyMapParameters.getSaveOption("average_motion_saliency_map_save_options", ".png"))) {
 			imageSaveFolder = new File(
 					SaliencyMapParameters.getWorkspace() + "/" + projectName + "/data_analysis/images/" + timestamp);
+			imageSaveFolder.mkdirs();
 		}
-		imageSaveFolder.mkdirs();
 
 		if (SaliencyMapParameters.isOutput("motion_saliency_map")
 				|| (SaliencyMapParameters.isOutput("average_motion_saliency_map")
@@ -92,6 +94,10 @@ public class SaliencyMap extends SwingWorker<String, String> {
 			} catch (IOException e) {
 				IJ.handleException(e);
 			}
+
+			Globals.writeCSV(boundaryIndexCSVFile, Arrays.asList("Project name:", projectName));
+			Globals.writeCSV(boundaryIndexCSVFile,
+					Arrays.asList("Tracks parameters:", String.join(", ", trackMetadata.tracksParametersList())));
 		}
 	}
 
@@ -101,10 +107,16 @@ public class SaliencyMap extends SwingWorker<String, String> {
 				new Parameter("imagePath", "str", resizedImagePath),
 				new Parameter("distanceThreshold", "float", SaliencyMapParameters.getSaliencyMapDistanceThreshold()),
 				new Parameter("padding", "int", SaliencyMapParameters.getPaddingDistance()),
-				new Parameter("saveDirectory", "str", matlabSaveFolder),
-				new Parameter("saveDirectory2", "str", imageSaveFolder),
-				new Parameter("saveDirectory3", "str", spacialTimeMotionSaliencyMapFolder),
 				new Parameter("fileName", "str", projectName)));
+
+		if (matlabSaveFolder != null)
+			parameters.add(new Parameter("saveDirectory", "str", matlabSaveFolder));
+
+		if (imageSaveFolder != null)
+			parameters.add(new Parameter("saveDirectory2", "str", imageSaveFolder));
+
+		if (spacialTimeMotionSaliencyMapFolder != null)
+			parameters.add(new Parameter("saveDirectory3", "str", spacialTimeMotionSaliencyMapFolder));
 
 		addScriptHeader();
 
@@ -425,7 +437,7 @@ public class SaliencyMap extends SwingWorker<String, String> {
 		publish("-Processing parameters...");
 
 		timestamp = Globals.getFormattedDate();
-		SaliencyMapParameters.deleteFiles();
+		SaliencyMapParameters.trimFiles();
 		recordHistory();
 
 		fileNumber = 1;
@@ -478,6 +490,7 @@ public class SaliencyMap extends SwingWorker<String, String> {
 							spacialTimeMotionSaliencyMapFolder, "spatial_time_saliency_map");
 
 			}
+			fileNumber++;
 		}
 
 		return "Done.";
@@ -526,9 +539,6 @@ public class SaliencyMap extends SwingWorker<String, String> {
 		command.add(scriptPath);
 		for (Parameter parameter : script.getParameters())
 			command.add(parameter.getValue());
-
-		IJ.log(script.getScript());
-		IJ.log(String.valueOf(command));
 
 		// run process
 		ProcessBuilder pb = new ProcessBuilder(command);
@@ -592,9 +602,6 @@ public class SaliencyMap extends SwingWorker<String, String> {
 			}
 			if (messageScope == '.') {
 				validMessage = false;
-				Globals.writeCSV(boundaryIndexCSVFile, Arrays.asList("Project name", projectName));
-				Globals.writeCSV(boundaryIndexCSVFile,
-						Arrays.asList("Tracks parameters", String.join(", ", trackMetadata.metadataList())));
 				Globals.writeCSV(boundaryIndexCSVFile, Arrays.asList("Motion enrichment index", m));
 			}
 
