@@ -1,9 +1,10 @@
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Polygon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.File;
+import java.util.Arrays;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -23,7 +24,6 @@ public class RoiManager {
 	ImagePlus image;
 	JPanel displayPanel;
 	Overlay overlay;
-	List<String> roiNames;
 	int roiNumber;
 	JComboBox labelColorComboBox, strokeColorComboBox;
 
@@ -58,7 +58,6 @@ public class RoiManager {
 		overlay.setLabelFont(new Font("Roboto", Font.BOLD, 15));
 		overlay.setLabelColor(Globals.nameToColor(String.valueOf(labelColorComboBox.getSelectedItem())));
 
-		roiNames = new ArrayList<String>();
 		roiNumber = 1;
 	}
 
@@ -66,16 +65,7 @@ public class RoiManager {
 		Roi roi = image.getRoi();
 		roi.setPosition(0, 0, 0);
 
-		roiNames.add(String.valueOf(roiNumber));
 		overlay.add(roi, String.valueOf(roiNumber));
-
-//		Polygon pol = roi.getPolygon();
-//		for (int i = 0; i < pol.npoints; i++)
-//			IJ.log(pol.xpoints[i] + " " + pol.ypoints[i]);
-
-		// IJ.log(String.valueOf(roi.getPolygon()));
-		// IJ.log(String.valueOf(roi.getFloatPolygon()));
-
 		overlay.setLabelColor(Globals.nameToColor(String.valueOf(labelColorComboBox.getSelectedItem())));
 		overlay.setStrokeColor(Globals.nameToColor(String.valueOf(strokeColorComboBox.getSelectedItem())));
 
@@ -85,50 +75,70 @@ public class RoiManager {
 		show();
 	}
 
-	public boolean saveMask(boolean saveOverlay) {
+	public void saveMask(String directoryPath) {
 		IJ.run(image, "Select None", "");
 
 		ImageProcessor mask = image.createRoiMask();
 		ImagePlus maskImage = new ImagePlus("mask", mask);
 
-		String saveDirectory = IJ.getDirectory("Choose saving directory");
-		if (saveDirectory != null) {
-			IJ.saveAs(maskImage, "PNG",
-					saveDirectory + Globals.getNameWithoutExtension(image.getTitle()).replace("_", "") + "_mask.png");
+		IJ.saveAs(maskImage, "PNG",
+				directoryPath + "/" + Globals.getNameWithoutExtension(image.getTitle()).replace("_", "") + "_mask.png");
+	}
 
-			if (saveOverlay)
-				IJ.saveAs(image, "PNG", saveDirectory
-						+ Globals.getNameWithoutExtension(image.getTitle()).replace("_", "") + "_annotations.png");
+	public void saveOverlay(String directoryPath) {
+		IJ.saveAs(image, "PNG", directoryPath + "/" + Globals.getNameWithoutExtension(image.getTitle()).replace("_", "")
+				+ "_annotations.png");
+	}
 
-			image.close();
+	public void saveAnnotation(String directoryPath) {
+		File annotationCSVFile = new File(directoryPath + "/" + image.getShortTitle() + "_annotation.csv");
 
-			return true;
+		// add metadata
+		Globals.writeCSV(annotationCSVFile,
+				Arrays.asList(image.getShortTitle(), String.valueOf(overlay.size()), Globals.getFormattedDate()));
+
+		for (int i = 0; i < overlay.size(); i++) {
+			Roi roi = overlay.get(i);
+			Polygon pol = roi.getPolygon();
+
+			Globals.writeCSV(annotationCSVFile, Arrays.asList(roi.getName(), String.valueOf(pol.npoints)));
+
+			for (int j = 0; j < pol.npoints; j++)
+				Globals.writeCSV(annotationCSVFile,
+						Arrays.asList(String.valueOf(pol.xpoints[j]), String.valueOf(pol.ypoints[j])));
+
 		}
-		return false;
+	}
+
+	public void closeImage() {
+		image.close();
+	}
+
+	public int roiCount() {
+		return overlay.size();
 	}
 
 	public void show() {
-		int roiCount = 0;
 		displayPanel.removeAll();
 
-		for (String roiName : roiNames) {
-			JLabel roiNameLabel = new JLabel(roiName);
+		for (int i = 0; i < overlay.size(); i++) {
+			final int iCopy = i;
+			Roi roi = overlay.get(i);
+
+			JLabel roiNameLabel = new JLabel(roi.getName());
 			roiNameLabel.setHorizontalAlignment(SwingConstants.LEFT);
 			roiNameLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
-			roiNameLabel.setBounds(10, 10 + roiCount * 25, 200, 20);
+			roiNameLabel.setBounds(10, 10 + i * 25, 200, 20);
 			roiNameLabel.setBackground(new Color(252, 252, 252));
 			roiNameLabel.setOpaque(true);
 			roiNameLabel.setVisible(true);
-
-			final int roiCountCopy = roiCount;
 
 			JButton deleteButton = new JButton("Delete");
 			deleteButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					IJ.run(image, "Select None", "");
 
-					overlay.remove(roiCountCopy);
-					roiNames.remove(roiCountCopy);
+					overlay.remove(iCopy);
 					image.setOverlay(overlay);
 					show();
 				}
@@ -138,7 +148,7 @@ public class RoiManager {
 			deleteButton.setForeground(Color.WHITE);
 			deleteButton.setFont(new Font("Arial", Font.BOLD, 15));
 			deleteButton.setBackground(new Color(13, 59, 102));
-			deleteButton.setBounds(230, 10 + roiCount * 25, 100, 20);
+			deleteButton.setBounds(230, 10 + i * 25, 100, 20);
 			displayPanel.add(deleteButton);
 
 			JButton renameButton = new JButton("Rename");
@@ -150,8 +160,7 @@ public class RoiManager {
 					String s = (String) JOptionPane.showInputDialog(dialog, "Set selection name:\n", "MOSES",
 							JOptionPane.PLAIN_MESSAGE, null, null, null);
 
-					overlay.get(roiCountCopy).setName(s);
-					roiNames.set(roiCountCopy, s);
+					overlay.get(iCopy).setName(s);
 					image.setOverlay(overlay);
 					show();
 				}
@@ -161,10 +170,9 @@ public class RoiManager {
 			renameButton.setForeground(Color.WHITE);
 			renameButton.setFont(new Font("Arial", Font.BOLD, 15));
 			renameButton.setBackground(new Color(13, 59, 102));
-			renameButton.setBounds(350, 10 + roiCount * 25, 100, 20);
+			renameButton.setBounds(350, 10 + i * 25, 100, 20);
 			displayPanel.add(renameButton);
 
-			roiCount++;
 			displayPanel.add(roiNameLabel);
 		}
 		Globals.updatePanelSize(displayPanel);

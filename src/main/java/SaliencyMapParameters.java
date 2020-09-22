@@ -5,62 +5,96 @@ import java.util.List;
 import java.util.Map;
 
 public class SaliencyMapParameters {
-	private static List<String> motionTracksFilePaths;
+	private static List<ProjectImageAnnotationTracks> files;
 	private static List<String> outputNames;
-	private static Map<String, List<String>> motionTracksSubfiles;
 	private static Map<String, Boolean> outputs = new HashMap<String, Boolean>();
 	private static Map<String, SaveOption> saveOptions = new HashMap<String, SaveOption>();
-	private static String saveDirectory;
-	private static boolean batchMode;
-	private static int paddingDistance, fileCount;
+	private static String workspacePath;
+	private static boolean gaussianSmoothing;
+	private static int paddingDistance;
 	private static double saliencyMapDistanceThreshold;
 
 	public static void initialise() {
-		resetMotionTracks();
 		saliencyMapDistanceThreshold = 5;
 		paddingDistance = 3;
-		batchMode = false;
+		gaussianSmoothing = false;
+
+		files = new ArrayList<ProjectImageAnnotationTracks>();
 
 		outputNames = new ArrayList<String>();
 		outputNames.addAll(Arrays.asList("config_file", "motion_saliency_map", "final_saliency_map_visualisation",
-				"spatial_time_saliency_map_visualisation", "average_motion_saliency_map", "boundary_formation_index"));
+				"final_saliency_map_visualisation_overlay", "spatial_time_saliency_map_visualisation",
+				"spatial_time_saliency_map_visualisation_overlay", "average_motion_saliency_map",
+				"boundary_formation_index"));
 
 		for (String outputName : outputNames)
 			outputs.put(outputName, false);
 	}
 
-	public static void resetMotionTracks() {
-		motionTracksFilePaths = new ArrayList<String>();
-		motionTracksSubfiles = new HashMap<String, List<String>>();
-		fileCount = 0;
-	}
+	public static void setTracksPaths(List<String> paths) {
+		files = new ArrayList<ProjectImageAnnotationTracks>();
 
-	public static void addMotionTracksFilePath(String s) {
-		motionTracksFilePaths.add(s);
-		motionTracksSubfiles.put(s, new ArrayList<String>());
-		fileCount++;
-	}
+		for (String path : paths) {
+			ProjectImageAnnotationTracks imt = new ProjectImageAnnotationTracks();
 
-	public static void addMotionTracksFilePath(List<String> list) {
-		for (String s : list) {
-			motionTracksFilePaths.add(s);
-			motionTracksSubfiles.put(s, new ArrayList<String>());
-			fileCount++;
+			imt.setProjectName(Globals.getParentProject(path, workspacePath));
+			imt.setTrackPath(path);
+			files.add(imt);
 		}
 	}
 
-	public static void addMotionTrackSubfile(String parentFile, String s) {
-		List<String> subfiles = motionTracksSubfiles.get(parentFile);
-		subfiles.add(s);
-		motionTracksSubfiles.put(parentFile, subfiles);
+	public static List<String> getTracksPaths() {
+		List<String> result = new ArrayList<String>();
+
+		for (ProjectImageAnnotationTracks imt : files)
+			if (imt.getTrackPath() != null)
+				result.add(imt.getTrackPath());
+
+		return result;
 	}
 
-	public static void setBatchMode(boolean b) {
-		batchMode = b;
+	public static void setImagePaths(List<String> paths) {
+		for (String path : paths) {
+			for (ProjectImageAnnotationTracks imt : files)
+				if (Globals.getNameWithoutExtension(path).equals(imt.getProjectName())) {
+					imt.setImagePath(path);
+					break;
+				}
+		}
 	}
 
-	public static boolean getBatchMode() {
-		return batchMode;
+	public static List<String> getImagePaths() {
+		List<String> result = new ArrayList<String>();
+
+		for (ProjectImageAnnotationTracks imt : files)
+			if (imt.getImagePath() != null)
+				result.add(imt.getImagePath());
+
+		return result;
+	}
+
+	public static List<String> noImageMatch() {
+		List<String> result = new ArrayList<String>();
+
+		for (ProjectImageAnnotationTracks imt : files)
+			if (imt.getImagePath() == null)
+				result.add(imt.getProjectName());
+
+		return result;
+	}
+
+	public static void deleteFiles() {
+		for (ProjectImageAnnotationTracks imt : files)
+			if (imt.getImagePath() == null || imt.getTrackPath() == null)
+				files.remove(imt);
+	}
+
+	public static void setGaussianSmoothing(boolean b) {
+		gaussianSmoothing = b;
+	}
+
+	public static boolean getGaussianSmoothing() {
+		return gaussianSmoothing;
 	}
 
 	public static void setSaliencyMapDistanceThreshold(double d) {
@@ -79,12 +113,12 @@ public class SaliencyMapParameters {
 		return paddingDistance;
 	}
 
-	public static void setSaveDirectory(String s) {
-		saveDirectory = s;
+	public static void setWorkspace(String s) {
+		workspacePath = s;
 	}
 
-	public static String getSaveDirectory() {
-		return saveDirectory;
+	public static String getWorkspace() {
+		return workspacePath;
 	}
 
 	public static void setOutput(String s) {
@@ -96,15 +130,7 @@ public class SaliencyMapParameters {
 	}
 
 	public static int getFileCount() {
-		return fileCount;
-	}
-
-	public static List<String> getMotionTracksFilePaths() {
-		return motionTracksFilePaths;
-	}
-
-	public static List<String> getMotionTracksSubfiles(String s) {
-		return motionTracksSubfiles.get(s);
+		return files.size();
 	}
 
 	public static void setSaveOption(String s, SaveOption saveOption) {
@@ -114,19 +140,6 @@ public class SaliencyMapParameters {
 	public static boolean getSaveOption(String s, String e) {
 		SaveOption a = saveOptions.get(s);
 		return a.getOption(e);
-	}
-
-	public static List<String> getSubfilesList() {
-		List<String> result = new ArrayList<String>();
-
-		for (String filePath : motionTracksFilePaths) {
-			List<String> subfiles = motionTracksSubfiles.get(filePath);
-			for (String subfile : subfiles)
-				result.add(Globals.getName(filePath) + " : " + subfile);
-
-		}
-
-		return result;
 	}
 
 	public static List<String> getOutputList() {
@@ -142,40 +155,29 @@ public class SaliencyMapParameters {
 	public static List<String> getParametersList() {
 		List<String> outputList = new ArrayList<String>();
 
-		outputList.add("batchMode=" + batchMode);
-		outputList.add("tracks=" + String.join(",", getSubfilesList()));
-
-		if (isOutput("motion_saliency_map"))
-			outputList.add("saliencyMapDistanceThreshold=" + saliencyMapDistanceThreshold);
+		outputList.add("saliency map distance threshold = " + saliencyMapDistanceThreshold);
+		outputList.add("gaussian smoothing = " + gaussianSmoothing);
 
 		if (isOutput("spatial_time_saliency_map_visualisation")) {
-			String saveList = "spatialTimeSaliencyMapVisualisationSaveOptions=";
 			List<String> options = saveOptions.get("spatial_time_saliency_map_visualisation_save_options")
 					.getOptionList();
-			for (int index = 0; index < options.size(); index++) {
-				saveList += options.get(index);
-				if (index < options.size() - 1)
-					saveList += ",";
-			}
-			outputList.add(saveList);
+			outputList
+					.add("spatial time saliency map visualisation save options = [" + String.join("; ", options) + "]");
 		}
 
-		if (isOutput("boundary_formation_index")) {
-			outputList.add("paddingDistance=" + paddingDistance);
-
-			if (isOutput("average_motion_saliency_map")) {
-				String saveList = "averageMotionSaliencyMapSaveOptions=";
-				List<String> options = saveOptions.get("average_motion_saliency_map_save_options").getOptionList();
-				for (int index = 0; index < options.size(); index++) {
-					saveList += options.get(index);
-					if (index < options.size() - 1)
-						saveList += ",";
-				}
-				outputList.add(saveList);
-			}
+		if (isOutput("average_motion_saliency_map")) {
+			List<String> options = saveOptions.get("average_motion_saliency_map_save_options").getOptionList();
+			outputList.add("average motion saliency map save options = [" + String.join("; ", options) + "]");
 		}
+
+		if (isOutput("boundary_formation_index"))
+			outputList.add("padding distance = " + paddingDistance);
 
 		return outputList;
+	}
+
+	public static List<ProjectImageAnnotationTracks> getFiles() {
+		return files;
 	}
 
 }

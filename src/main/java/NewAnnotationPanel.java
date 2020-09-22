@@ -3,19 +3,24 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+
+import ij.IJ;
 
 public class NewAnnotationPanel extends JLayeredPane {
 	private MainFrame parentFrame;
@@ -24,7 +29,7 @@ public class NewAnnotationPanel extends JLayeredPane {
 	JPanel bigPanel;
 	JScrollPane scrollPane;
 	JComboBox labelColorComboBox, strokeColorComboBox;
-	JCheckBox overlayCheckBox;
+	JCheckBox overlayCheckBox, maskCheckBox;
 
 	public NewAnnotationPanel(MainFrame parentFrame) {
 		setOpaque(true);
@@ -54,7 +59,7 @@ public class NewAnnotationPanel extends JLayeredPane {
 
 		scrollPane = new JScrollPane();
 		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		scrollPane.setBounds(20, 90, 460, 247);
+		scrollPane.setBounds(20, 90, 460, 215);
 		add(scrollPane);
 
 		bigPanel = new JPanel();
@@ -65,7 +70,7 @@ public class NewAnnotationPanel extends JLayeredPane {
 
 		JLabel labelColorLabel = new JLabel("Label color");
 		labelColorLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
-		labelColorLabel.setBounds(20, 349, 99, 16);
+		labelColorLabel.setBounds(20, 317, 99, 16);
 		add(labelColorLabel);
 
 		labelColorComboBox = new JComboBox();
@@ -73,12 +78,12 @@ public class NewAnnotationPanel extends JLayeredPane {
 		labelColorComboBox.setModel(
 				new DefaultComboBoxModel(new String[] { "white", "black", "red", "yellow", "green", "blue" }));
 		labelColorComboBox.setSelectedIndex(0);
-		labelColorComboBox.setBounds(20, 370, 130, 25);
+		labelColorComboBox.setBounds(20, 338, 130, 25);
 		add(labelColorComboBox);
 
 		JLabel strokeColorLabel = new JLabel("Stroke color");
 		strokeColorLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
-		strokeColorLabel.setBounds(350, 349, 99, 16);
+		strokeColorLabel.setBounds(350, 317, 99, 16);
 		add(strokeColorLabel);
 
 		strokeColorComboBox = new JComboBox();
@@ -86,7 +91,7 @@ public class NewAnnotationPanel extends JLayeredPane {
 				new DefaultComboBoxModel(new String[] { "white", "black", "red", "yellow", "green", "blue" }));
 		strokeColorComboBox.setSelectedIndex(0);
 		strokeColorComboBox.setFont(new Font("Roboto", Font.PLAIN, 15));
-		strokeColorComboBox.setBounds(350, 370, 130, 25);
+		strokeColorComboBox.setBounds(350, 338, 130, 25);
 		add(strokeColorComboBox);
 
 		// roi manager
@@ -114,14 +119,44 @@ public class NewAnnotationPanel extends JLayeredPane {
 		AddCurrentSelectionButton.setBounds(58, 59, 386, 20);
 		add(AddCurrentSelectionButton);
 
-		JButton saveButton = new JButton("Save mask");
+		JButton saveButton = new JButton("Save annotations");
 		saveButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (rm.saveMask(overlayCheckBox.isSelected())) {
-					parentFrame.empty();
-					parentFrame.menuPanel = new MenuPanel(parentFrame);
-					parentFrame.getContentPane().add(parentFrame.menuPanel);
-					parentFrame.validate();
+				if (rm.roiCount() > 0) {
+					JFrame dialog = new JFrame();
+					Object[] options = { "Ok" };
+					JOptionPane.showOptionDialog(dialog, "Please select a MOSES workspace", "MOSES",
+							JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+
+					String saveDirectory = IJ.getDirectory("Choose saving directory");
+
+					if (saveDirectory != null) {
+						String annotationFolderPath = saveDirectory + "/" + Globals.lastImage.getShortTitle() + "/"
+								+ "annotations" + "/" + Globals.getFormattedDate();
+						File annotationFolder = new File(annotationFolderPath);
+						annotationFolder.mkdirs();
+
+						rm.saveAnnotation(annotationFolderPath);
+
+						if (overlayCheckBox.isSelected())
+							rm.saveOverlay(annotationFolderPath);
+
+						if (maskCheckBox.isSelected())
+							rm.saveMask(annotationFolderPath);
+
+						rm.closeImage();
+
+						parentFrame.empty();
+						parentFrame.menuPanel = new MenuPanel(parentFrame);
+						parentFrame.getContentPane().add(parentFrame.menuPanel);
+						parentFrame.validate();
+
+					}
+				} else {
+					JFrame dialog = new JFrame();
+					Object[] options = { "Ok" };
+					JOptionPane.showOptionDialog(dialog, "No annotations to save.", "MOSES", JOptionPane.YES_NO_OPTION,
+							JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
 				}
 			}
 		});
@@ -130,7 +165,7 @@ public class NewAnnotationPanel extends JLayeredPane {
 		saveButton.setForeground(Color.WHITE);
 		saveButton.setFont(new Font("Arial", Font.BOLD, 15));
 		saveButton.setBackground(new Color(13, 59, 102));
-		saveButton.setBounds(350, 430, 140, 30);
+		saveButton.setBounds(323, 430, 167, 30);
 		add(saveButton);
 
 		JButton cancelButton = new JButton("Cancel");
@@ -152,8 +187,14 @@ public class NewAnnotationPanel extends JLayeredPane {
 
 		overlayCheckBox = new JCheckBox("Save annotation overlay");
 		overlayCheckBox.setFont(new Font("Roboto", Font.PLAIN, 15));
-		overlayCheckBox.setBounds(20, 400, 200, 24);
+		overlayCheckBox.setBounds(20, 371, 200, 24);
 		overlayCheckBox.setBackground(new Color(252, 252, 252));
 		add(overlayCheckBox);
+
+		maskCheckBox = new JCheckBox("Save image mask");
+		maskCheckBox.setFont(new Font("Roboto", Font.PLAIN, 15));
+		maskCheckBox.setBackground(new Color(252, 252, 252));
+		maskCheckBox.setBounds(20, 398, 200, 24);
+		add(maskCheckBox);
 	}
 }

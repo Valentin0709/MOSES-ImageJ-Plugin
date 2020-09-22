@@ -22,11 +22,13 @@ public class MainFrame extends JFrame {
 	public ComputeTracksPanel1 computeTracksPanel1;
 	public ComputeTracksPanel2 computeTracksPanel2;
 	public ComputeTracksPanel3 computeTracksPanel3;
-	public SaliencyMapPanel saliencyMapPanel;
+	public SaliencyMapPanel1 saliencyMapPanel1;
+	public SaliencyMapPanel2 saliencyMapPanel2;
 	public MeshMetricsPanel meshMetricsPanel;
 	public NewAnnotationPanel newAnnotationPanel;
 	public VisualisationFromMaskPanel1 visualisationFromMaskPanel1;
 	public VisualisationFromMaskPanel2 visualisationFromMaskPanel2;
+	public VisualisationFromMaskPanel3 visualisationFromMaskPanel3;
 
 	public MainFrame() {
 

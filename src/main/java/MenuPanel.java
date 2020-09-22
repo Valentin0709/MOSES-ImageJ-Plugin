@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -27,6 +28,7 @@ public class MenuPanel extends JPanel {
 	public MainFrame parentFrame;
 
 	JCheckBox batchModeCheckbox;
+	List<String> filePaths;
 
 	public MenuPanel(MainFrame parentFrame) {
 
@@ -61,7 +63,7 @@ public class MenuPanel extends JPanel {
 		titleLabel.setHorizontalTextPosition(JLabel.CENTER);
 
 		JLabel instructionLabel1 = new JLabel(
-				"<html> Extract and visualize superpixel motion tracks from a TIFF image stack<html>");
+				"<html> Extract and visualize motion tracks and meshes from a TIFF image stack<html>");
 		instructionLabel1.setHorizontalAlignment(SwingConstants.CENTER);
 		instructionLabel1.setFont(new Font("Roboto", Font.PLAIN, 15));
 		instructionLabel1.setBounds(0, 92, 500, 24);
@@ -84,104 +86,42 @@ public class MenuPanel extends JPanel {
 		superpixelTracksButton.setBackground(new Color(13, 59, 102));
 		superpixelTracksButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ArrayList<String> validExtensions = new ArrayList<String>();
+				List<String> validExtensions = new ArrayList<String>();
 				validExtensions.addAll(Arrays.asList(".tif", ".tiff"));
 
 				JFrame dialog = new JFrame();
+				Object[] options = { "Ok" };
+				int n = JOptionPane.showOptionDialog(dialog,
+						"Please select the folder which contains the images you wish to analyse.", "MOSES",
+						JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
 
-				// checks if batch mode is enabled
-				if (batchModeCheckbox.isSelected()) {
-					// display dialog box
+				if (n == 0) {
+					String saveDirectory = IJ.getDirectory("Choose saving directory");
 
-					Object[] options = { "Cancel", "Import now" };
-					int n = JOptionPane.showOptionDialog(dialog,
-							"Batch mode is enabled. Please select a file from the folder you want to analyse and input your preffered settings. MOSES will automatically import and compute the motion tracks for all the other files that have a valid format using the same settings.",
-							"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
+					if (saveDirectory != null) {
+						FileSelecter selecter = new FileSelecter();
+						selecter.listFiles(saveDirectory, validExtensions, false,
+								"Select the images you wish to work with from the list below");
+						selecter.setVisible(true);
+						selecter.importButton.addActionListener(new ActionListener() {
+							public void actionPerformed(ActionEvent e) {
+								filePaths = selecter.getSelected();
+								selecter.dispose();
 
-					// display import file window
+								if (filePaths.size() > 0) {
+									if (filePaths.size() > 1) {
+										JFrame dialog = new JFrame();
+										Object[] options = { "Ok" };
+										JOptionPane.showOptionDialog(dialog,
+												"Multiple files were selected. Please input your preffered settings for the first image and MOSES will automatically run the same computation for all the other files.",
+												"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null,
+												options, options[0]);
+									}
 
-					if (n == 1) {
-						String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
-
-						if (importedFilePath != null)
-							computeTracks(importedFilePath);
-						else {
-							// display error dialog box
-
-							JFrame errorDialog = new JFrame();
-							Object[] options2 = { "Ok" };
-							JOptionPane.showOptionDialog(dialog,
-									"Current selected image has an invalid file format. Please import a TIFF stack to continue.",
-									"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options2,
-									options2[0]);
-						}
-					}
-
-				} else {
-					if (parentFrame.imageDisplayService.getActiveDataset() == null) { // checks if any files are opened
-
-						// display dialog box
-
-						Object[] options = { "Cancel", "Import now" };
-						int n = JOptionPane.showOptionDialog(dialog,
-								"No file selected. Please import a TIFF stack to continue.", "MOSES",
-								JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
-
-						// display import file window
-
-						if (n == 1) {
-							String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
-
-							if (importedFilePath != null)
-								computeTracks(importedFilePath);
-							else {
-
-								// display error dialog box
-
-								JFrame errorDialog = new JFrame();
-								Object[] options2 = { "Ok" };
-								JOptionPane.showOptionDialog(dialog,
-										"Current selected image has an invalid file format. Please import a TIFF stack to continue.",
-										"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options2,
-										options2[0]);
-							}
-						}
-					} else {
-
-						String openFilePath = parentFrame.imageDisplayService.getActiveDataset().getSource();
-						// String extension = Globals.getExtension(filePath);
-
-						if (Globals.checkExtension(openFilePath, validExtensions))
-							computeTracks(openFilePath);
-						else {
-							// display dialog box
-
-							Object[] options = { "Cancel", "Import now" };
-							int n = JOptionPane.showOptionDialog(dialog,
-									"Current selected image has an invalid file format. Please import a TIFF stack to continue.",
-									"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options,
-									options[0]);
-
-							// display import file window
-
-							if (n == 1) {
-								String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
-
-								if (importedFilePath != null)
-									computeTracks(importedFilePath);
-								else {
-
-									// display error dialog box
-
-									JFrame errorDialog = new JFrame();
-									Object[] options2 = { "Ok" };
-									JOptionPane.showOptionDialog(dialog,
-											"Current selected image has an invalid file format. Please import a TIFF stack to continue.",
-											"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null,
-											options2, options2[0]);
+									computeTracks();
 								}
 							}
-						}
+						});
 					}
 				}
 			}
@@ -234,7 +174,7 @@ public class MenuPanel extends JPanel {
 		titleLabel3.setBounds(-12, 210, 500, 29);
 		add(titleLabel3);
 
-		JButton CreateAnnotationButton = new JButton("New mask");
+		JButton CreateAnnotationButton = new JButton("New annotation");
 		CreateAnnotationButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				ArrayList<String> validExtensions = new ArrayList<String>();
@@ -315,11 +255,10 @@ public class MenuPanel extends JPanel {
 		CreateAnnotationButton.setBounds(10, 245, 230, 43);
 		add(CreateAnnotationButton);
 
-		JButton btnCreateVisualisationFrom = new JButton("<html>Visualisation from mask</html>");
-		btnCreateVisualisationFrom.addActionListener(new ActionListener() {
+		JButton customVisualisationButton = new JButton("<html>Custom visualisation</html>");
+		customVisualisationButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				VisualisationFromMaskParameters.initialise();
-				VisualisationFromMaskParameters.setBatchMode(batchModeCheckbox.isSelected());
 
 				parentFrame.empty();
 				parentFrame.visualisationFromMaskPanel1 = new VisualisationFromMaskPanel1(parentFrame);
@@ -327,21 +266,28 @@ public class MenuPanel extends JPanel {
 				parentFrame.validate();
 			}
 		});
-		btnCreateVisualisationFrom.setHorizontalTextPosition(SwingConstants.CENTER);
-		btnCreateVisualisationFrom.setForeground(Color.WHITE);
-		btnCreateVisualisationFrom.setFont(new Font("Arial", Font.BOLD, 17));
-		btnCreateVisualisationFrom.setBackground(new Color(13, 59, 102));
-		btnCreateVisualisationFrom.setBounds(260, 245, 230, 43);
-		add(btnCreateVisualisationFrom);
+		customVisualisationButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		customVisualisationButton.setForeground(Color.WHITE);
+		customVisualisationButton.setFont(new Font("Arial", Font.BOLD, 17));
+		customVisualisationButton.setBackground(new Color(13, 59, 102));
+		customVisualisationButton.setBounds(260, 245, 230, 43);
+		add(customVisualisationButton);
+
+		JLabel lblCreateANew = new JLabel(
+				"<html> Create a new annotation and visualise MOSES motion tracks using your selected regions of interest<html>");
+		lblCreateANew.setHorizontalTextPosition(SwingConstants.CENTER);
+		lblCreateANew.setHorizontalAlignment(SwingConstants.CENTER);
+		lblCreateANew.setFont(new Font("Roboto", Font.PLAIN, 15));
+		lblCreateANew.setBounds(12, 286, 476, 43);
+		add(lblCreateANew);
 
 	}
 
-	public void computeTracks(String filePath) {
+	public void computeTracks() {
 		// initialize parameters
 
 		ComputeTracksParameters.initialise();
-		ComputeTracksParameters.setBatchMode(batchModeCheckbox.isSelected());
-		ComputeTracksParameters.setFilePath(filePath);
+		ComputeTracksParameters.setFilePath(filePaths);
 
 		// run script
 
@@ -355,7 +301,7 @@ public class MenuPanel extends JPanel {
 
 				PythonScript script = new PythonScript("Read file");
 				script.addParameter(
-						Arrays.asList(new Parameter("filePath", "str", ComputeTracksParameters.getFilePath())));
+						Arrays.asList(new Parameter("filePath", "str", ComputeTracksParameters.getFilePath(0))));
 				script.importModule("sys");
 				script.importModuleFrom("read_multiimg_PIL", "MOSES.Utility_Functions.file_io");
 				script.addScript(script.createParameterDictionary());
@@ -419,6 +365,10 @@ public class MenuPanel extends JPanel {
 			IJ.handleException(e1);
 		}
 
+		// open image
+
+		IJ.open(ComputeTracksParameters.getFilePath(0));
+
 		// display computeTracksPanel1 and close current panel
 
 		parentFrame.empty();
@@ -429,11 +379,10 @@ public class MenuPanel extends JPanel {
 
 	public void motionMeasurements() {
 		SaliencyMapParameters.initialise();
-		SaliencyMapParameters.setBatchMode(batchModeCheckbox.isSelected());
 
 		parentFrame.empty();
-		parentFrame.saliencyMapPanel = new SaliencyMapPanel(parentFrame);
-		parentFrame.getContentPane().add(parentFrame.saliencyMapPanel);
+		parentFrame.saliencyMapPanel1 = new SaliencyMapPanel1(parentFrame);
+		parentFrame.getContentPane().add(parentFrame.saliencyMapPanel1);
 		parentFrame.validate();
 	}
 

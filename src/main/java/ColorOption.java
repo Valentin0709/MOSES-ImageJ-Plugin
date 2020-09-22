@@ -25,6 +25,7 @@ public class ColorOption {
 			JComboBox comboBox = new JComboBox();
 			comboBox.setModel(new DefaultComboBoxModel(
 					new String[] { "red", "blue", "green", "cyan", "magenta", "yellow", "black", "white" }));
+
 			comboBox.setBounds(x + 110 + (i / rows) * 200, y + (i % rows) * 25, 90, 23);
 			comboBox.setFont(new Font("Roboto", Font.PLAIN, 15));
 			comboBox.setSelectedIndex(i);
@@ -62,5 +63,6 @@ public class ColorOption {
 		if (selected == 5)
 			return "w";
 		return "k";
+
 	}
 }

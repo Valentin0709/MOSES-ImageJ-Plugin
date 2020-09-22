@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,8 +14,10 @@ import java.util.Arrays;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFormattedTextField;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
@@ -833,140 +836,7 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		nextButton.setBounds(350, 430, 140, 30);
 		nextButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// load file chooser and run script if any checkbox is selected
-
-				if (saveCheckBox1.isEnabled() || saveCheckBox3.isEnabled() || saveCheckBox4.isEnabled()
-						|| saveCheckBox6.isEnabled() || saveCheckBox8.isEnabled()) {
-
-					String saveDirectory = IJ.getDirectory("Choose saving directory");
-					if (saveDirectory != null) {
-						ComputeTracksParameters.setSaveDirectory(saveDirectory);
-
-						// add parameters
-
-						if (saveCheckBox1.isSelected()) {
-							ComputeTracksParameters.setOutput("forward_tracks");
-							ComputeTracksParameters.setDenseForwardTracks(saveCheckBox13.isSelected());
-						}
-						if (saveCheckBox2.isSelected()) {
-							ComputeTracksParameters.setOutput("forward_tracks_visualisation");
-							ComputeTracksParameters.setSaveOption("forward_tracks_save_options", saveOption1);
-							ComputeTracksParameters.setColorOption("forward_tracks_colors", colorOption1);
-							ComputeTracksParameters
-									.setForwardTracksTemporalSegment(Integer.parseInt(temporalSegmentField1.getText()));
-						}
-
-						if (saveCheckBox3.isSelected()) {
-							ComputeTracksParameters.setOutput("motion_field");
-							ComputeTracksParameters.setSaveOption("motion_field_save_options", saveOption6);
-						}
-
-						if (saveCheckBox4.isSelected()) {
-							ComputeTracksParameters.setOutput("backward_tracks");
-							ComputeTracksParameters.setDenseBackwardTracks(saveCheckBox14.isSelected());
-						}
-						if (saveCheckBox5.isSelected()) {
-							ComputeTracksParameters.setOutput("backward_tracks_visualisation");
-							ComputeTracksParameters.setSaveOption("backward_tracks_save_options", saveOption2);
-							ComputeTracksParameters.setColorOption("backward_tracks_colors", colorOption2);
-							ComputeTracksParameters.setBackwardTracksTemporalSegment(
-									Integer.parseInt(temporalSegmentField2.getText()));
-						}
-
-						if (saveCheckBox6.isSelected()) {
-							ComputeTracksParameters.setOutput("MOSES_mesh");
-							ComputeTracksParameters
-									.setMOSESMeshDistanceThreshold(Double.parseDouble(distanceTresholdField.getText()));
-							ComputeTracksParameters.setMOSESMeshForwardTracks(forwardTracksButton1.isSelected());
-						}
-						if (saveCheckBox7.isSelected()) {
-							ComputeTracksParameters.setOutput("MOSES_mesh_visualisation");
-							ComputeTracksParameters.setColorOption("MOSES_mesh_colors", colorOption3);
-						}
-						if (saveCheckBox71.isSelected()) {
-							ComputeTracksParameters.setOutput("MOSES_mesh_frame_visualisation");
-							ComputeTracksParameters.setMOSESMeshFrame(Integer.parseInt(frameField.getText()));
-						}
-						if (saveCheckBox72.isSelected()) {
-							ComputeTracksParameters.setOutput("MOSES_mesh_complete_visualisation");
-
-							ComputeTracksParameters.setSaveOption("MOSES_mesh_complete_visualisation_save_options",
-									saveOption3);
-						}
-
-						if (saveCheckBox8.isSelected()) {
-							ComputeTracksParameters.setOutput("radial_mesh");
-							ComputeTracksParameters.setRadialMeshDistanceThreshold(
-									Double.parseDouble(distanceTresholdField2.getText()));
-							ComputeTracksParameters.setRadialMeshForwardTracks(forwardTracksButton2.isSelected());
-						}
-						if (saveCheckBox9.isSelected()) {
-							ComputeTracksParameters.setOutput("radial_mesh_visualisation");
-							ComputeTracksParameters.setColorOption("radial_mesh_colors", colorOption4);
-						}
-						if (saveCheckBox91.isSelected()) {
-							ComputeTracksParameters.setOutput("radial_mesh_frame_visualisation");
-							ComputeTracksParameters.setRadialMeshFrame(Integer.parseInt(frameField2.getText()));
-						}
-						if (saveCheckBox92.isSelected()) {
-							ComputeTracksParameters.setOutput("radial_mesh_complete_visualisation");
-							ComputeTracksParameters.setSaveOption("radial_mesh_complete_visualisation_save_options",
-									saveOption4);
-						}
-
-						if (saveCheckBox10.isSelected()) {
-							ComputeTracksParameters.setOutput("neighbor_mesh");
-							ComputeTracksParameters.setKNeighbor(Integer.parseInt(KNeighborField.getText()));
-							ComputeTracksParameters.setNeighborMeshForwardTracks(forwardTracksButton3.isSelected());
-						}
-						if (saveCheckBox11.isSelected()) {
-							ComputeTracksParameters.setOutput("neighbor_mesh_visualisation");
-							ComputeTracksParameters.setColorOption("neighbor_mesh_colors", colorOption5);
-						}
-						if (saveCheckBox111.isSelected()) {
-							ComputeTracksParameters.setOutput("neighbor_mesh_frame_visualisation");
-							ComputeTracksParameters.setNeighborMeshFrame(Integer.parseInt(frameField3.getText()));
-						}
-						if (saveCheckBox112.isSelected()) {
-							ComputeTracksParameters.setOutput("neighbor_mesh_complete_visualisation");
-							ComputeTracksParameters.setSaveOption("neighbor_mesh_complete_visualisation_save_options",
-									saveOption5);
-						}
-
-						if (saveCheckBox12.isSelected())
-							ComputeTracksParameters.setOutput("config_file");
-
-						// loading bar panel
-
-						ProgressPanel progress = new ProgressPanel(self, 40, 200);
-						self.add(progress);
-						self.setLayer(progress, 1);
-						progress.setVisibility(true);
-
-						Globals.setPanelEnabled(bigPanel, false);
-						scrollPane.setVerticalScrollBarPolicy(scrollPane.VERTICAL_SCROLLBAR_NEVER);
-
-						// run process
-						class SwingWorkerListener implements PropertyChangeListener {
-							@Override
-							public void propertyChange(PropertyChangeEvent evt) {
-								if (swingWorker.isDone()) {
-									parentFrame.empty();
-									parentFrame.menuPanel = new MenuPanel(parentFrame);
-									parentFrame.getContentPane().add(parentFrame.menuPanel);
-									parentFrame.validate();
-								}
-
-							}
-						}
-
-						swingWorker = new ComputeTracks(progress);
-						swingWorkerStarted = true;
-						swingWorker.addPropertyChangeListener(new SwingWorkerListener());
-						swingWorker.execute();
-					}
-				}
-
+				finish();
 			}
 		});
 
@@ -1032,5 +902,159 @@ public class ComputeTracksPanel3 extends JLayeredPane {
 		checkBoxList2.addCheckBoxChild(saveCheckBox10, saveCheckBox11);
 		checkBoxList2.addPanelChild(saveCheckBox11, optionPanel9);
 		checkBoxList2.show(10, 175);
+	}
+
+	private void finish() {
+		// load file chooser and run script if any checkbox is selected
+		if (saveCheckBox1.isSelected() || saveCheckBox3.isSelected() || saveCheckBox4.isSelected()
+				|| saveCheckBox6.isSelected() || saveCheckBox8.isSelected() || saveCheckBox10.isSelected()) {
+
+			JFrame dialog = new JFrame();
+			Object[] options = { "New MOSES workspace", "Use existing MOSES workspace" };
+			int n = JOptionPane.showOptionDialog(dialog,
+					"Do you want to save the files in an existing workspace or create a new MOSES workspace?", "MOSES",
+					JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
+
+			String saveDirectory = null;
+			if (n == 0) {
+				JFrame dialog2 = new JFrame();
+				String name = (String) JOptionPane.showInputDialog(dialog2, "Set workspace name:\n", "MOSES",
+						JOptionPane.PLAIN_MESSAGE, null, null, null);
+
+				String workspaceDirectory = IJ.getDirectory("Choose saving directory");
+				if (workspaceDirectory != null) {
+					File workspaceFolder = Globals.createWorkspace(workspaceDirectory, name);
+					saveDirectory = workspaceFolder.getAbsolutePath();
+				}
+			}
+			if (n == 1)
+				saveDirectory = Globals.getWorkspace();
+
+			if (saveDirectory != null) {
+				ComputeTracksParameters.setSaveDirectory(saveDirectory);
+
+				// add parameters
+				if (saveCheckBox1.isSelected()) {
+					ComputeTracksParameters.setOutput("forward_tracks");
+					ComputeTracksParameters.setDenseForwardTracks(saveCheckBox13.isSelected());
+				}
+				if (saveCheckBox2.isSelected()) {
+					ComputeTracksParameters.setOutput("forward_tracks_visualisation");
+					ComputeTracksParameters.setSaveOption("forward_tracks_save_options", saveOption1);
+					ComputeTracksParameters.setColorOption("forward_tracks_colors", colorOption1);
+					ComputeTracksParameters
+							.setForwardTracksTemporalSegment(Integer.parseInt(temporalSegmentField1.getText()));
+				}
+
+				if (saveCheckBox3.isSelected()) {
+					ComputeTracksParameters.setOutput("motion_field");
+					ComputeTracksParameters.setSaveOption("motion_field_save_options", saveOption6);
+				}
+
+				if (saveCheckBox4.isSelected()) {
+					ComputeTracksParameters.setOutput("backward_tracks");
+					ComputeTracksParameters.setDenseBackwardTracks(saveCheckBox14.isSelected());
+				}
+				if (saveCheckBox5.isSelected()) {
+					ComputeTracksParameters.setOutput("backward_tracks_visualisation");
+					ComputeTracksParameters.setSaveOption("backward_tracks_save_options", saveOption2);
+					ComputeTracksParameters.setColorOption("backward_tracks_colors", colorOption2);
+					ComputeTracksParameters
+							.setBackwardTracksTemporalSegment(Integer.parseInt(temporalSegmentField2.getText()));
+				}
+
+				if (saveCheckBox6.isSelected()) {
+					ComputeTracksParameters.setOutput("MOSES_mesh");
+					ComputeTracksParameters
+							.setMOSESMeshDistanceThreshold(Double.parseDouble(distanceTresholdField.getText()));
+					ComputeTracksParameters.setMOSESMeshForwardTracks(forwardTracksButton1.isSelected());
+				}
+				if (saveCheckBox7.isSelected()) {
+					ComputeTracksParameters.setOutput("MOSES_mesh_visualisation");
+					ComputeTracksParameters.setColorOption("MOSES_mesh_colors", colorOption3);
+				}
+				if (saveCheckBox71.isSelected()) {
+					ComputeTracksParameters.setOutput("MOSES_mesh_frame_visualisation");
+					ComputeTracksParameters.setMOSESMeshFrame(Integer.parseInt(frameField.getText()));
+				}
+				if (saveCheckBox72.isSelected()) {
+					ComputeTracksParameters.setOutput("MOSES_mesh_complete_visualisation");
+
+					ComputeTracksParameters.setSaveOption("MOSES_mesh_complete_visualisation_save_options",
+							saveOption3);
+				}
+
+				if (saveCheckBox8.isSelected()) {
+					ComputeTracksParameters.setOutput("radial_mesh");
+					ComputeTracksParameters
+							.setRadialMeshDistanceThreshold(Double.parseDouble(distanceTresholdField2.getText()));
+					ComputeTracksParameters.setRadialMeshForwardTracks(forwardTracksButton2.isSelected());
+				}
+				if (saveCheckBox9.isSelected()) {
+					ComputeTracksParameters.setOutput("radial_mesh_visualisation");
+					ComputeTracksParameters.setColorOption("radial_mesh_colors", colorOption4);
+				}
+				if (saveCheckBox91.isSelected()) {
+					ComputeTracksParameters.setOutput("radial_mesh_frame_visualisation");
+					ComputeTracksParameters.setRadialMeshFrame(Integer.parseInt(frameField2.getText()));
+				}
+				if (saveCheckBox92.isSelected()) {
+					ComputeTracksParameters.setOutput("radial_mesh_complete_visualisation");
+					ComputeTracksParameters.setSaveOption("radial_mesh_complete_visualisation_save_options",
+							saveOption4);
+				}
+
+				if (saveCheckBox10.isSelected()) {
+					ComputeTracksParameters.setOutput("neighbor_mesh");
+					ComputeTracksParameters.setKNeighbor(Integer.parseInt(KNeighborField.getText()));
+					ComputeTracksParameters.setNeighborMeshForwardTracks(forwardTracksButton3.isSelected());
+				}
+				if (saveCheckBox11.isSelected()) {
+					ComputeTracksParameters.setOutput("neighbor_mesh_visualisation");
+					ComputeTracksParameters.setColorOption("neighbor_mesh_colors", colorOption5);
+				}
+				if (saveCheckBox111.isSelected()) {
+					ComputeTracksParameters.setOutput("neighbor_mesh_frame_visualisation");
+					ComputeTracksParameters.setNeighborMeshFrame(Integer.parseInt(frameField3.getText()));
+				}
+				if (saveCheckBox112.isSelected()) {
+					ComputeTracksParameters.setOutput("neighbor_mesh_complete_visualisation");
+					ComputeTracksParameters.setSaveOption("neighbor_mesh_complete_visualisation_save_options",
+							saveOption5);
+				}
+
+				if (saveCheckBox12.isSelected())
+					ComputeTracksParameters.setOutput("config_file");
+
+				// loading bar panel
+
+				ProgressPanel progress = new ProgressPanel(self, 40, 200);
+				self.add(progress);
+				self.setLayer(progress, 1);
+				progress.setVisibility(true);
+
+				Globals.setPanelEnabled(bigPanel, false);
+				scrollPane.setVerticalScrollBarPolicy(scrollPane.VERTICAL_SCROLLBAR_NEVER);
+
+				// run process
+				class SwingWorkerListener implements PropertyChangeListener {
+					@Override
+					public void propertyChange(PropertyChangeEvent evt) {
+						if (swingWorker.isDone()) {
+							parentFrame.empty();
+							parentFrame.menuPanel = new MenuPanel(parentFrame);
+							parentFrame.getContentPane().add(parentFrame.menuPanel);
+							parentFrame.validate();
+						}
+
+					}
+				}
+
+				swingWorker = new ComputeTracks(progress);
+				swingWorkerStarted = true;
+				swingWorker.addPropertyChangeListener(new SwingWorkerListener());
+				swingWorker.execute();
+			}
+		}
 	}
 }

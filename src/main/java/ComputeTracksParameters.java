@@ -1,15 +1,17 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class ComputeTracksParameters {
-	private static String filePath, fileName, simpleFileName, fileExtension, fileDirectory, saveDirectory;
+	private static String saveDirectory;
+	private static List<String> filePaths, outputNames;
 	private static int frames, width, height, channels, numberSuperpixels, levels, winSize, iterations, polyN, flags;
 	private static int forwardTracksTemporalSegment, backwardTracksTemporalSegment, MOSESMeshFrame, radialMeshFrame,
 			neighborMeshFrame, KNeighbor;
 	private static double pyrScale, polySigma, downsizeFactor, MOSESMeshDistanceThreshold, radialMeshDistanceThreshold;
-	private static boolean batchMode, MOSESMeshForwardTracks, radialMeshForwardTracks, neighborMeshForwardTracks,
+	private static boolean MOSESMeshForwardTracks, radialMeshForwardTracks, neighborMeshForwardTracks,
 			denseForwardTracks, denseBackwardTracks;
 	private static ArrayList<Integer> selectedChannels = new ArrayList<Integer>();
 	private static Map<String, Boolean> outputs = new HashMap<String, Boolean>();
@@ -17,8 +19,8 @@ public class ComputeTracksParameters {
 	private static Map<String, ColorOption> colorOptions = new HashMap<String, ColorOption>();
 
 	public static void initialise() {
-		batchMode = false;
-		filePath = fileName = simpleFileName = fileExtension = saveDirectory = null;
+		filePaths = new ArrayList<String>();
+		saveDirectory = null;
 		frames = width = height = channels = 0;
 		numberSuperpixels = 1000;
 		pyrScale = 0.5;
@@ -36,40 +38,32 @@ public class ComputeTracksParameters {
 		KNeighbor = 4;
 		selectedChannels.clear();
 
-		outputs.put("config_file", false);
-		outputs.put("forward_tracks", false);
-		outputs.put("forward_tracks_visualisation", false);
-		outputs.put("backward_tracks", false);
-		outputs.put("backward_tracks_visualisation", false);
-		outputs.put("motion_field", false);
-		outputs.put("MOSES_mesh", false);
-		outputs.put("MOSES_mesh_visualisation", false);
-		outputs.put("MOSES_mesh_frame_visualisation", false);
-		outputs.put("MOSES_mesh_complete_visualisation", false);
-		outputs.put("radial_mesh", false);
-		outputs.put("radial_mesh_visualisation", false);
-		outputs.put("radial_mesh_frame_visualisation", false);
-		outputs.put("radial_mesh_complete_visualisation", false);
-		outputs.put("neighbor_mesh", false);
-		outputs.put("neighbor_mesh_visualisation", false);
-		outputs.put("neighbor_mesh_frame_visualisation", false);
-		outputs.put("neighbor_mesh_complete_visualisation", false);
+		outputNames = new ArrayList<String>();
+		outputNames.addAll(Arrays.asList("config_file", "forward_tracks", "forward_tracks_visualisation",
+				"backward_tracks", "backward_tracks_visualisation", "motion_field", "MOSES_mesh",
+				"MOSES_mesh_visualisation", "MOSES_mesh_frame_visualisation", "MOSES_mesh_complete_visualisation",
+				"radial_mesh", "radial_mesh_visualisation", "radial_mesh_frame_visualisation",
+				"radial_mesh_complete_visualisation", "neighbor_mesh", "neighbor_mesh_visualisation",
+				"neighbor_mesh_frame_visualisation", "neighbor_mesh_complete_visualisation"));
+
+		for (String outputName : outputNames)
+			outputs.put(outputName, false);
 	}
 
 	public static void setFilePath(String s) {
-		filePath = s;
-		fileName = Globals.getName(s);
-		simpleFileName = Globals.getNameWithoutExtension(s);
-		fileExtension = Globals.getExtension(s);
-		fileDirectory = Globals.getDirectory(s);
+		filePaths.add(s);
 	}
 
-	public static String getFileDirectory() {
-		return fileDirectory;
+	public static void setFilePath(List<String> s) {
+		filePaths.addAll(s);
 	}
 
-	public static String getSimpleFileName() {
-		return simpleFileName;
+	public static String getFilePath(int x) {
+		return filePaths.get(x);
+	}
+
+	public static int getFileCount() {
+		return filePaths.size();
 	}
 
 	public static void setSaveDirectory(String s) {
@@ -78,14 +72,6 @@ public class ComputeTracksParameters {
 
 	public static String getSaveDirectory() {
 		return saveDirectory;
-	}
-
-	public static String getFileName() {
-		return fileName;
-	}
-
-	public static String getFilePath() {
-		return filePath;
 	}
 
 	public static void setFrames(int f) {
@@ -224,14 +210,6 @@ public class ComputeTracksParameters {
 		return downsizeFactor;
 	}
 
-	public static void setBatchMode(boolean b) {
-		batchMode = b;
-	}
-
-	public static boolean getBatchMode() {
-		return batchMode;
-	}
-
 	public static void setSelectedChannel(int c) {
 		selectedChannels.add(c);
 	}
@@ -349,45 +327,16 @@ public class ComputeTracksParameters {
 		return denseForwardTracks;
 	}
 
+	public static List<String> getFiles() {
+		return filePaths;
+	}
+
 	public static List<String> getOutputList() {
 		List<String> outputList = new ArrayList<String>();
 
-		if (isOutput("config_file"))
-			outputList.add("config_file");
-		if (isOutput("forward_tracks"))
-			outputList.add("forward_tracks");
-		if (isOutput("forward_tracks_visualisation"))
-			outputList.add("forward_tracks_visualisation");
-		if (isOutput("backward_tracks"))
-			outputList.add("backward_tracks");
-		if (isOutput("backward_tracks_visualisation"))
-			outputList.add("backward_tracks_visualisation");
-		if (isOutput("motion_field"))
-			outputList.add("motion_field");
-		if (isOutput("MOSES_mesh"))
-			outputList.add("MOSES_mesh");
-		if (isOutput("MOSES_mesh_visualisation"))
-			outputList.add("MOSES_mesh_visualisation");
-		if (isOutput("MOSES_mesh_frame_visualisation"))
-			outputList.add("MOSES_mesh_frame_visualisation");
-		if (isOutput("MOSES_mesh_complete_visualisation"))
-			outputList.add("MOSES_mesh_complete_visualisation");
-		if (isOutput("radial_mesh"))
-			outputList.add("radial_mesh");
-		if (isOutput("radial_mesh_visualisation"))
-			outputList.add("radial_mesh_visualisation");
-		if (isOutput("radial_mesh_frame_visualisation"))
-			outputList.add("radial_mesh_frame_visualisation");
-		if (isOutput("radial_mesh_complete_visualisation"))
-			outputList.add("radial_mesh_complete_visualisation");
-		if (isOutput("neighbor_mesh"))
-			outputList.add("neighbor_mesh");
-		if (isOutput("neighbor_mesh_visualisation"))
-			outputList.add("neighbor_mesh_visualisation");
-		if (isOutput("neighbor_mesh_frame_visualisation"))
-			outputList.add("neighbor_mesh_frame_visualisation");
-		if (isOutput("neighbor_mesh_complete_visualisation"))
-			outputList.add("neighbor_mesh_complete_visualisation");
+		for (String outputName : outputNames)
+			if (isOutput(outputName))
+				outputList.add(outputName);
 
 		return outputList;
 	}
@@ -395,175 +344,127 @@ public class ComputeTracksParameters {
 	public static List<String> getParametersList() {
 		List<String> outputList = new ArrayList<String>();
 
-		outputList.add("batchMode=" + batchMode);
-
-		if (batchMode)
-			outputList.add("directory=" + fileDirectory);
-		else
-			outputList.add("filePath=" + filePath);
-
-		outputList.add("downsizeFactor=" + downsizeFactor);
-		outputList.add("numberSuperpixels=" + numberSuperpixels);
-		outputList.add("pyrScale=" + pyrScale);
-		outputList.add("levels=" + levels);
-		outputList.add("winSize=" + winSize);
-		outputList.add("iterations=" + iterations);
-		outputList.add("polyN = " + polyN);
-		outputList.add("polySigma=" + polySigma);
-		outputList.add("flags=" + flags);
-
-		String selectedChannelsList = "selectedChannels=";
-		for (int index = 0; index < selectedChannels.size(); index++) {
-			selectedChannelsList += selectedChannels.get(index);
-			if (index < selectedChannels.size() - 1)
-				selectedChannelsList += ",";
-		}
-		outputList.add(selectedChannelsList);
+		outputList.add("downsize factor = " + downsizeFactor);
+		outputList.add("number superpixels = " + numberSuperpixels);
+		outputList.add("pyr scale = " + pyrScale);
+		outputList.add("levels = " + levels);
+		outputList.add("windows size = " + winSize);
+		outputList.add("iterations = " + iterations);
+		outputList.add("poly n = " + polyN);
+		outputList.add("poly sigma = " + polySigma);
+		outputList.add("flags = " + flags);
+		outputList.add("selectedChannels = [" + String.join("; ", Globals.convertStringList(selectedChannels)) + "]");
 
 		if (isOutput("forward_tracks"))
-			outputList.add("denseForwardTracks=" + denseForwardTracks);
+			outputList.add("dense forward tracks = " + denseForwardTracks);
 
+		List<String> colorList;
 		if (isOutput("forward_tracks_visualisation")) {
-			outputList.add("forwardTracksTemporalSegment=" + forwardTracksTemporalSegment);
+			outputList.add("forward tracks temporal segment length = " + forwardTracksTemporalSegment);
 
-			String colorList = "forwardTracksVisualisationColorOptions=";
+			colorList = new ArrayList<String>();
 			for (int index = 0; index < selectedChannels.size(); index++) {
-				colorList += getColorOption("forward_tracks_colors", index);
-				if (index < selectedChannels.size() - 1)
-					colorList += ",";
-			}
-			outputList.add(colorList);
+				colorList.add(getColorOption("forward_tracks_colors", index));
 
-			String saveList = "forwardTracksVisualisationSaveOptions=";
-			List<String> options = saveOptions.get("forward_tracks_save_options").getOptionList();
-			for (int index = 0; index < options.size(); index++) {
-				saveList += options.get(index);
-				if (index < options.size() - 1)
-					saveList += ",";
+				outputList.add("forward tracks visualisation color options = [" + String.join("; ", colorList) + "]");
+
+				List<String> options = saveOptions.get("forward_tracks_save_options").getOptionList();
+				outputList.add("forward tracks visualisation save options = [" + String.join("; ", options) + "]");
 			}
-			outputList.add(saveList);
 		}
 
 		if (isOutput("backward_tracks"))
-			outputList.add("denseBackwardTracks=" + denseBackwardTracks);
+			outputList.add("dense backward tracks = " + denseBackwardTracks);
 
 		if (isOutput("backward_tracks_visualisation")) {
-			outputList.add("backwardTracksTemporalSegment=" + backwardTracksTemporalSegment);
+			outputList.add("backward tracks temporal segment length = " + backwardTracksTemporalSegment);
 
-			String colorList = "backwardTracksVisualisationColorOptions=";
-			for (int index = 0; index < selectedChannels.size(); index++) {
-				colorList += getColorOption("backward_tracks_colors", index);
-				if (index < selectedChannels.size() - 1)
-					colorList += ",";
-			}
-			outputList.add(colorList);
+			colorList = new ArrayList<String>();
+			for (int index = 0; index < selectedChannels.size(); index++)
+				colorList.add(getColorOption("backward_tracks_colors", index));
 
-			String saveList = "backwardTracksVisualisationSaveOptions=";
+			outputList.add("backward tracks visualisation color options = [" + String.join("; ", colorList) + "]");
+
 			List<String> options = saveOptions.get("backward_tracks_save_options").getOptionList();
-			for (int index = 0; index < options.size(); index++) {
-				saveList += options.get(index);
-				if (index < options.size() - 1)
-					saveList += ",";
-			}
-			outputList.add(saveList);
+			outputList.add("backward tracks visualisation save options = [" + String.join("; ", options) + "]");
 		}
 
 		if (isOutput("motion_field")) {
-			String saveList = "motionFieldSaveOptions=";
 			List<String> options = saveOptions.get("motion_field_save_options").getOptionList();
-			for (int index = 0; index < options.size(); index++) {
-				saveList += options.get(index);
-				if (index < options.size() - 1)
-					saveList += ",";
-			}
-			outputList.add(saveList);
+			outputList.add("motion field save options = [" + String.join("; ", options) + "]");
 		}
 
 		if (isOutput("MOSES_mesh")) {
-			outputList.add("MOSESMeshDistanceThreshold=" + MOSESMeshDistanceThreshold);
-			outputList.add("MOSESMeshForwardTracks=" + MOSESMeshForwardTracks);
+			outputList.add("MOSES mesh distance threshold = " + MOSESMeshDistanceThreshold);
+			if (MOSESMeshForwardTracks)
+				outputList.add("MOSES mesh tracks = forward");
+
+			else
+				outputList.add("MOSES mesh tracks = backward");
 		}
 
 		if (isOutput("MOSES_mesh_visualisation")) {
-			String colorList = "MOSESMeshVisualisationColorOptions=";
-			for (int index = 0; index < selectedChannels.size(); index++) {
-				colorList += getColorOption("MOSES_mesh_colors", index);
-				if (index < selectedChannels.size() - 1)
-					colorList += ",";
-			}
-			outputList.add(colorList);
+			colorList = new ArrayList<String>();
+			for (int index = 0; index < selectedChannels.size(); index++)
+				colorList.add(getColorOption("MOSES_mesh_colors", index));
+
+			outputList.add("MOSES mesh visualisation color options = [" + String.join("; ", colorList) + "]");
 		}
 
 		if (isOutput("MOSES_mesh_frame_visualisation"))
-			outputList.add("MOSESMeshFrame=" + MOSESMeshFrame);
+			outputList.add("MOSES Mesh frame = " + MOSESMeshFrame);
 
 		if (isOutput("MOSES_mesh_complete_visualisation")) {
-			String saveList = "MOSESMeshVisualisationSaveOptions=";
 			List<String> options = saveOptions.get("MOSES_mesh_complete_visualisation_save_options").getOptionList();
-			for (int index = 0; index < options.size(); index++) {
-				saveList += options.get(index);
-				if (index < options.size() - 1)
-					saveList += ",";
-			}
-			outputList.add(saveList);
+			outputList.add("MOSES mesh visualisation save options = [" + String.join("; ", options) + "]");
 		}
 
 		if (isOutput("radial_mesh")) {
-			outputList.add("radialMeshDistanceThreshold=" + radialMeshDistanceThreshold);
-			outputList.add("radialMeshForwardTracks=" + radialMeshForwardTracks);
+			outputList.add("radial mesh distance threshold = " + radialMeshDistanceThreshold);
+			if (radialMeshForwardTracks)
+				outputList.add("radial mesh forward tracks = forward");
+			else
+				outputList.add("radial mesh forward tracks = backward");
 		}
 
 		if (isOutput("radial_mesh_visualisation")) {
-			String colorList = "radialMeshVisualisationColorOptions=";
-			for (int index = 0; index < selectedChannels.size(); index++) {
-				colorList += getColorOption("radial_mesh_colors", index);
-				if (index < selectedChannels.size() - 1)
-					colorList += ",";
-			}
-			outputList.add(colorList);
+			colorList = new ArrayList<String>();
+			for (int index = 0; index < selectedChannels.size(); index++)
+				colorList.add(getColorOption("radial_mesh_colors", index));
+
+			outputList.add("radial mesh visualisation color options = [" + String.join("; ", colorList) + "]");
 		}
 
 		if (isOutput("radial_mesh_frame_visualisation"))
-			outputList.add("radialMeshFrame=" + radialMeshFrame);
+			outputList.add("radial mesh frame = " + radialMeshFrame);
 
 		if (isOutput("radial_mesh_complete_visualisation")) {
-			String saveList = "radialMeshVisualisationSaveOptions=";
 			List<String> options = saveOptions.get("radial_mesh_complete_visualisation_save_options").getOptionList();
-			for (int index = 0; index < options.size(); index++) {
-				saveList += options.get(index);
-				if (index < options.size() - 1)
-					saveList += ",";
-			}
-			outputList.add(saveList);
+			outputList.add("radial mesh visualisation save options = [" + String.join("; ", options) + "]");
 		}
 
 		if (isOutput("neighbor_mesh")) {
-			outputList.add("KNeighbor=" + KNeighbor);
-			outputList.add("neighborMeshForwardTracks=" + neighborMeshForwardTracks);
+			outputList.add("K neighbors = " + KNeighbor);
+			if (neighborMeshForwardTracks)
+				outputList.add("neighbor mesh forward tracks = forward");
+			else
+				outputList.add("neighbor mesh forward tracks = backward");
 		}
 
 		if (isOutput("neighbor_mesh_visualisation")) {
-			String colorList = "neighborMeshVisualisationColorOptions=";
-			for (int index = 0; index < selectedChannels.size(); index++) {
-				colorList += getColorOption("neighbor_mesh_colors", index);
-				if (index < selectedChannels.size() - 1)
-					colorList += ",";
-			}
-			outputList.add(colorList);
+			colorList = new ArrayList<String>();
+			for (int index = 0; index < selectedChannels.size(); index++)
+				colorList.add(getColorOption("neighbor_mesh_colors", index));
+
+			outputList.add("neighbor mesh visualisation color options = [" + String.join("; ", colorList) + "]");
 		}
 
 		if (isOutput("neighbor_mesh_frame_visualisation"))
-			outputList.add("neighborMeshFrame=" + neighborMeshFrame);
+			outputList.add("neighbor mesh frame = " + neighborMeshFrame);
 
 		if (isOutput("neighbor_mesh_complete_visualisation")) {
-			String saveList = "neighborMeshVisualisationSaveOptions=";
 			List<String> options = saveOptions.get("neighbor_mesh_complete_visualisation_save_options").getOptionList();
-			for (int index = 0; index < options.size(); index++) {
-				saveList += options.get(index);
-				if (index < options.size() - 1)
-					saveList += ",";
-			}
-			outputList.add(saveList);
+			outputList.add("neighbor mesh visualisation save options = [" + String.join(", ", options) + "]");
 		}
 
 		return outputList;

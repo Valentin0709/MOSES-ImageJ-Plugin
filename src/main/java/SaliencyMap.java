@@ -3,8 +3,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -13,6 +11,8 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
+
+import org.joml.Math;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -24,67 +24,92 @@ public class SaliencyMap extends SwingWorker<String, String> {
 	private Process process;
 	private PythonScript script;
 	private int scriptCount;
-	private File configFile, spacialTimeMotionSaliencyMapFolder, boundaryIndexCSVFile;
-	private String currentFilePath, spacialTimeMotionSaliencyMapPath;
-	List<String> subfiles;
+	private File imageSaveFolder, CSVSaveFolder, matlabSaveFolder, configFile, spacialTimeMotionSaliencyMapFolder,
+			boundaryIndexCSVFile;
+	private String trackPath, resizedImagePath, projectName, timestamp;
+	private MatlabMetadata trackMetadata;
 
 	public SaliencyMap(ProgressPanel p) {
 		progress = p;
 		fileNumber = scriptCount = 0;
 	}
 
-	private void folderPaths() {
-		spacialTimeMotionSaliencyMapPath = SaliencyMapParameters.getSaveDirectory()
-				+ Globals.getNameWithoutExtension(currentFilePath) + "_spacial_time_motion_saliency_map_image_sequence";
+	private void recordHistory() {
+		File commandsHistoryFile = new File(SaliencyMapParameters.getWorkspace() + "/workspace_history.csv");
+
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList(""));
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Action:", "motion saliency map"));
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Timestamp:", timestamp));
+
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Motion tracks:"));
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList(String.join(", ", SaliencyMapParameters.getTracksPaths())));
+
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Images:"));
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList(String.join(", ", SaliencyMapParameters.getImagePaths())));
+
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Outputs:"));
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList(String.join(", ", SaliencyMapParameters.getOutputList())));
+
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("Parameters:"));
+		Globals.writeCSV(commandsHistoryFile,
+				Arrays.asList(String.join(", ", SaliencyMapParameters.getParametersList())));
 	}
 
-	private void createConfigFile() {
-		SimpleDateFormat formatter = new SimpleDateFormat("HH'-'mm'-'dd'-'MM'-'yyyy");
-		configFile = new File(SaliencyMapParameters.getSaveDirectory() + "MOSES_config_file" + "_"
-				+ formatter.format(new Date(System.currentTimeMillis())) + ".txt");
+	private void folderPaths() {
+		if (SaliencyMapParameters.isOutput("spatial_time_saliency_map_visualisation")
+				|| SaliencyMapParameters.isOutput("final_saliency_map_visualisation")
+				|| (SaliencyMapParameters.isOutput("average_motion_saliency_map")
+						&& SaliencyMapParameters.getSaveOption("average_motion_saliency_map_save_options", ".png"))) {
+			imageSaveFolder = new File(
+					SaliencyMapParameters.getWorkspace() + "/" + projectName + "/data_analysis/images/" + timestamp);
+		}
+		imageSaveFolder.mkdirs();
 
-		try {
-			configFile.createNewFile();
-		} catch (IOException e) {
-			IJ.handleException(e);
+		if (SaliencyMapParameters.isOutput("motion_saliency_map")
+				|| (SaliencyMapParameters.isOutput("average_motion_saliency_map")
+						&& SaliencyMapParameters.getSaveOption("average_motion_saliency_map_save_options", ".mat"))) {
+			matlabSaveFolder = new File(SaliencyMapParameters.getWorkspace() + "/" + projectName
+					+ "/data_analysis/matlab_files/" + timestamp);
+			matlabSaveFolder.mkdirs();
 		}
 
-		String configFileHeader = "MOSES config file \r\n";
-		configFileHeader += "@Action: motion_saliency_map \r\n\r\n";
+		if (SaliencyMapParameters.isOutput("spatial_time_saliency_map_visualisation")) {
+			String spacialTimeMotionSaliencyMapPath = imageSaveFolder.getAbsolutePath() + "/" + projectName
+					+ "_spacial_time_motion_saliency_map_image_sequence";
+			spacialTimeMotionSaliencyMapFolder = new File(spacialTimeMotionSaliencyMapPath);
+			spacialTimeMotionSaliencyMapFolder.mkdirs();
+		}
 
-		configFileHeader += "@Outputs:\r\n";
-		List<String> outputs = SaliencyMapParameters.getOutputList();
-		for (String output : outputs)
-			configFileHeader += "\t" + output + "\r\n";
-		configFileHeader += "\r\n";
+		if (SaliencyMapParameters.isOutput("boundary_formation_index")) {
+			CSVSaveFolder = new File(
+					SaliencyMapParameters.getWorkspace() + "/" + projectName + "/data_analysis/CSV_files/" + timestamp);
+			CSVSaveFolder.mkdirs();
 
-		configFileHeader += "@Parameters: \r\n";
-		List<String> parameters = SaliencyMapParameters.getParametersList();
-		for (String parameter : parameters)
-			configFileHeader += "\t" + parameter + "\r\n";
-		configFileHeader += "\r\n";
+			boundaryIndexCSVFile = new File(CSVSaveFolder.getAbsolutePath() + "/MOSES_motion_enrichment_index.csv");
 
-		FileWriter configFileWriter;
-		try {
-			configFileWriter = new FileWriter(configFile, true);
-			configFileWriter.write(configFileHeader);
-			configFileWriter.flush();
-			configFileWriter.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+			try {
+				boundaryIndexCSVFile.createNewFile();
+			} catch (IOException e) {
+				IJ.handleException(e);
+			}
 		}
 	}
 
 	private void generateMotionSaliencyMap() {
 		List<Parameter> parameters = new ArrayList<Parameter>();
-		parameters.addAll(Arrays.asList(new Parameter("filePath", "str", currentFilePath),
-				new Parameter("subfiles", "str", String.join(",", subfiles)),
+		parameters.addAll(Arrays.asList(new Parameter("trackPath", "str", trackPath),
+				new Parameter("imagePath", "str", resizedImagePath),
 				new Parameter("distanceThreshold", "float", SaliencyMapParameters.getSaliencyMapDistanceThreshold()),
 				new Parameter("padding", "int", SaliencyMapParameters.getPaddingDistance()),
-				new Parameter("saveDirectory", "str", SaliencyMapParameters.getSaveDirectory()),
-				new Parameter("fileName", "str", Globals.getNameWithoutExtension(currentFilePath))));
+				new Parameter("saveDirectory", "str", matlabSaveFolder),
+				new Parameter("saveDirectory2", "str", imageSaveFolder),
+				new Parameter("saveDirectory3", "str", spacialTimeMotionSaliencyMapFolder),
+				new Parameter("fileName", "str", projectName)));
 
 		addScriptHeader();
+
+		script.addScript(PythonScript.print(PythonScript.addString("-Computing motion saliency map...")));
+		script.newLine();
 
 		script.addCommnet("define parameters dictionary");
 		script.addParameter(parameters);
@@ -92,166 +117,283 @@ public class SaliencyMap extends SwingWorker<String, String> {
 		script.newLine();
 
 		script.addCommnet("import file");
-		script.addScript(
-				PythonScript.setValue("file", PythonScript.callFunction("spio.loadmat", "parameters.get('filePath')")));
-		script.addScript(PythonScript.setValue("rows", "int(file['metadata'][0][0])"));
-		script.addScript(PythonScript.setValue("columns", "int(file['metadata'][0][1])"));
-		script.addScript(PythonScript.setValue("subfiles", "parameters.get('subfiles').split(',')"));
+		script.addScript(PythonScript.setValue("file",
+				PythonScript.callFunction("spio.loadmat", "parameters.get('trackPath')")));
+		script.addScript(PythonScript.setValue("fileInfo",
+				PythonScript.callFunction("spio.whosmat", "parameters.get('trackPath')")));
+
+		script.addScript(PythonScript.setValue("rows", "int(file['metadata'][0][0][0][1][0][0])"));
+		script.addScript(PythonScript.setValue("columns", "int(file['metadata'][0][0][0][1][0][1])"));
 		script.newLine();
 
 		script.addCommnet("compute saliency map");
-		for (int i = 0; i < subfiles.size(); i++) {
-			script.addScript(PythonScript.print(PythonScript.addString("-Computing motion saliency map for ")
-					+ " + subfiles[" + i + "] + " + PythonScript.addString(" ...")));
-			script.addScript(PythonScript.setValue("track", "file[subfiles[" + i + "]]"));
+		List<Integer> channels = trackMetadata.getChannels();
+		for (int i = 0; i < channels.size(); i++) {
+			int channelIndex = channels.get(i) + 1;
+
+			script.addScript(PythonScript.setValue("track", "file[fileInfo[" + i + "][0]]"));
 			script.addScript(PythonScript.setValue("spixel_size", "track[1,0,1] - track[1,0,0]"));
-			script.addScript(
-					PythonScript.setValue(Arrays.asList("final_saliency_map_" + i, "spatial_time_saliency_map_" + i),
-							PythonScript.callFunction("compute_motion_saliency_map",
-									Arrays.asList("track",
-											"dist_thresh = parameters.get('distanceThreshold') * spixel_size",
-											"shape = (rows, columns)", "filt = 1", "filt_size = spixel_size"))));
+			script.addScript(PythonScript.setValue(
+					Arrays.asList("final_saliency_map_" + channelIndex, "spatial_time_saliency_map_" + channelIndex),
+					PythonScript.callFunction("compute_motion_saliency_map",
+							Arrays.asList("track", "dist_thresh = parameters.get('distanceThreshold') * spixel_size",
+									"shape = (rows, columns)", "filt = 1", "filt_size = spixel_size"))));
+
+			if (SaliencyMapParameters.getGaussianSmoothing())
+				script.addScript(PythonScript.setValue("final_saliency_map_" + channelIndex, PythonScript.callFunction(
+						"gaussian", Arrays.asList("final_saliency_map_" + channelIndex, "spixel_size / 2"))));
+
 			script.newLine();
 		}
+	}
 
+	private void saveMotionSaliencyMap() {
 		script.addCommnet("save saliency map");
-		script.addScript(PythonScript.setValue("saveLocation",
-				"parameters.get('saveDirectory') + parameters.get('fileName') + '_saliency_map.mat'"));
+		script.addScript(PythonScript.setValue("saveLocation", "parameters.get('saveDirectory')"));
 
+		List<Integer> channels = trackMetadata.getChannels();
 		List<String> saveList = new ArrayList<String>();
-		for (int i = 0; i < subfiles.size(); i++) {
-			saveList.add("'final_saliency_map_' + subfiles[" + i + "]" + " : final_saliency_map_" + i);
+		for (int i = 0; i < channels.size(); i++) {
+			int channelIndex = channels.get(i) + 1;
+
+			saveList.add("'final_saliency_map_" + channelIndex + "' : final_saliency_map_" + channelIndex);
 		}
 
-		script.addScript(PythonScript.callFunction("spio.savemat",
-				Arrays.asList("saveLocation", "{" + String.join(", ", saveList) + "}")));
+		saveList.add(
+				"'metadata' : np.array([[file['metadata'][0][0][0][0][0], [file['metadata'][0][0][0][1][0][0], file['metadata'][0][0][0][1][0][1]], file['metadata'][0][0][0][2][0], file['metadata'][0][0][0][3][0] ,'saliency_map'], file['metadata'][0][1]])");
+
+		script.addScript(
+				PythonScript.callFunction("spio.savemat",
+						Arrays.asList(
+								PythonScript.callFunction("os.path.join",
+										Arrays.asList("saveLocation",
+												"parameters.get('fileName') + '_saliency_map.mat'")),
+								"{" + String.join(", ", saveList) + "}")));
 	}
 
 	private void visualiseFinalMotionSaliencyMap() {
+		script.addScript(PythonScript.print(PythonScript.addString("-Plotting final motion saliency map...")));
+
+		List<Integer> channels = trackMetadata.getChannels();
+
 		script.addCommnet("plot figure");
 		script.addScript(PythonScript.callFunctionWithResult(Arrays.asList("fig", "ax"), "plt.subplots",
-				Arrays.asList("nrows = 1", "ncols = len(subfiles)")));
-		script.addScript(PythonScript.setValue("saveLocation",
-				"parameters.get('saveDirectory') + parameters.get('fileName') + '_final_saliency_map.png'"));
+				Arrays.asList("nrows = 1", "ncols = " + channels.size())));
+		script.addScript(PythonScript.setValue("saveLocation", "parameters.get('saveDirectory2')"));
 
-		if (subfiles.size() == 1) {
-			script.addScript(PythonScript.print(PythonScript.addString("-Plotting final motion saliency map for ")
-					+ " + subfiles[0] + " + PythonScript.addString(" ...")));
+		if (SaliencyMapParameters.isOutput("final_saliency_map_visualisation_overlay")) {
+			script.addScript(PythonScript.setValue("vidstack",
+					PythonScript.callFunction("read_multiimg_PIL", "parameters.get('imagePath')")));
+
+			if (trackMetadata.getTrackType().equals("forward"))
+				script.addScript(PythonScript.setValue("frame_img", "vidstack[0]"));
+			else
+				script.addScript(PythonScript.setValue("frame_img", "vidstack[-1]"));
+		}
+
+		if (channels.size() == 1) {
+			int channelIndex = channels.get(0) + 1;
 
 			script.addScript(PythonScript.callFunction("fig.set_size_inches",
-					Arrays.asList("float(columns) / rows * len(subfiles)", "1", "forward = False")));
+					Arrays.asList("float(columns) / rows * " + channels.size(), "1", "forward = False")));
 			script.addScript(PythonScript.callFunction("plt.subplots_adjust",
 					Arrays.asList("left = 0", "right = 1", "bottom = 0", "top = 1", "hspace = 0", "wspace = 0")));
-			script.addScript(
-					PythonScript.callFunction("ax.imshow", Arrays.asList("final_saliency_map_0", "cmap='coolwarm'")));
+
+			if (SaliencyMapParameters.isOutput("final_saliency_map_visualisation_overlay")) {
+				script.addScript(PythonScript.callFunction("ax.imshow", Arrays.asList("frame_img")));
+
+				script.addScript(PythonScript.callFunction("ax.imshow",
+						Arrays.asList("final_saliency_map_" + channelIndex, "cmap='coolwarm'", "alpha = 0.7")));
+			} else
+				script.addScript(PythonScript.callFunction("ax.imshow",
+						Arrays.asList("final_saliency_map_" + channelIndex, "cmap='coolwarm'")));
+
 			script.addScript(PythonScript.callFunction("ax.grid", PythonScript.addString("off")));
 			script.addScript(PythonScript.callFunction("ax.axis", PythonScript.addString("off")));
 
-			script.addScript(PythonScript.callFunction("fig.savefig", Arrays.asList("saveLocation", "dpi = rows")));
-			script.addScript(PythonScript.callFunction("plt.close", "fig"));
 		} else {
 			script.addScript(PythonScript.callFunction("fig.set_size_inches",
-					Arrays.asList("float(columns) / rows * len(subfiles) + 0.1", "1", "forward = False")));
+					Arrays.asList("float(columns) / rows * " + channels.size() + " + 0.1", "1", "forward = False")));
 			script.addScript(PythonScript.callFunction("plt.subplots_adjust",
 					Arrays.asList("left = 0", "right = 1", "bottom = 0", "top = 1", "hspace = 0", "wspace = 0.1")));
 
-			for (int i = 0; i < subfiles.size(); i++) {
-				script.addScript(PythonScript.print(PythonScript.addString("-Plotting final motion saliency map for ")
-						+ " + subfiles[" + i + "] +" + PythonScript.addString(" ...")));
+			for (int i = 0; i < channels.size(); i++) {
+				int channelIndex = channels.get(i) + 1;
 
-				script.addScript(PythonScript.callFunction("ax[" + i + "].imshow",
-						Arrays.asList("final_saliency_map_" + i, "cmap='coolwarm'")));
+				if (SaliencyMapParameters.isOutput("final_saliency_map_visualisation_overlay")) {
+					script.addScript(PythonScript.callFunction("ax[" + i + "].imshow", Arrays.asList("frame_img")));
+
+					script.addScript(PythonScript.callFunction("ax[" + i + "].imshow",
+							Arrays.asList("final_saliency_map_" + channelIndex, "cmap='coolwarm'", "alpha = 0.7")));
+				} else
+					script.addScript(PythonScript.callFunction("ax[" + i + "].imshow",
+							Arrays.asList("final_saliency_map_" + channelIndex, "cmap='coolwarm'")));
+
 				script.addScript(PythonScript.callFunction("ax[" + i + "].grid", PythonScript.addString("off")));
 				script.addScript(PythonScript.callFunction("ax[" + i + "].axis", PythonScript.addString("off")));
-
-				script.addScript(PythonScript.callFunction("fig.savefig", Arrays.asList("saveLocation", "dpi = rows")));
-				script.addScript(PythonScript.callFunction("plt.close", "fig"));
 			}
 		}
+
+		script.addScript(
+				PythonScript.callFunction("fig.savefig",
+						Arrays.asList(
+								PythonScript.callFunction("os.path.join",
+										Arrays.asList("saveLocation",
+												"parameters.get('fileName') + '_final_saliency_map.png'")),
+								"dpi = rows")));
+		script.addScript(PythonScript.callFunction("plt.close", "fig"));
 	}
 
 	private void visualiseSpacialTimeMotionSaliencyMap() {
-		spacialTimeMotionSaliencyMapFolder = new File(spacialTimeMotionSaliencyMapPath);
-		spacialTimeMotionSaliencyMapFolder.mkdirs();
-
+		List<Integer> channels = trackMetadata.getChannels();
 		script.addCommnet("spacial time motion saliency map");
-		script.addScript(PythonScript.print(PythonScript.addString("-Plotting spacial time motion saliency map ...")));
-		script.addScript(
-				PythonScript.print(PythonScript.addString(">") + " + str(spatial_time_saliency_map_0.shape[0])"));
-		script.startFor("frame", "spatial_time_saliency_map_0.shape[0]");
+		script.addScript(PythonScript.setValue("saveLocation", "parameters.get('saveDirectory3')"));
+
+		if (SaliencyMapParameters.isOutput("spatial_time_saliency_map_visualisation_overlay")) {
+			script.addScript(PythonScript.setValue("vidstack",
+					PythonScript.callFunction("read_multiimg_PIL", "parameters.get('imagePath')")));
+		}
+
+		script.addScript(PythonScript.print(PythonScript.addString("-Plotting spacial time motion saliency map...")));
+
+		int channelIndex0 = channels.get(0) + 1;
+
+		script.addScript(PythonScript.print(
+				PythonScript.addString(">") + " + str(spatial_time_saliency_map_" + channelIndex0 + ".shape[0])"));
+		script.startFor("frame", "spatial_time_saliency_map_" + channelIndex0 + ".shape[0]");
 		script.addScript(PythonScript.print(PythonScript.addString("!") + " + str(frame + 1)"));
 
 		script.addCommnet("plot figure");
 		script.addScript(PythonScript.callFunctionWithResult(Arrays.asList("fig", "ax"), "plt.subplots",
-				Arrays.asList("nrows = 1", "ncols = len(subfiles)")));
-		script.addScript(PythonScript.setValue("saveLocation",
-				"parameters.get('saveDirectory') + parameters.get('fileName') + '_spacial_time_motion_saliency_map_image_sequence'"));
+				Arrays.asList("nrows = 1", "ncols = " + channels.size())));
 
-		if (subfiles.size() == 1) {
+		if (SaliencyMapParameters.isOutput("spatial_time_saliency_map_visualisation_overlay")) {
+			if (trackMetadata.getTrackType().equals("forward"))
+				script.addScript(PythonScript.setValue("frame_img", "vidstack[frame]"));
+			else
+				script.addScript(PythonScript.setValue("frame_img", "vidstack[-(frame + 1)]"));
+		}
+		if (channels.size() == 1) {
 
 			script.addScript(PythonScript.callFunction("fig.set_size_inches",
-					Arrays.asList("float(columns) / rows * len(subfiles)", "1", "forward = False")));
+					Arrays.asList("float(columns) / rows * " + channels.size(), "1", "forward = False")));
 			script.addScript(PythonScript.callFunction("plt.subplots_adjust",
 					Arrays.asList("left = 0", "right = 1", "bottom = 0", "top = 1", "hspace = 0", "wspace = 0")));
-			script.addScript(PythonScript.callFunction("ax.imshow",
-					Arrays.asList("spatial_time_saliency_map_0[frame, :, :]", "cmap='coolwarm'")));
+
+			if (SaliencyMapParameters.getGaussianSmoothing())
+				script.addScript(
+						PythonScript.setValue("spatial_time_saliency_map_" + channelIndex0 + "[frame, :, :]",
+								PythonScript.callFunction("gaussian",
+										Arrays.asList("spatial_time_saliency_map_" + channelIndex0 + "[frame, :, :]",
+												"spixel_size / 2"))));
+
+			if (SaliencyMapParameters.isOutput("spatial_time_saliency_map_visualisation_overlay")) {
+				script.addScript(PythonScript.callFunction("ax.imshow", Arrays.asList("frame_img")));
+
+				script.addScript(PythonScript.callFunction("ax.imshow",
+						Arrays.asList("spatial_time_saliency_map_" + channelIndex0 + "[frame, :, :]", "cmap='coolwarm'",
+								"alpha = 0.7")));
+			} else
+				script.addScript(PythonScript.callFunction("ax.imshow", Arrays
+						.asList("spatial_time_saliency_map_" + channelIndex0 + "[frame, :, :]", "cmap='coolwarm'")));
+
 			script.addScript(PythonScript.callFunction("ax.grid", PythonScript.addString("off")));
 			script.addScript(PythonScript.callFunction("ax.axis", PythonScript.addString("off")));
-
-			script.addScript(PythonScript.callFunction("fig.savefig",
-					Arrays.asList(PythonScript.callFunction("os.path.join", Arrays.asList("saveLocation",
-							"'spatial_time_saliency_map_%s' %(str(frame + 1).zfill(3)) + '_' + parameters.get('fileName')  + '.png' ")),
-							"dpi = rows")));
-			script.addScript(PythonScript.callFunction("plt.close", "fig"));
 		} else {
 			script.addScript(PythonScript.callFunction("fig.set_size_inches",
-					Arrays.asList("float(columns) / rows * len(subfiles) + 0.1", "1", "forward = False")));
+					Arrays.asList("float(columns) / rows * " + channels.size() + " + 0.1", "1", "forward = False")));
 			script.addScript(PythonScript.callFunction("plt.subplots_adjust",
 					Arrays.asList("left = 0", "right = 1", "bottom = 0", "top = 1", "hspace = 0", "wspace = 0.1")));
 
-			for (int i = 0; i < subfiles.size(); i++) {
+			for (int i = 0; i < channels.size(); i++) {
+				int channelIndex = channels.get(i) + 1;
 
-				script.addScript(PythonScript.callFunction("ax[" + i + "].imshow",
-						Arrays.asList("spatial_time_saliency_map_" + i + "[frame, :, :]", "cmap='coolwarm'")));
+				if (SaliencyMapParameters.getGaussianSmoothing())
+					script.addScript(
+							PythonScript.setValue("spatial_time_saliency_map_" + channelIndex + "[frame, :, :]",
+									PythonScript.callFunction("gaussian",
+											Arrays.asList("spatial_time_saliency_map_" + channelIndex + "[frame, :, :]",
+													"spixel_size / 2"))));
+
+				if (SaliencyMapParameters.isOutput("spatial_time_saliency_map_visualisation_overlay")) {
+					script.addScript(PythonScript.callFunction("ax[" + i + "].imshow", Arrays.asList("frame_img")));
+
+					script.addScript(PythonScript.callFunction("ax[" + i + "].imshow",
+							Arrays.asList("spatial_time_saliency_map_" + channelIndex + "[frame, :, :]",
+									"cmap='coolwarm'", "alpha = 0.7")));
+				} else
+					script.addScript(PythonScript.callFunction("ax[" + i + "].imshow", Arrays
+							.asList("spatial_time_saliency_map_" + channelIndex + "[frame, :, :]", "cmap='coolwarm'")));
+
 				script.addScript(PythonScript.callFunction("ax[" + i + "].grid", PythonScript.addString("off")));
 				script.addScript(PythonScript.callFunction("ax[" + i + "].axis", PythonScript.addString("off")));
-
-				script.addScript(PythonScript.callFunction("fig.savefig",
-						Arrays.asList(PythonScript.callFunction("os.path.join", Arrays.asList("saveLocation",
-								"'spatial_time_saliency_map_%s' %(str(frame + 1).zfill(3)) + '_' + parameters.get('fileName')  + '.png' ")),
-								"dpi = rows")));
-				script.addScript(PythonScript.callFunction("plt.close", "fig"));
 			}
 		}
+		script.addScript(PythonScript.callFunction("fig.savefig",
+				Arrays.asList(PythonScript.callFunction("os.path.join", Arrays.asList("saveLocation",
+						"'spatial_time_saliency_map_%s' %(str(frame + 1).zfill(3)) + '_' + parameters.get('fileName')  + '.png' ")),
+						"dpi = rows")));
+		script.addScript(PythonScript.callFunction("plt.close", "fig"));
 
 		script.stopFor();
 	}
 
 	private void generateBoundaryFormationIndex() {
-		script.addScript(PythonScript.print(PythonScript.addString("-Computing boundary formation index ...")));
+		script.addScript(PythonScript.print(PythonScript.addString("-Computing motion enrichment index...")));
 
-		script.addScript(PythonScript.setValue(Arrays.asList("boundary_formation_index", "av_saliency_map"),
-				PythonScript.callFunction("compute_boundary_formation_index", Arrays.asList("final_saliency_map_0",
-						"final_saliency_map_1", "spixel_size", "pad_multiple = parameters.get('padding')"))));
+		List<Integer> channels = trackMetadata.getChannels();
+		List<String> saliencyMaps = new ArrayList<String>();
+		for (int i = 0; i < channels.size(); i++) {
+			int channelIndex = channels.get(i) + 1;
+			saliencyMaps.add("final_saliency_map_" + channelIndex);
+		}
+
+		script.addScript(PythonScript.setValue("av_saliency_map",
+				"(" + String.join("+", saliencyMaps) + ") / " + channels.size()));
+
+		script.addScript(PythonScript.setValue(Arrays.asList("boundary_formation_index", "avrg_saliency_map"),
+				PythonScript.callFunction("compute_boundary_formation_index", Arrays.asList("av_saliency_map",
+						"av_saliency_map", "spixel_size", "pad_multiple = parameters.get('padding')"))));
 		script.addScript(PythonScript.print(PythonScript.addString(".%.3f") + "%(boundary_formation_index)"));
 		script.newLine();
 
 	}
 
 	private void getAverageMotionSaliencyMap() {
+		script.addScript(PythonScript.print(PythonScript.addString("-Computing average motion saliency map...")));
+
+		List<Integer> channels = trackMetadata.getChannels();
+		List<String> saliencyMaps = new ArrayList<String>();
+		for (int i = 0; i < channels.size(); i++) {
+			int channelIndex = channels.get(i) + 1;
+			saliencyMaps.add("final_saliency_map_" + channelIndex);
+		}
+
+		script.addScript(PythonScript.setValue("av_saliency_map",
+				"(" + String.join("+", saliencyMaps) + ") / " + channels.size()));
+
 		if (SaliencyMapParameters.getSaveOption("average_motion_saliency_map_save_options", ".mat")) {
+			script.addScript(PythonScript.setValue("saveLocation", "parameters.get('saveDirectory')"));
+
+			List<String> saveList = new ArrayList<String>();
+			saveList.add("'average_saliency_map' : av_saliency_map");
+			saveList.add(
+					"'metadata' : np.array([[file['metadata'][0][0][0][0][0], [file['metadata'][0][0][0][1][0][0], file['metadata'][0][0][0][1][0][1]], file['metadata'][0][0][0][2][0], file['metadata'][0][0][0][3][0] ,'saliency_map'], file['metadata'][0][1]])");
 
 			script.addCommnet("save average motion saliency map");
-			script.addScript(PythonScript.print(PythonScript.addString("-Saving average saliency map...")));
-			script.addScript(PythonScript.setValue("saveLocation",
-					"parameters.get('saveDirectory') + parameters.get('fileName') + '_average_saliency_map.mat'"));
 			script.addScript(PythonScript.callFunction("spio.savemat",
-					Arrays.asList("saveLocation", "{'average_saliency_map' : av_saliency_map}")));
+					Arrays.asList(
+							PythonScript.callFunction("os.path.join",
+									Arrays.asList("saveLocation",
+											"parameters.get('fileName') + '_average_saliency_map.mat'")),
+							"{" + String.join(",", saveList) + "}")));
 		}
 
 		if (SaliencyMapParameters.getSaveOption("average_motion_saliency_map_save_options", ".png")) {
+			script.addScript(PythonScript.setValue("saveLocation", "parameters.get('saveDirectory2')"));
+
 			script.addCommnet("plot figure");
-			script.addScript(PythonScript.print(PythonScript.addString("-Plotting average motion saliency map ...")));
+			script.addScript(PythonScript.print(PythonScript.addString("-Plotting average motion saliency map...")));
 			script.addScript(PythonScript.setValue("fig", PythonScript.callFunction("plt.figure", "")));
 			script.addScript(PythonScript.callFunction("fig.set_size_inches", Arrays.asList(
 					"float(av_saliency_map.shape[1]) / int(av_saliency_map.shape[0])", "1", "forward = False")));
@@ -268,10 +410,12 @@ public class SaliencyMap extends SwingWorker<String, String> {
 			script.newLine();
 
 			script.addCommnet("save figure");
-			script.addScript(PythonScript.setValue("saveLocation",
-					"parameters.get('saveDirectory') + parameters.get('fileName') + '_average_saliency_map.png'"));
 			script.addScript(PythonScript.callFunction("fig.savefig",
-					Arrays.asList("saveLocation", "dpi = av_saliency_map.shape[0]")));
+					Arrays.asList(
+							PythonScript.callFunction("os.path.join",
+									Arrays.asList("saveLocation",
+											"parameters.get('fileName') + '_average_saliency_map.png'")),
+							"dpi = av_saliency_map.shape[0]")));
 			script.addScript(PythonScript.callFunction("plt.close", "fig"));
 		}
 	}
@@ -280,41 +424,40 @@ public class SaliencyMap extends SwingWorker<String, String> {
 	protected String doInBackground() throws Exception {
 		publish("-Processing parameters...");
 
-		if (SaliencyMapParameters.isOutput("config_file"))
-			createConfigFile();
+		timestamp = Globals.getFormattedDate();
+		SaliencyMapParameters.deleteFiles();
+		recordHistory();
 
-		if (SaliencyMapParameters.isOutput("boundary_formation_index")) {
-			boundaryIndexCSVFile = new File(
-					SaliencyMapParameters.getSaveDirectory() + "MOSES_boundary_formation_index.csv");
+		fileNumber = 1;
+		for (ProjectImageAnnotationTracks imt : SaliencyMapParameters.getFiles()) {
+			String imagePath = imt.getImagePath();
+			trackPath = imt.getTrackPath();
+			projectName = imt.getProjectName();
 
-			try {
-				boundaryIndexCSVFile.createNewFile();
-			} catch (IOException e) {
-				IJ.handleException(e);
-			}
+			if (imagePath != null && trackPath != null) {
+				trackMetadata = new MatlabMetadata(trackPath);
 
-			try {
-				FileWriter csvWriter = new FileWriter(boundaryIndexCSVFile, true);
+				progress.setFileName(projectName);
+				publish("-Processing parameters...");
 
-				csvWriter.append(String.join(",", Arrays.asList("File", "Boundary formation index")));
-				csvWriter.append("\n");
-				csvWriter.flush();
-				csvWriter.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+				// create resized file
+				resizedImagePath = System.getProperty("java.io.tmpdir") + "MOSESimage.tif";
 
-		for (String filePath : SaliencyMapParameters.getMotionTracksFilePaths()) {
-			currentFilePath = filePath;
-			progress.setFileName(Globals.getName(filePath));
-			fileNumber++;
-			subfiles = SaliencyMapParameters.getMotionTracksSubfiles(filePath);
-			folderPaths();
+				ImagePlus resizedImage = IJ.openImage(imagePath);
+				IJ.run(resizedImage, "Size...", "width="
+						+ (int) (resizedImage.getWidth() / Math.sqrt(trackMetadata.getDownsizeFactor())) + " height="
+						+ (int) (resizedImage.getHeight() / Math.sqrt(trackMetadata.getDownsizeFactor())) + " depth="
+						+ ComputeTracksParameters.getFrames() + " constrain average interpolation=Bilinear");
+				IJ.saveAs(resizedImage, "Tiff", resizedImagePath);
+				resizedImage.close();
 
-			if (SaliencyMapParameters.isOutput("motion_saliency_map") && !this.isCancelled()) {
+				folderPaths();
+
 				script = new PythonScript("Motion saliency map");
 				generateMotionSaliencyMap();
+
+				if (SaliencyMapParameters.isOutput("motion_saliency_map") && !this.isCancelled())
+					saveMotionSaliencyMap();
 
 				if (SaliencyMapParameters.isOutput("final_saliency_map_visualisation") && !this.isCancelled())
 					visualiseFinalMotionSaliencyMap();
@@ -322,40 +465,23 @@ public class SaliencyMap extends SwingWorker<String, String> {
 				if (SaliencyMapParameters.isOutput("spatial_time_saliency_map_visualisation") && !this.isCancelled())
 					visualiseSpacialTimeMotionSaliencyMap();
 
-				if (SaliencyMapParameters.isOutput("boundary_formation_index") && !this.isCancelled()) {
-					if (subfiles.size() == 2) {
-						generateBoundaryFormationIndex();
+				if (SaliencyMapParameters.isOutput("average_motion_saliency_map") && !this.isCancelled())
+					getAverageMotionSaliencyMap();
 
-						if (SaliencyMapParameters.isOutput("average_motion_saliency_map") && !this.isCancelled())
-							getAverageMotionSaliencyMap();
-					} else
-						publish("+Warning: Boundary formation index was not computed for " + Globals.getName(filePath)
-								+ ". Please check if the file contains the right number of motion tracks.");
-				}
+				if (SaliencyMapParameters.isOutput("boundary_formation_index") && !this.isCancelled())
+					generateBoundaryFormationIndex();
 
 				runScript();
 
 				if (SaliencyMapParameters.isOutput("spatial_time_saliency_map_visualisation") && !this.isCancelled())
 					executeSaveOption("spatial_time_saliency_map_visualisation_save_options",
 							spacialTimeMotionSaliencyMapFolder, "spatial_time_saliency_map");
+
 			}
 		}
 
 		return "Done.";
 
-	}
-
-	private void writeCSV(File f, List<String> row) {
-		try {
-			FileWriter csvWriter = new FileWriter(f, true);
-
-			csvWriter.append(String.join(",", row));
-			csvWriter.append("\n");
-			csvWriter.flush();
-			csvWriter.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 
 	public void destroy() {
@@ -368,8 +494,11 @@ public class SaliencyMap extends SwingWorker<String, String> {
 		script.importModule("os");
 		script.importModule("pylab", "plt");
 		script.importModule("scipy.io", "spio");
+		script.importModule("numpy", "np");
 		script.importModuleFrom("compute_motion_saliency_map", "MOSES.Motion_Analysis.mesh_statistics_tools");
 		script.importModuleFrom("compute_boundary_formation_index", "MOSES.Motion_Analysis.mesh_statistics_tools");
+		script.importModuleFrom("read_multiimg_PIL", "MOSES.Utility_Functions.file_io");
+		script.importModuleFrom("gaussian", "skimage.filters");
 	}
 
 	private void runScript() {
@@ -398,8 +527,8 @@ public class SaliencyMap extends SwingWorker<String, String> {
 		for (Parameter parameter : script.getParameters())
 			command.add(parameter.getValue());
 
-//		IJ.log(script.getScript());
-//		IJ.log(String.valueOf(command));
+		IJ.log(script.getScript());
+		IJ.log(String.valueOf(command));
 
 		// run process
 		ProcessBuilder pb = new ProcessBuilder(command);
@@ -463,7 +592,10 @@ public class SaliencyMap extends SwingWorker<String, String> {
 			}
 			if (messageScope == '.') {
 				validMessage = false;
-				writeCSV(boundaryIndexCSVFile, Arrays.asList(Globals.getName(currentFilePath), m));
+				Globals.writeCSV(boundaryIndexCSVFile, Arrays.asList("Project name", projectName));
+				Globals.writeCSV(boundaryIndexCSVFile,
+						Arrays.asList("Tracks parameters", String.join(", ", trackMetadata.metadataList())));
+				Globals.writeCSV(boundaryIndexCSVFile, Arrays.asList("Motion enrichment index", m));
 			}
 
 			if (validMessage) {
@@ -481,9 +613,7 @@ public class SaliencyMap extends SwingWorker<String, String> {
 			Thread.yield();
 
 			ImagePlus imp = FolderOpener.open(folder.getAbsolutePath(), "");
-			imp.show();
-			IJ.saveAs(imp, "Tiff", SaliencyMapParameters.getSaveDirectory()
-					+ Globals.getNameWithoutExtension(currentFilePath) + "_" + outputName + ".tif");
+			IJ.saveAs(imp, "Tiff", imageSaveFolder.getAbsolutePath() + "/" + projectName + "_" + outputName + ".tif");
 		}
 
 		// save .avi
@@ -492,8 +622,8 @@ public class SaliencyMap extends SwingWorker<String, String> {
 			Thread.yield();
 
 			ImagePlus imp = FolderOpener.open(folder.getAbsolutePath(), "");
-			IJ.run(imp, "AVI... ", "compression=JPEG frame=7 save=" + SaliencyMapParameters.getSaveDirectory()
-					+ Globals.getNameWithoutExtension(currentFilePath) + "_" + outputName + ".avi");
+			IJ.run(imp, "AVI... ", "compression=JPEG frame=7 save=" + imageSaveFolder.getAbsolutePath() + "/"
+					+ projectName + "_" + outputName + ".avi");
 		}
 
 		// delete image sequence folder

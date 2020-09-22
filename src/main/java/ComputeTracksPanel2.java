@@ -519,8 +519,8 @@ public class ComputeTracksPanel2 extends JPanel {
 				double downsizeFactor = Double.parseDouble(downsizeFactorField.getText());
 				int numberSuperpixels = Integer.parseInt(numberSuperpixelsField.getText());
 
-				ImagePlus currentImage = IJ.openImage(ComputeTracksParameters.getFilePath());
-				currentImage.setTitle(Globals.getNameWithoutExtension(ComputeTracksParameters.getFilePath())
+				ImagePlus currentImage = IJ.openImage(ComputeTracksParameters.getFilePath(0));
+				currentImage.setTitle(Globals.getNameWithoutExtension(ComputeTracksParameters.getFilePath(0))
 						+ "_superpixel_preview_" + "downsize factor=" + downsizeFactor + "_number_superpixels="
 						+ Integer.parseInt(numberSuperpixelsField.getText()));
 				IJ.run(currentImage, "Size...",

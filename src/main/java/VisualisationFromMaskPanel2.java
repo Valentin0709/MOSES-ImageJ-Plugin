@@ -3,36 +3,33 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.text.DecimalFormat;
-import java.util.Arrays;
+import java.util.List;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JFormattedTextField;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JLayeredPane;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.border.LineBorder;
 
-import ij.IJ;
-
-public class VisualisationFromMaskPanel2 extends JLayeredPane {
+public class VisualisationFromMaskPanel2 extends JPanel {
 	private MainFrame parentFrame;
 	private VisualisationFromMaskPanel2 self = this;
 
-	JCheckBox saveCheckBox1, saveCheckBox2;
-	JPanel optionPanel, bigPanel;
-	SaveOption saveOption;
-	ColorOption colorOption;
-	JFormattedTextField temporalSegmentField;
+	JButton importAnnotationButton;
+	JPanel step3Panel, step4Panel;
+	JLabel selectedAnnotationsLabel;
+	JCheckBox showAnnotationsCheckBox, showLabelsCheckBox;
+	JComboBox fontSizeComboBox, colorPaletteComboBox;
 
-	VisualisationFromMask swingWorker;
-	boolean swingWorkerStarted;
+	boolean ok1 = false;
 
 	public VisualisationFromMaskPanel2(MainFrame parentFrame) {
 		setOpaque(true);
@@ -50,7 +47,7 @@ public class VisualisationFromMaskPanel2 extends JLayeredPane {
 
 		// set size
 
-		this.setPreferredSize(new Dimension(Globals.frameWidth, Globals.frameHight));
+		this.setPreferredSize(new Dimension(1032, 500));
 
 		// set background color
 
@@ -60,35 +57,49 @@ public class VisualisationFromMaskPanel2 extends JLayeredPane {
 
 		setLayout(null);
 
-		JLabel titleLabel = new JLabel("Visualisation from mask", SwingConstants.CENTER);
+		JLabel titleLabel = new JLabel("Custom visualisation", SwingConstants.CENTER);
 		titleLabel.setVerticalTextPosition(SwingConstants.CENTER);
 		titleLabel.setHorizontalTextPosition(SwingConstants.CENTER);
 		titleLabel.setFont(new Font("Arial Black", Font.BOLD, 23));
 		titleLabel.setBounds(0, 0, 500, 36);
 		add(titleLabel);
 
-		JLabel step4Label = new JLabel("STEP 4");
-		step4Label.setVerticalAlignment(SwingConstants.TOP);
-		step4Label.setHorizontalAlignment(SwingConstants.LEFT);
-		step4Label.setForeground(Color.DARK_GRAY);
-		step4Label.setFont(new Font("Roboto", Font.BOLD, 15));
-		step4Label.setBounds(10, 45, 53, 30);
-		add(step4Label);
+		JButton nextButton = new JButton("Next");
+		nextButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (ok1) {
+					VisualisationFromMaskParameters
+							.setColorPalette(String.valueOf(colorPaletteComboBox.getSelectedItem()));
+					VisualisationFromMaskParameters
+							.setFontSize(Integer.parseInt(String.valueOf(fontSizeComboBox.getSelectedItem())));
+					VisualisationFromMaskParameters.setLabelVisibility(showLabelsCheckBox.isSelected());
+					VisualisationFromMaskParameters.setAnnotationVisibility(showAnnotationsCheckBox.isSelected());
 
-		JLabel instructionLabel1 = new JLabel(
-				"<html> Select you preferred outputs. You'll be asked to choose a saving directory at the end. </html>");
-		instructionLabel1.setVerticalAlignment(SwingConstants.TOP);
-		instructionLabel1.setFont(new Font("Roboto", Font.PLAIN, 15));
-		instructionLabel1.setBounds(65, 45, 415, 41);
-		add(instructionLabel1);
+					parentFrame.empty();
+					parentFrame.visualisationFromMaskPanel3 = new VisualisationFromMaskPanel3(parentFrame);
+					parentFrame.getContentPane().add(parentFrame.visualisationFromMaskPanel3);
+					parentFrame.validate();
+				} else {
+					// display error dialog box
+					JFrame dialog = new JFrame();
+					Object[] options = { "Ok" };
+					JOptionPane.showOptionDialog(dialog, "Plese complete steps 3 before going to the next page.",
+							"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
+
+				}
+			}
+		});
+		nextButton.setVerticalTextPosition(SwingConstants.CENTER);
+		nextButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		nextButton.setForeground(Color.WHITE);
+		nextButton.setFont(new Font("Arial", Font.BOLD, 15));
+		nextButton.setBackground(new Color(13, 59, 102));
+		nextButton.setBounds(350, 430, 140, 30);
+		add(nextButton);
 
 		JButton cancelButton = new JButton("Cancel");
 		cancelButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// stop swing worker
-				if (swingWorkerStarted)
-					swingWorker.destroy();
-
 				parentFrame.empty();
 				parentFrame.menuPanel = new MenuPanel(parentFrame);
 				parentFrame.getContentPane().add(parentFrame.menuPanel);
@@ -103,71 +114,83 @@ public class VisualisationFromMaskPanel2 extends JLayeredPane {
 		cancelButton.setBounds(10, 430, 140, 30);
 		add(cancelButton);
 
-		JButton finishButton = new JButton("Finish");
-		finishButton.addActionListener(new ActionListener() {
+		step3Panel = new JPanel();
+		step3Panel.setLayout(null);
+		step3Panel.setBorder(new LineBorder(new Color(0, 0, 0), 2));
+		step3Panel.setBackground(new Color(252, 252, 252));
+		step3Panel.setBounds(10, 45, 480, 180);
+		add(step3Panel);
+
+		importAnnotationButton = new JButton("Select annotation");
+		importAnnotationButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (saveCheckBox1.isSelected() || saveCheckBox2.isSelected()) {
+				FileSelecter selecter = new FileSelecter();
+				selecter.setSelectAllButton(false);
+				selecter.setVisible(true);
+				selecter.annotationList(VisualisationFromMaskParameters.getWorkspace(),
+						VisualisationFromMaskParameters.getProjectNames(),
+						"Select for each project the annotation file you want to use for visualising the motion tracks.");
 
-					String saveDirectory = IJ.getDirectory("Choose saving directory");
-					if (saveDirectory != null) {
-						VisualisationFromMaskParameters.setSaveDirectory(saveDirectory);
+				selecter.importButton.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						List<String> annotationPaths = selecter.getSelected();
+						selecter.dispose();
 
-						if (saveCheckBox1.isSelected()) {
-							VisualisationFromMaskParameters.setCompleteVisualisation(true);
-							VisualisationFromMaskParameters.setSaveOption(saveOption);
-							VisualisationFromMaskParameters.setColorOption(colorOption);
-							VisualisationFromMaskParameters
-									.setTracksTemporalSegment(Integer.parseInt(temporalSegmentField.getText()));
+						VisualisationFromMaskParameters.setAnnotationPaths(annotationPaths);
+
+						List<String> errorList = VisualisationFromMaskParameters.noAnnotationMatch();
+						if (errorList.size() > 0) {
+							JFrame dialog = new JFrame();
+							Object[] options = { "Ok" };
+							JOptionPane.showOptionDialog(dialog,
+									"No annotation selected for " + String.join(", ", errorList), "MOSES",
+									JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
 						}
 
-						if (saveCheckBox2.isSelected())
-							VisualisationFromMaskParameters.setLongestTracksVisualisation(true);
+						if (annotationPaths.size() > 0)
+							showSelectedAnnotations();
 
-						// loading bar panel
-						ProgressPanel progress = new ProgressPanel(self, 40, 200);
-						self.add(progress);
-						self.setLayer(progress, 1);
-						progress.setVisibility(true);
-
-						Globals.setPanelEnabled(bigPanel, false);
-
-						// run process
-						class SwingWorkerListener implements PropertyChangeListener {
-							@Override
-							public void propertyChange(PropertyChangeEvent evt) {
-								if (swingWorker.isDone()) {
-									parentFrame.empty();
-									parentFrame.menuPanel = new MenuPanel(parentFrame);
-									parentFrame.getContentPane().add(parentFrame.menuPanel);
-									parentFrame.validate();
-								}
-
-							}
-						}
-
-						swingWorker = new VisualisationFromMask(progress);
-						swingWorkerStarted = true;
-						swingWorker.addPropertyChangeListener(new SwingWorkerListener());
-						swingWorker.execute();
 					}
-				}
+				});
+
 			}
 		});
-		finishButton.setVerticalTextPosition(SwingConstants.CENTER);
-		finishButton.setHorizontalTextPosition(SwingConstants.CENTER);
-		finishButton.setForeground(Color.WHITE);
-		finishButton.setFont(new Font("Arial", Font.BOLD, 15));
-		finishButton.setBackground(new Color(13, 59, 102));
-		finishButton.setBounds(350, 430, 140, 30);
-		add(finishButton);
+		importAnnotationButton.setVerticalTextPosition(SwingConstants.CENTER);
+		importAnnotationButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		importAnnotationButton.setForeground(Color.WHITE);
+		importAnnotationButton.setFont(new Font("Arial", Font.BOLD, 15));
+		importAnnotationButton.setBackground(new Color(13, 59, 102));
+		importAnnotationButton.setBounds(140, 25, 200, 20);
+		step3Panel.add(importAnnotationButton);
+
+		JLabel step3Label = new JLabel("STEP 3");
+		step3Label.setVerticalAlignment(SwingConstants.TOP);
+		step3Label.setHorizontalAlignment(SwingConstants.LEFT);
+		step3Label.setForeground(Color.DARK_GRAY);
+		step3Label.setFont(new Font("Roboto", Font.BOLD, 15));
+		step3Label.setBounds(5, 5, 53, 30);
+		step3Panel.add(step3Label);
+
+		JLabel instructionLabel3 = new JLabel("<html>For each project pick one annotation file</html>");
+		instructionLabel3.setVerticalAlignment(SwingConstants.TOP);
+		instructionLabel3.setFont(new Font("Roboto", Font.PLAIN, 15));
+		instructionLabel3.setBounds(60, 5, 415, 20);
+		step3Panel.add(instructionLabel3);
+
+		JScrollPane scrollPane3 = new JScrollPane();
+		scrollPane3.setViewportBorder(null);
+		scrollPane3.setBackground(new Color(252, 252, 252));
+		scrollPane3.setBounds(5, 50, 470, 125);
+		step3Panel.add(scrollPane3);
+
+		selectedAnnotationsLabel = new JLabel("No annotations selected");
+		scrollPane3.setViewportView(selectedAnnotationsLabel);
+		selectedAnnotationsLabel.setVerticalAlignment(SwingConstants.TOP);
+		selectedAnnotationsLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
 
 		JButton backButton = new JButton("Back");
 		backButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// stop swing worker
-				if (swingWorkerStarted)
-					swingWorker.destroy();
-
 				parentFrame.empty();
 				parentFrame.visualisationFromMaskPanel1 = new VisualisationFromMaskPanel1(parentFrame);
 				parentFrame.getContentPane().add(parentFrame.visualisationFromMaskPanel1);
@@ -182,86 +205,84 @@ public class VisualisationFromMaskPanel2 extends JLayeredPane {
 		backButton.setBounds(200, 430, 140, 30);
 		add(backButton);
 
-		bigPanel = new JPanel();
-		bigPanel.setBounds(20, 98, 460, 252);
-		bigPanel.setBackground(new Color(252, 252, 252));
-		add(bigPanel);
+		step4Panel = new JPanel();
+		step4Panel.setLayout(null);
+		step4Panel.setBorder(new LineBorder(new Color(0, 0, 0), 2));
+		step4Panel.setBackground(new Color(252, 252, 252));
+		step4Panel.setBounds(10, 229, 480, 135);
+		add(step4Panel);
 
-		saveCheckBox1 = new JCheckBox("Create visualisation for all frames (.tif)");
-		saveCheckBox1.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox1.setBounds(0, 0, 291, 24);
-		saveCheckBox1.setBackground(new Color(252, 252, 252));
+		JLabel step4Label = new JLabel("STEP 4");
+		step4Label.setVerticalAlignment(SwingConstants.TOP);
+		step4Label.setHorizontalAlignment(SwingConstants.LEFT);
+		step4Label.setForeground(Color.DARK_GRAY);
+		step4Label.setFont(new Font("Roboto", Font.BOLD, 15));
+		step4Label.setBounds(5, 5, 53, 30);
+		step4Panel.add(step4Label);
 
-		saveCheckBox2 = new JCheckBox("Plot longest track for each region of interest (.png)");
-		saveCheckBox2.setFont(new Font("Roboto", Font.PLAIN, 15));
-		saveCheckBox2.setBounds(0, 0, 192, 24);
-		saveCheckBox2.setBackground(new Color(252, 252, 252));
+		JLabel instructionLabel1 = new JLabel("<html>Set display options.</html>");
+		instructionLabel1.setVerticalAlignment(SwingConstants.TOP);
+		instructionLabel1.setFont(new Font("Roboto", Font.PLAIN, 15));
+		instructionLabel1.setBounds(60, 5, 415, 20);
+		step4Panel.add(instructionLabel1);
 
-		optionPanel = new JPanel();
-		optionPanel.setOpaque(false);
-		optionPanel.setBounds(0, 0, 405, 160);
-		optionPanel.setBackground(new Color(238, 238, 238));
-		optionPanel.setLayout(null);
+		JLabel lblcolorPalette = new JLabel("<html>Color palette:</html>");
+		lblcolorPalette.setFont(new Font("Roboto", Font.PLAIN, 15));
+		lblcolorPalette.setBounds(5, 30, 91, 25);
+		step4Panel.add(lblcolorPalette);
 
-		saveOption = new SaveOption(Arrays.asList(".tif", ".avi", ".png"));
-		saveOption.show(optionPanel, 320, 5, true);
-		colorOption = new ColorOption(VisualisationFromMaskParameters.getChannels());
-		colorOption.show(optionPanel, 10, 25, 3);
+		colorPaletteComboBox = new JComboBox();
+		colorPaletteComboBox.setModel(
+				new DefaultComboBoxModel(new String[] { "bright", "deep", "muted", "pastel", "dark", "colorblind" }));
+		colorPaletteComboBox.setSelectedItem(VisualisationFromMaskParameters.getColorPalette());
+		colorPaletteComboBox.setFont(new Font("Roboto", Font.PLAIN, 15));
+		colorPaletteComboBox.setBounds(115, 30, 150, 25);
+		step4Panel.add(colorPaletteComboBox);
 
-		JLabel instructionLabel = new JLabel("<html> Select the display color for each motion track </html>");
-		instructionLabel.setVisible(false);
-		instructionLabel.setBounds(5, 5, 306, 18);
-		instructionLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
-		optionPanel.add(instructionLabel);
+		showLabelsCheckBox = new JCheckBox("Show labels");
+		showLabelsCheckBox.setFont(new Font("Roboto", Font.PLAIN, 15));
+		showLabelsCheckBox.setBackground(new Color(252, 252, 252));
+		showLabelsCheckBox.setBounds(191, 55, 182, 24);
+		showLabelsCheckBox.setSelected(VisualisationFromMaskParameters.getLabelVisibility());
+		step4Panel.add(showLabelsCheckBox);
 
-		JLabel temporalSegmentLabel = new JLabel("Plot tracks in temporal segments of length:");
-		temporalSegmentLabel.setVisible(false);
-		temporalSegmentLabel.setVerticalAlignment(SwingConstants.TOP);
-		temporalSegmentLabel.setHorizontalAlignment(SwingConstants.LEFT);
-		temporalSegmentLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
-		temporalSegmentLabel.setBounds(5, 95, 295, 20);
-		optionPanel.add(temporalSegmentLabel);
+		JLabel lblfontSize = new JLabel("<html>Label font size:</html>");
+		lblfontSize.setFont(new Font("Roboto", Font.PLAIN, 15));
+		lblfontSize.setBounds(5, 80, 104, 25);
+		step4Panel.add(lblfontSize);
 
-		DecimalFormat integerFormat = new DecimalFormat("###");
-		integerFormat.setGroupingUsed(false);
+		fontSizeComboBox = new JComboBox();
+		fontSizeComboBox
+				.setModel(new DefaultComboBoxModel(new String[] { "10", "12", "14", "16", "18", "20", "22", "24" }));
+		fontSizeComboBox.setSelectedItem(String.valueOf(VisualisationFromMaskParameters.getFontSize()));
+		fontSizeComboBox.setFont(new Font("Roboto", Font.PLAIN, 15));
+		fontSizeComboBox.setBounds(115, 80, 150, 25);
+		step4Panel.add(fontSizeComboBox);
 
-		temporalSegmentField = new JFormattedTextField(integerFormat) {
-			@Override
-			protected void processFocusEvent(final FocusEvent e) {
-				if (e.isTemporary()) {
-					return;
-				}
+		showAnnotationsCheckBox = new JCheckBox("Show annotations");
+		showAnnotationsCheckBox.setFont(new Font("Roboto", Font.PLAIN, 15));
+		showAnnotationsCheckBox.setBackground(new Color(252, 252, 252));
+		showAnnotationsCheckBox.setBounds(5, 55, 182, 24);
+		showAnnotationsCheckBox.setSelected(VisualisationFromMaskParameters.getAnnotationVisibility());
+		step4Panel.add(showAnnotationsCheckBox);
 
-				if (e.getID() == FocusEvent.FOCUS_LOST) {
-					if (getText() == null || getText().isEmpty()) {
-						setValue(0);
-					}
-				}
-				super.processFocusEvent(e);
-			}
-		};
-		temporalSegmentField.setVisible(false);
-		temporalSegmentField.setText(String.valueOf(VisualisationFromMaskParameters.getTracksTemporalSegment()));
-		temporalSegmentField.setHorizontalAlignment(SwingConstants.CENTER);
-		temporalSegmentField.setFont(new Font("Roboto", Font.PLAIN, 15));
-		temporalSegmentField.setBounds(290, 97, 70, 18);
-		optionPanel.add(temporalSegmentField);
+		if (VisualisationFromMaskParameters.getAnnotationPaths().size() > 0)
+			showSelectedAnnotations();
 
-		JLabel noteLabel = new JLabel(
-				"<html>Note: If you are using backward motion tracks, the video will be plotted in reverse</html>");
-		noteLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
-		noteLabel.setVerticalAlignment(SwingConstants.TOP);
-		noteLabel.setHorizontalAlignment(SwingConstants.LEFT);
-		noteLabel.setVisible(false);
-		noteLabel.setBounds(5, 115, 400, 40);
-		optionPanel.add(noteLabel);
+	}
 
-		CheckBoxList checkBoxList = new CheckBoxList(bigPanel);
-		bigPanel.setLayout(null);
-		checkBoxList.addCheckBox(saveCheckBox1);
-		checkBoxList.addPanelChild(saveCheckBox1, optionPanel);
-		checkBoxList.addCheckBox(saveCheckBox2);
-		checkBoxList.show(5, 5);
+	public void showSelectedAnnotations() {
+		String text = "Selected annotations: <br>"
+				+ String.join("<br>", VisualisationFromMaskParameters.getAnnotationPaths());
+
+		List<String> errorList = VisualisationFromMaskParameters.noAnnotationMatch();
+		if (errorList.size() > 0) {
+			text += "<br> Warning! No annotation selected for the following projects: <br>"
+					+ String.join("<br> ", errorList);
+		}
+		selectedAnnotationsLabel.setText("<html>" + text + "</html>");
+
+		ok1 = true;
 	}
 
 }

@@ -4,6 +4,7 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -21,19 +23,16 @@ import javax.swing.border.LineBorder;
 
 import ij.IJ;
 
-public class VisualisationFromMaskPanel1 extends JPanel {
+public class SaliencyMapPanel1 extends JLayeredPane {
 	private MainFrame parentFrame;
-	private VisualisationFromMaskPanel1 self = this;
+	private SaliencyMapPanel1 self = this;
 
-	private JPanel step1Panel, step2Panel;
-	private JButton importMaskButton, importImageButton;
-	private JLabel step1Label, step2Label, instructionLabel1, instructionLabel2, selectedTracksLabel,
-			selectedImagesLabel;
-	private JScrollPane scrollPane1, scrollPane2;
+	private JLabel selectedTracksLabel, importedImagesLabel;
+	private JPanel step2Panel;
 
-	boolean ok1, ok2 = false;
+	boolean ok1 = false, ok2 = false;
 
-	public VisualisationFromMaskPanel1(MainFrame parentFrame) {
+	public SaliencyMapPanel1(MainFrame parentFrame) {
 		setOpaque(true);
 
 		// set look and feel
@@ -49,7 +48,7 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 
 		// set size
 
-		this.setPreferredSize(new Dimension(500, 500));
+		this.setPreferredSize(new Dimension(Globals.frameWidth, Globals.frameHight));
 
 		// set background color
 
@@ -59,42 +58,20 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 
 		setLayout(null);
 
-		JLabel titleLabel = new JLabel("Custom visualisation", SwingConstants.CENTER);
+		DecimalFormat decimalFormat = new DecimalFormat("#.##");
+		decimalFormat.setGroupingUsed(false);
+
+		JLabel titleLabel = new JLabel("Motion saliency map", SwingConstants.CENTER);
 		titleLabel.setVerticalTextPosition(SwingConstants.CENTER);
 		titleLabel.setHorizontalTextPosition(SwingConstants.CENTER);
 		titleLabel.setFont(new Font("Arial Black", Font.BOLD, 23));
 		titleLabel.setBounds(0, 0, 500, 36);
 		add(titleLabel);
 
-		JButton nextButton = new JButton("Next");
-		nextButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (ok1 && ok2) {
-					parentFrame.empty();
-					parentFrame.visualisationFromMaskPanel2 = new VisualisationFromMaskPanel2(parentFrame);
-					parentFrame.getContentPane().add(parentFrame.visualisationFromMaskPanel2);
-					parentFrame.validate();
-				} else {
-					// display error dialog box
-					JFrame dialog = new JFrame();
-					Object[] options = { "Ok" };
-					JOptionPane.showOptionDialog(dialog, "Plese complete steps 1 and 2 before going to the next page.",
-							"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
-
-				}
-			}
-		});
-		nextButton.setVerticalTextPosition(SwingConstants.CENTER);
-		nextButton.setHorizontalTextPosition(SwingConstants.CENTER);
-		nextButton.setForeground(Color.WHITE);
-		nextButton.setFont(new Font("Arial", Font.BOLD, 15));
-		nextButton.setBackground(new Color(13, 59, 102));
-		nextButton.setBounds(350, 430, 140, 30);
-		add(nextButton);
-
 		JButton cancelButton = new JButton("Cancel");
 		cancelButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				// display menuPanel and close current panel
 				parentFrame.empty();
 				parentFrame.menuPanel = new MenuPanel(parentFrame);
 				parentFrame.getContentPane().add(parentFrame.menuPanel);
@@ -109,12 +86,38 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 		cancelButton.setBounds(10, 430, 140, 30);
 		add(cancelButton);
 
-		step1Panel = new JPanel();
-		step1Panel.setBounds(10, 45, 480, 150);
-		add(step1Panel);
+		JButton finishButton = new JButton("Finish");
+		finishButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (ok1 && ok2) {
+					parentFrame.empty();
+					parentFrame.saliencyMapPanel2 = new SaliencyMapPanel2(parentFrame);
+					parentFrame.getContentPane().add(parentFrame.saliencyMapPanel2);
+					parentFrame.validate();
+				} else {
+					// display error dialog box
+					JFrame dialog = new JFrame();
+					Object[] options = { "Ok" };
+					JOptionPane.showOptionDialog(dialog, "Plese complete steps 1 and 2 before going to the next page.",
+							"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
+
+				}
+			}
+		});
+		finishButton.setVerticalTextPosition(SwingConstants.CENTER);
+		finishButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		finishButton.setForeground(Color.WHITE);
+		finishButton.setFont(new Font("Arial", Font.BOLD, 15));
+		finishButton.setBackground(new Color(13, 59, 102));
+		finishButton.setBounds(350, 430, 140, 30);
+		add(finishButton);
+
+		JPanel step1Panel = new JPanel();
 		step1Panel.setLayout(null);
 		step1Panel.setBorder(new LineBorder(new Color(0, 0, 0), 2));
 		step1Panel.setBackground(new Color(252, 252, 252));
+		step1Panel.setBounds(10, 45, 480, 150);
+		add(step1Panel);
 
 		JButton selectWorkspaceButton = new JButton("Select motion tracks");
 		selectWorkspaceButton.addActionListener(new ActionListener() {
@@ -128,13 +131,12 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 					String workspacePath = Globals.getWorkspace();
 
 					if (workspacePath != null) {
-						VisualisationFromMaskParameters.setWorkspace(workspacePath);
+						SaliencyMapParameters.setWorkspace(workspacePath);
 
 						FileSelecter selecter = new FileSelecter();
 						selecter.setSelectAllButton(false);
 						selecter.setVisible(true);
-						selecter.tracksList(VisualisationFromMaskParameters.getWorkspace(),
-								Globals.getProjectList(workspacePath),
+						selecter.tracksList(SaliencyMapParameters.getWorkspace(), Globals.getProjectList(workspacePath),
 								"Select for each project the motion track you want to plot.");
 
 						selecter.importButton.addActionListener(new ActionListener() {
@@ -142,11 +144,10 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 								List<String> tracksPaths = selecter.getSelected();
 								selecter.dispose();
 
-								VisualisationFromMaskParameters.setTracksPaths(tracksPaths);
+								SaliencyMapParameters.setTracksPaths(tracksPaths);
 
 								if (tracksPaths.size() > 0)
 									showSelectedTracks();
-
 							}
 						});
 					}
@@ -161,7 +162,7 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 		selectWorkspaceButton.setBounds(127, 25, 226, 20);
 		step1Panel.add(selectWorkspaceButton);
 
-		step1Label = new JLabel("STEP 1");
+		JLabel step1Label = new JLabel("STEP 1");
 		step1Label.setVerticalAlignment(SwingConstants.TOP);
 		step1Label.setHorizontalAlignment(SwingConstants.LEFT);
 		step1Label.setForeground(Color.DARK_GRAY);
@@ -169,34 +170,36 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 		step1Label.setBounds(5, 5, 53, 30);
 		step1Panel.add(step1Label);
 
-		instructionLabel1 = new JLabel("<html>Select the motion tracks you want to visualise</html>");
+		JLabel instructionLabel1 = new JLabel("<html>Import MOSES motion tracks</html>");
 		instructionLabel1.setVerticalAlignment(SwingConstants.TOP);
 		instructionLabel1.setFont(new Font("Roboto", Font.PLAIN, 15));
 		instructionLabel1.setBounds(60, 5, 415, 20);
 		step1Panel.add(instructionLabel1);
 
-		scrollPane1 = new JScrollPane();
+		JScrollPane scrollPane1 = new JScrollPane();
 		scrollPane1.setViewportBorder(null);
 		scrollPane1.setBackground(new Color(252, 252, 252));
 		scrollPane1.setBounds(5, 50, 470, 95);
 		step1Panel.add(scrollPane1);
 
-		selectedTracksLabel = new JLabel("No projects selected");
+		selectedTracksLabel = new JLabel("No files selected");
 		selectedTracksLabel.setVerticalAlignment(SwingConstants.TOP);
+		selectedTracksLabel.setHorizontalAlignment(SwingConstants.LEFT);
+		selectedTracksLabel.setForeground(Color.DARK_GRAY);
 		selectedTracksLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
+		selectedTracksLabel.setBorder(null);
+		selectedTracksLabel.setBackground(new Color(252, 252, 252));
 		scrollPane1.setViewportView(selectedTracksLabel);
 
 		step2Panel = new JPanel();
-		step2Panel.setBounds(10, 200, 480, 220);
-		add(step2Panel);
+		step2Panel.setLayout(null);
 		step2Panel.setBorder(new LineBorder(new Color(0, 0, 0), 2));
 		step2Panel.setBackground(new Color(252, 252, 252));
-		step2Panel.setLayout(null);
+		step2Panel.setBounds(10, 202, 480, 216);
+		add(step2Panel);
 
-		importImageButton = new JButton("Import images");
-		importImageButton.setBounds(140, 80, 200, 20);
-		step2Panel.add(importImageButton);
-		importImageButton.addActionListener(new ActionListener() {
+		JButton importImagesButton = new JButton("Import images");
+		importImagesButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String imageDirectoryPath = IJ.getDirectory("Choose image directory");
 
@@ -208,9 +211,9 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 					for (File f : imageFiles)
 						imagePaths.add(f.getAbsolutePath());
 
-					VisualisationFromMaskParameters.setImagePaths(imagePaths);
+					SaliencyMapParameters.setImagePaths(imagePaths);
 
-					List<String> errorList = VisualisationFromMaskParameters.noImageMatch();
+					List<String> errorList = SaliencyMapParameters.noImageMatch();
 					if (errorList.size() > 0) {
 						JFrame dialog = new JFrame();
 						Object[] options = { "Ok" };
@@ -219,18 +222,20 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 								options[0]);
 					}
 
-					if (VisualisationFromMaskParameters.getImagePaths().size() > 0)
+					if (SaliencyMapParameters.getImagePaths().size() > 0)
 						showSelectedImages();
 				}
 			}
 		});
-		importImageButton.setVerticalTextPosition(SwingConstants.CENTER);
-		importImageButton.setHorizontalTextPosition(SwingConstants.CENTER);
-		importImageButton.setForeground(Color.WHITE);
-		importImageButton.setFont(new Font("Arial", Font.BOLD, 15));
-		importImageButton.setBackground(new Color(13, 59, 102));
+		importImagesButton.setVerticalTextPosition(SwingConstants.CENTER);
+		importImagesButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		importImagesButton.setForeground(Color.WHITE);
+		importImagesButton.setFont(new Font("Arial", Font.BOLD, 15));
+		importImagesButton.setBackground(new Color(13, 59, 102));
+		importImagesButton.setBounds(128, 65, 226, 20);
+		step2Panel.add(importImagesButton);
 
-		step2Label = new JLabel("STEP 2");
+		JLabel step2Label = new JLabel("STEP 2");
 		step2Label.setVerticalAlignment(SwingConstants.TOP);
 		step2Label.setHorizontalAlignment(SwingConstants.LEFT);
 		step2Label.setForeground(Color.DARK_GRAY);
@@ -238,36 +243,38 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 		step2Label.setBounds(5, 5, 53, 30);
 		step2Panel.add(step2Label);
 
-		instructionLabel2 = new JLabel(
-				"<html>Import the folder which contains the TIFF stacks used for computing the motion tracks and creating the annotations. They will be paired up automatically to their corresponding projects.</html>");
-		instructionLabel2.setVerticalAlignment(SwingConstants.TOP);
-		instructionLabel2.setFont(new Font("Roboto", Font.PLAIN, 15));
-		instructionLabel2.setBounds(60, 5, 415, 73);
-		step2Panel.add(instructionLabel2);
+		JLabel instructionLabel1_1 = new JLabel(
+				"<html>Import the folder which contains the TIFF stacks used for computing the motion tracks. They will be paired up automatically to their corresponding projects. </html>");
+		instructionLabel1_1.setVerticalAlignment(SwingConstants.TOP);
+		instructionLabel1_1.setFont(new Font("Roboto", Font.PLAIN, 15));
+		instructionLabel1_1.setBounds(60, 5, 415, 60);
+		step2Panel.add(instructionLabel1_1);
 
-		scrollPane2 = new JScrollPane();
+		JScrollPane scrollPane2 = new JScrollPane();
 		scrollPane2.setViewportBorder(null);
 		scrollPane2.setBackground(new Color(252, 252, 252));
-		scrollPane2.setBounds(5, 105, 470, 110);
+		scrollPane2.setBounds(5, 90, 470, 120);
 		step2Panel.add(scrollPane2);
 
-		selectedImagesLabel = new JLabel("No images imported");
-		selectedImagesLabel.setVerticalAlignment(SwingConstants.TOP);
-		selectedImagesLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
-		scrollPane2.setViewportView(selectedImagesLabel);
+		importedImagesLabel = new JLabel("No files selected");
+		importedImagesLabel.setVerticalAlignment(SwingConstants.TOP);
+		importedImagesLabel.setHorizontalAlignment(SwingConstants.LEFT);
+		importedImagesLabel.setForeground(Color.DARK_GRAY);
+		importedImagesLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
+		importedImagesLabel.setBorder(null);
+		importedImagesLabel.setBackground(new Color(252, 252, 252));
+		scrollPane2.setViewportView(importedImagesLabel);
 
 		Globals.setPanelEnabled(step2Panel, false);
-
-		if (VisualisationFromMaskParameters.getTracksPaths().size() > 0)
+		if (SaliencyMapParameters.getTracksPaths().size() > 0)
 			showSelectedTracks();
 
-		if (VisualisationFromMaskParameters.getImagePaths().size() > 0)
+		if (SaliencyMapParameters.getImagePaths().size() > 0)
 			showSelectedImages();
 	}
 
 	public void showSelectedTracks() {
-		String text = "Selected motion tracks: <br>"
-				+ String.join("<br>", VisualisationFromMaskParameters.getTracksPaths());
+		String text = "Selected motion tracks: <br>" + String.join("<br>", SaliencyMapParameters.getTracksPaths());
 		selectedTracksLabel.setText("<html>" + text + "</html>");
 
 		Globals.setPanelEnabled(step2Panel, true);
@@ -275,15 +282,16 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 	}
 
 	private void showSelectedImages() {
-		String text = "Imported images: <br>" + String.join("<br>", VisualisationFromMaskParameters.getImagePaths());
+		String text = "Imported images: <br>" + String.join("<br>", SaliencyMapParameters.getImagePaths());
 
-		List<String> errorList = VisualisationFromMaskParameters.noImageMatch();
+		List<String> errorList = SaliencyMapParameters.noImageMatch();
 		if (errorList.size() > 0) {
 			text += "<br> Warning! No image imported for the following projects: <br>"
 					+ String.join("<br> ", errorList);
 		}
-		selectedImagesLabel.setText("<html>" + text + "</html>");
+		importedImagesLabel.setText("<html>" + text + "</html>");
 
 		ok2 = true;
 	}
+
 }

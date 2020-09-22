@@ -9,13 +9,15 @@ import java.util.List;
 import ij.IJ;
 
 public class MatlabMetadata {
-	private String parentFile, fileType, trackType;
+	private String parentFile, fileType, trackType, matlabFilePath;
 	private boolean denseTracking;
 	private int height, width, numberSuperpixels, levels, winSize, iterations, polyN, flags, KNeighbor;
-	private static double pyrScale, polySigma, MOSESMeshDistanceThreshold, radialMeshDistanceThresholda;
+	private static double pyrScale, polySigma, downsizeFactor, MOSESMeshDistanceThreshold, radialMeshDistanceThresholda;
 	private List<Integer> channels;
 
 	public MatlabMetadata(String path) {
+		matlabFilePath = path;
+
 		String temporaryDirectorPath = System.getProperty("java.io.tmpdir");
 		String scriptPath = temporaryDirectorPath + "get_matlab_metadata.py";
 		File file = new File(scriptPath);
@@ -29,8 +31,9 @@ public class MatlabMetadata {
 		script.addScript(PythonScript.print("str(file['metadata'][0][0][0][0][0])"));
 		script.addScript(PythonScript.print("str(file['metadata'][0][0][0][1][0][0])"));
 		script.addScript(PythonScript.print("str(file['metadata'][0][0][0][1][0][1])"));
-		script.addScript(PythonScript.print("str(file['metadata'][0][0][0][2][0])"));
-		script.addScript(PythonScript.print("str(file['metadata'][0][0][0][3][0])"));
+		script.addScript(PythonScript.print("file['metadata'][0][0][0][2][0]"));
+		script.addScript(PythonScript.print("float(file['metadata'][0][0][0][3][0])"));
+		script.addScript(PythonScript.print("str(file['metadata'][0][0][0][4][0])"));
 
 		script.addScript(PythonScript.print("str(file['metadata'][0][1][0])"));
 		script.addScript(PythonScript.print("str(file['metadata'][0][1][1])"));
@@ -66,40 +69,41 @@ public class MatlabMetadata {
 
 			String output;
 			while ((output = in.readLine()) != null)
-				metadata.add(output.replaceAll(" ", ""));
+				metadata.add(output);
 
 		} catch (IOException | InterruptedException e1) {
 			IJ.handleException(e1);
 		}
 
-		parentFile = metadata.get(0);
-		height = Integer.parseInt(metadata.get(1));
-		width = Integer.parseInt(metadata.get(2));
+		parentFile = metadata.get(0).replaceAll(" ", "");
+		height = Integer.parseInt(metadata.get(1).replaceAll(" ", ""));
+		width = Integer.parseInt(metadata.get(2).replaceAll(" ", ""));
 
 		String[] channelList = metadata.get(3).replace("[", "").replace("]", "").split(" ");
 		channels = new ArrayList<Integer>();
 		for (String channel : channelList)
 			channels.add(Integer.parseInt(channel));
 
-		fileType = metadata.get(4);
+		downsizeFactor = Double.parseDouble(metadata.get(4).replaceAll(" ", ""));
+		fileType = metadata.get(5).replaceAll(" ", "");
 
-		trackType = metadata.get(5);
-		denseTracking = Boolean.parseBoolean(metadata.get(6));
-		numberSuperpixels = Integer.parseInt(metadata.get(7));
-		pyrScale = Double.parseDouble(metadata.get(8));
-		levels = Integer.parseInt(metadata.get(9));
-		winSize = Integer.parseInt(metadata.get(10));
-		iterations = Integer.parseInt(metadata.get(11));
-		polyN = Integer.parseInt(metadata.get(12));
-		polySigma = Double.parseDouble(metadata.get(13));
-		flags = Integer.parseInt(metadata.get(14));
+		trackType = metadata.get(6).replaceAll(" ", "");
+		denseTracking = Boolean.parseBoolean(metadata.get(7).replaceAll(" ", ""));
+		numberSuperpixels = Integer.parseInt(metadata.get(8).replaceAll(" ", ""));
+		pyrScale = Double.parseDouble(metadata.get(9).replaceAll(" ", ""));
+		levels = Integer.parseInt(metadata.get(10).replaceAll(" ", ""));
+		winSize = Integer.parseInt(metadata.get(11).replaceAll(" ", ""));
+		iterations = Integer.parseInt(metadata.get(12).replaceAll(" ", ""));
+		polyN = Integer.parseInt(metadata.get(13).replaceAll(" ", ""));
+		polySigma = Double.parseDouble(metadata.get(14).replaceAll(" ", ""));
+		flags = Integer.parseInt(metadata.get(15).replaceAll(" ", ""));
 
 		if (fileType.equals("MOSES_mesh"))
-			MOSESMeshDistanceThreshold = Double.parseDouble(metadata.get(15));
+			MOSESMeshDistanceThreshold = Double.parseDouble(metadata.get(15).replaceAll(" ", ""));
 		if (fileType.equals("radial_mesh"))
-			radialMeshDistanceThresholda = Double.parseDouble(metadata.get(15));
+			radialMeshDistanceThresholda = Double.parseDouble(metadata.get(15).replaceAll(" ", ""));
 		if (fileType.equals("neighbor_mesh"))
-			KNeighbor = Integer.parseInt(metadata.get(15));
+			KNeighbor = Integer.parseInt(metadata.get(15).replaceAll(" ", ""));
 
 		file.delete();
 	}
@@ -112,7 +116,34 @@ public class MatlabMetadata {
 		return fileType;
 	}
 
+	public double getDownsizeFactor() {
+		return downsizeFactor;
+	}
+
+	public String getTrackType() {
+		return trackType;
+	}
+
 	public List<Integer> getChannels() {
 		return channels;
+	}
+
+	public List<String> metadataList() {
+		List<String> result = new ArrayList<String>();
+
+		result.add("channels = [" + String.join(";", Globals.convertStringList(channels)) + "]");
+		result.add("downsize factor = " + downsizeFactor);
+		result.add("dense tracking = " + denseTracking);
+		result.add("tracks type = " + trackType);
+		result.add("number of superpixels = " + numberSuperpixels);
+		result.add("scale factor = " + pyrScale);
+		result.add("levels = " + levels);
+		result.add("window size = " + winSize);
+		result.add("iterations = " + iterations);
+		result.add("poly n = " + polyN);
+		result.add("poly sigma = " + polySigma);
+		result.add("flags = " + flags);
+
+		return result;
 	}
 }

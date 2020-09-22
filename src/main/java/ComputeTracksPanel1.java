@@ -121,7 +121,7 @@ public class ComputeTracksPanel1 extends JPanel {
 		channelsLabel.setHorizontalTextPosition(SwingConstants.CENTER);
 		channelsLabel.setFont(new Font("Roboto", Font.PLAIN, 15));
 
-		nameField = new JLabel(ComputeTracksParameters.getFileName(), SwingConstants.LEFT);
+		nameField = new JLabel(Globals.getName(ComputeTracksParameters.getFilePath(0)), SwingConstants.LEFT);
 		nameField.setBounds(100, 190, 130, 20);
 		nameField.setVerticalTextPosition(SwingConstants.CENTER);
 		nameField.setHorizontalTextPosition(SwingConstants.CENTER);

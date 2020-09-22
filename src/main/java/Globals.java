@@ -6,10 +6,14 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -28,10 +32,12 @@ public class Globals {
 	// method that returns file extension from file path
 
 	public static String getExtension(String filePath) {
-		String fileName = filePath.substring(filePath.lastIndexOf("\\"));
-		String extension = fileName.substring(fileName.lastIndexOf("."));
-
-		return extension;
+		// String fileName = filePath.substring(filePath.lastIndexOf("\\"));
+		if (new File(filePath).isFile()) {
+			String extension = filePath.substring(filePath.lastIndexOf("."));
+			return extension;
+		}
+		return "";
 	}
 
 	// method that returns file name from file path
@@ -40,6 +46,17 @@ public class Globals {
 		String fileName = filePath.substring(filePath.lastIndexOf("\\") + 1);
 
 		return fileName.replaceAll("\\s+", "");
+	}
+
+	public static List<String> getName(List<String> filePaths) {
+		List<String> result = new ArrayList<String>();
+
+		for (String filePath : filePaths) {
+			String fileName = filePath.substring(filePath.lastIndexOf("\\") + 1).replaceAll("\\s+", "");
+			result.add(fileName);
+		}
+
+		return result;
 	}
 
 	public static String getNameWithoutExtension(String filePath) {
@@ -141,75 +158,6 @@ public class Globals {
 		file.delete();
 
 		return false;
-	}
-
-	public static List<String> getMatlabFiles(String path) {
-		List<String> output = new ArrayList<String>();
-
-		String temporaryDirectorPath = System.getProperty("java.io.tmpdir");
-		String scriptPath = temporaryDirectorPath + "get_matlab_files.py";
-		File file = new File(scriptPath);
-
-		try {
-			FileWriter writer = new FileWriter(file);
-			writer.write("import scipy.io as sio\r\n" + "import sys\r\n" + "files = sio.whosmat(sys.argv[1])\r\n"
-					+ "for i in range(len(files)):\r\n" + "    print(files[i][0])");
-			writer.close();
-		} catch (IOException e2) {
-			IJ.handleException(e2);
-		}
-
-		ProcessBuilder pb = new ProcessBuilder("python", scriptPath, path);
-		try {
-			Process p = pb.start();
-			p.waitFor();
-			BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-			String fileName;
-			while ((fileName = in.readLine()) != null)
-				output.add(fileName);
-
-		} catch (IOException | InterruptedException e1) {
-			IJ.handleException(e1);
-		}
-
-		file.delete();
-
-		return output;
-	}
-
-	public static String getMatlabMetadata(String path) {
-		String fileName = null;
-
-		String temporaryDirectorPath = System.getProperty("java.io.tmpdir");
-		String scriptPath = temporaryDirectorPath + "get_matlab_metadata.py";
-		File file = new File(scriptPath);
-
-		try {
-			FileWriter writer = new FileWriter(file);
-			writer.write("import scipy.io as spio\r\n" + "import sys\r\n" + "file = spio.loadmat(sys.argv[1])\r\n"
-					+ "print(str(file['metadata'][0][2]).replace('[','').replace(']','').replace('\\'',''))");
-
-			writer.close();
-		} catch (IOException e2) {
-			IJ.handleException(e2);
-		}
-
-		ProcessBuilder pb = new ProcessBuilder("python", scriptPath, path);
-		try {
-			Process p = pb.start();
-			p.waitFor();
-			BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-			fileName = in.readLine();
-
-		} catch (IOException | InterruptedException e1) {
-			IJ.handleException(e1);
-		}
-
-		file.delete();
-
-		return fileName;
 	}
 
 	public static boolean checkPythonInstallationStatus() {
@@ -317,5 +265,73 @@ public class Globals {
 				result.add(file);
 		}
 		return result;
+	}
+
+	public static void writeCSV(File f, List<String> row) {
+		try {
+			FileWriter csvWriter = new FileWriter(f, true);
+
+			csvWriter.append(String.join(",", row));
+			csvWriter.append("\n");
+			csvWriter.flush();
+			csvWriter.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static String getFormattedDate() {
+		SimpleDateFormat formatter = new SimpleDateFormat("dd'-'MM'-'yyyy'_T'HH'-'mm");
+		return formatter.format(new Date(System.currentTimeMillis()));
+	}
+
+	public static File createWorkspace(String path, String name) {
+		String workspacePath = path + "MOSES_Workspace_" + name;
+		File workspaceFolder = new File(workspacePath);
+		workspaceFolder.mkdirs();
+
+		File commandsHistoryFile = new File(workspacePath + "/workspace_history.csv");
+
+		// header
+		Globals.writeCSV(commandsHistoryFile, Arrays.asList("MOSES_Workspace_" + name + " history"));
+
+		return workspaceFolder;
+	}
+
+	public static String getWorkspace() {
+		String workspace = IJ.getDirectory("Choose saving directory");
+
+		if (workspace == null)
+			return null;
+
+		workspace = workspace.substring(0, workspace.length() - 1);
+
+		if (getName(workspace).contains("MOSES_Workspace"))
+			return workspace;
+		else {
+			JFrame dialog = new JFrame();
+			Object[] options = { "Ok" };
+			JOptionPane.showOptionDialog(dialog, "Invalid workspace selected.", "MOSES", JOptionPane.YES_NO_OPTION,
+					JOptionPane.WARNING_MESSAGE, null, options, options[0]);
+
+			return null;
+		}
+	}
+
+	public static List<String> getProjectList(String workspacePath) {
+		List<String> result = new ArrayList<String>();
+
+		File[] files = new File(workspacePath).listFiles();
+		for (File file : files)
+			if (file.isDirectory())
+				result.add(getName(file.getAbsolutePath()));
+
+		return result;
+	}
+
+	public static String getParentProject(String filePath, String workspacePath) {
+		String pathSection = filePath.substring(workspacePath.length() + 1);
+
+		return pathSection.substring(0, pathSection.indexOf("\\"));
 	}
 }

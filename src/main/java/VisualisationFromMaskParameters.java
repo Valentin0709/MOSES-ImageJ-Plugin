@@ -1,98 +1,112 @@
 import java.util.ArrayList;
 import java.util.List;
 
-import ij.ImagePlus;
-
 public class VisualisationFromMaskParameters {
-	private static boolean batchMode, completeVis, longestTracksVis;
-	private static List<ImageMaskTracks> files;
+	private static boolean showLabels, showAnnotations, completeVis, longestTracksVis, allTracksVis;
+	private static List<ProjectImageAnnotationTracks> files;
 	private static List<Integer> channels;
-	private static String saveDirectory;
-	private static int tracksTemporalSegment;
-	private static ColorOption colorOption;
+	private static String saveDirectory, workspacePath, colorPalette;
+	private static int tracksTemporalSegment, fontSize;
 	private static SaveOption saveOption;
 
 	public static void initialise() {
-		batchMode = completeVis = longestTracksVis = false;
-		saveDirectory = null;
+		allTracksVis = completeVis = longestTracksVis = showLabels = showAnnotations = false;
+		saveDirectory = workspacePath = colorPalette = null;
 		tracksTemporalSegment = 5;
-		files = new ArrayList<ImageMaskTracks>();
+		fontSize = 12;
+		colorPalette = "bright";
+		files = new ArrayList<ProjectImageAnnotationTracks>();
 		channels = new ArrayList<Integer>();
 	}
 
-	public static void setBatchMode(boolean b) {
-		batchMode = b;
+	public static List<String> getProjectNames() {
+		List<String> result = new ArrayList<String>();
+
+		for (ProjectImageAnnotationTracks imt : files)
+			result.add(imt.getProjectName());
+
+		return result;
 	}
 
-	public static boolean getBatchMode() {
-		return batchMode;
-	}
-
-	public static void setFilePath(String path) {
-		ImageMaskTracks imt = new ImageMaskTracks();
-		imt.setImagePath(path);
-		files.add(imt);
-	}
-
-	public static void setFilePath(List<String> paths) {
-		for (String path : paths)
-			setFilePath(path);
-	}
-
-	public static boolean setMaskPath(String path, boolean matchName, boolean matchSize) {
-		ImagePlus mask = new ImagePlus(path);
-		String parentFile = String.valueOf(mask.getProperty("parentFile"));
-
-		boolean addedMaskPath = false;
-		;
-		for (ImageMaskTracks imt : files) {
-			ImagePlus img = new ImagePlus(imt.getImagePath());
-
-			boolean ok1 = true;
-			if (!Globals.getName(imt.getImagePath()).equals(parentFile) && matchName)
-				ok1 = false;
-
-			boolean ok2 = true;
-			if (!(img.getWidth() == mask.getWidth() && img.getHeight() == mask.getHeight()) && matchSize)
-				ok2 = false;
-
-			if (ok1 && ok2) {
-				addedMaskPath = true;
-				imt.setMaskPath(path);
-			}
-
-		}
-		return addedMaskPath;
-	}
-
-	public static boolean setTrackPath(String path) {
-		MatlabMetadata trackMetadata = new MatlabMetadata(path);
-
-		boolean addedTrackPath = false;
-		if (trackMetadata.getFileType().equals("tracks")) {
-			for (ImageMaskTracks imt : files) {
-
-				if (trackMetadata.getParentFile().equals(Globals.getNameWithoutExtension(imt.getImagePath()))) {
-					imt.setTrackPath(path);
-					addedTrackPath = true;
+	public static void setImagePaths(List<String> paths) {
+		for (String path : paths) {
+			for (ProjectImageAnnotationTracks imt : files)
+				if (Globals.getNameWithoutExtension(path).equals(imt.getProjectName())) {
+					imt.setImagePath(path);
+					break;
 				}
-			}
 		}
 
-		if (addedTrackPath) {
-			for (Integer channel : trackMetadata.getChannels())
-				if (!channels.contains(channel))
-					channels.add(channel);
-		}
-
-		return addedTrackPath;
 	}
 
 	public static List<String> getImagePaths() {
 		List<String> result = new ArrayList<String>();
 
-		for (ImageMaskTracks imt : files)
-			result.add(imt.getImagePath());
+		for (ProjectImageAnnotationTracks imt : files)
+			if (imt.getImagePath() != null)
+				result.add(imt.getImagePath());
+
+		return result;
+	}
+
+	public static List<String> noImageMatch() {
+		List<String> result = new ArrayList<String>();
+
+		for (ProjectImageAnnotationTracks imt : files)
+			if (imt.getImagePath() == null)
+				result.add(imt.getProjectName());
+
+		return result;
+	}
+
+	public static void setAnnotationPaths(List<String> paths) {
+		for (String path : paths) {
+			for (ProjectImageAnnotationTracks imt : files)
+				if (Globals.getParentProject(path, workspacePath).equals(imt.getProjectName())) {
+					imt.setAnnotationPath(path);
+					break;
+				}
+		}
+	}
+
+	public static List<String> getAnnotationPaths() {
+		List<String> result = new ArrayList<String>();
+
+		for (ProjectImageAnnotationTracks imt : files)
+			if (imt.getAnnotationPath() != null)
+				result.add(imt.getAnnotationPath());
+
+		return result;
+	}
+
+	public static List<String> noAnnotationMatch() {
+		List<String> result = new ArrayList<String>();
+
+		for (ProjectImageAnnotationTracks imt : files)
+			if (imt.getAnnotationPath() == null)
+				result.add(imt.getProjectName());
+
+		return result;
+	}
+
+	public static void setTracksPaths(List<String> paths) {
+		files = new ArrayList<ProjectImageAnnotationTracks>();
+
+		for (String path : paths) {
+			ProjectImageAnnotationTracks imt = new ProjectImageAnnotationTracks();
+
+			imt.setProjectName(Globals.getParentProject(path, workspacePath));
+			imt.setTrackPath(path);
+			files.add(imt);
+		}
+	}
+
+	public static List<String> getTracksPaths() {
+		List<String> result = new ArrayList<String>();
+
+		for (ProjectImageAnnotationTracks imt : files)
+			if (imt.getTrackPath() != null)
+				result.add(imt.getTrackPath());
 
 		return result;
 	}
@@ -101,7 +115,7 @@ public class VisualisationFromMaskParameters {
 		return files.size();
 	}
 
-	public static List<ImageMaskTracks> getFiles() {
+	public static List<ProjectImageAnnotationTracks> getFiles() {
 		return files;
 	}
 
@@ -133,14 +147,6 @@ public class VisualisationFromMaskParameters {
 		return saveOption.getOption(ext);
 	}
 
-	public static void setColorOption(ColorOption co) {
-		colorOption = co;
-	}
-
-	public static String getColorOption(int channelIndex) {
-		return colorOption.getColor(channelIndex);
-	}
-
 	public static void setCompleteVisualisation(boolean b) {
 		completeVis = b;
 	}
@@ -155,6 +161,54 @@ public class VisualisationFromMaskParameters {
 
 	public static boolean isLongestTracksVisualisation() {
 		return longestTracksVis;
+	}
+
+	public static void setWorkspace(String path) {
+		workspacePath = path;
+	}
+
+	public static String getWorkspace() {
+		return workspacePath;
+	}
+
+	public static void setColorPalette(String c) {
+		colorPalette = c;
+	}
+
+	public static String getColorPalette() {
+		return colorPalette;
+	}
+
+	public static void setLabelVisibility(boolean b) {
+		showLabels = b;
+	}
+
+	public static boolean getLabelVisibility() {
+		return showLabels;
+	}
+
+	public static void setAnnotationVisibility(boolean b) {
+		showAnnotations = b;
+	}
+
+	public static boolean getAnnotationVisibility() {
+		return showAnnotations;
+	}
+
+	public static void setFontSize(int x) {
+		fontSize = x;
+	}
+
+	public static int getFontSize() {
+		return fontSize;
+	}
+
+	public static void setAllTracksVisualisation(boolean b) {
+		allTracksVis = b;
+	}
+
+	public static boolean isAllTracksVisualisation() {
+		return allTracksVis;
 	}
 
 }
