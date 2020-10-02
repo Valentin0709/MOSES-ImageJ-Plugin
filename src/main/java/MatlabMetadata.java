@@ -11,7 +11,7 @@ import ij.IJ;
 public class MatlabMetadata {
 	private String parentFile, fileType, trackType, matlabFilePath;
 	private boolean denseTracking;
-	private int height, width, numberSuperpixels, levels, winSize, iterations, polyN, flags, KNeighbor;
+	private int height, width, frames, numberSuperpixels, levels, winSize, iterations, polyN, flags, KNeighbor;
 	private static double pyrScale, polySigma, downsizeFactor, MOSESMeshDistanceThreshold, radialMeshDistanceThresholda;
 	private List<Integer> channels;
 
@@ -31,6 +31,7 @@ public class MatlabMetadata {
 		script.addScript(PythonScript.print("str(file['metadata'][0][0][0][0][0])"));
 		script.addScript(PythonScript.print("str(file['metadata'][0][0][0][1][0][0])"));
 		script.addScript(PythonScript.print("str(file['metadata'][0][0][0][1][0][1])"));
+		script.addScript(PythonScript.print("str(file['metadata'][0][0][0][1][0][2])"));
 		script.addScript(PythonScript.print("file['metadata'][0][0][0][2][0]"));
 		script.addScript(PythonScript.print("float(file['metadata'][0][0][0][3][0])"));
 		script.addScript(PythonScript.print("str(file['metadata'][0][0][0][4][0])"));
@@ -78,32 +79,33 @@ public class MatlabMetadata {
 		parentFile = metadata.get(0).replaceAll(" ", "");
 		height = Integer.parseInt(metadata.get(1).replaceAll(" ", ""));
 		width = Integer.parseInt(metadata.get(2).replaceAll(" ", ""));
+		frames = Integer.parseInt(metadata.get(3).replaceAll(" ", ""));
 
-		String[] channelList = metadata.get(3).replace("[", "").replace("]", "").split(" ");
+		String[] channelList = metadata.get(4).replace("[", "").replace("]", "").split(" ");
 		channels = new ArrayList<Integer>();
 		for (String channel : channelList)
 			channels.add(Integer.parseInt(channel));
 
-		downsizeFactor = Double.parseDouble(metadata.get(4).replaceAll(" ", ""));
-		fileType = metadata.get(5).replaceAll(" ", "");
+		downsizeFactor = Double.parseDouble(metadata.get(5).replaceAll(" ", ""));
+		fileType = metadata.get(6).replaceAll(" ", "");
 
-		trackType = metadata.get(6).replaceAll(" ", "");
-		denseTracking = Boolean.parseBoolean(metadata.get(7).replaceAll(" ", ""));
-		numberSuperpixels = Integer.parseInt(metadata.get(8).replaceAll(" ", ""));
-		pyrScale = Double.parseDouble(metadata.get(9).replaceAll(" ", ""));
-		levels = Integer.parseInt(metadata.get(10).replaceAll(" ", ""));
-		winSize = Integer.parseInt(metadata.get(11).replaceAll(" ", ""));
-		iterations = Integer.parseInt(metadata.get(12).replaceAll(" ", ""));
-		polyN = Integer.parseInt(metadata.get(13).replaceAll(" ", ""));
-		polySigma = Double.parseDouble(metadata.get(14).replaceAll(" ", ""));
-		flags = Integer.parseInt(metadata.get(15).replaceAll(" ", ""));
+		trackType = metadata.get(7).replaceAll(" ", "");
+		denseTracking = Boolean.parseBoolean(metadata.get(8).replaceAll(" ", ""));
+		numberSuperpixels = Integer.parseInt(metadata.get(9).replaceAll(" ", ""));
+		pyrScale = Double.parseDouble(metadata.get(10).replaceAll(" ", ""));
+		levels = Integer.parseInt(metadata.get(11).replaceAll(" ", ""));
+		winSize = Integer.parseInt(metadata.get(12).replaceAll(" ", ""));
+		iterations = Integer.parseInt(metadata.get(13).replaceAll(" ", ""));
+		polyN = Integer.parseInt(metadata.get(14).replaceAll(" ", ""));
+		polySigma = Double.parseDouble(metadata.get(15).replaceAll(" ", ""));
+		flags = Integer.parseInt(metadata.get(16).replaceAll(" ", ""));
 
 		if (fileType.equals("MOSES_mesh"))
-			MOSESMeshDistanceThreshold = Double.parseDouble(metadata.get(16).replaceAll(" ", ""));
+			MOSESMeshDistanceThreshold = Double.parseDouble(metadata.get(17).replaceAll(" ", ""));
 		if (fileType.equals("radial_mesh"))
-			radialMeshDistanceThresholda = Double.parseDouble(metadata.get(16).replaceAll(" ", ""));
+			radialMeshDistanceThresholda = Double.parseDouble(metadata.get(17).replaceAll(" ", ""));
 		if (fileType.equals("neighbor_mesh"))
-			KNeighbor = Integer.parseInt(metadata.get(16).replaceAll(" ", ""));
+			KNeighbor = Integer.parseInt(metadata.get(17).replaceAll(" ", ""));
 
 		file.delete();
 	}
@@ -118,6 +120,14 @@ public class MatlabMetadata {
 
 	public String getFileType() {
 		return fileType;
+	}
+
+	public int getFrames() {
+		return frames;
+	}
+
+	public int getNumberSuperpixels() {
+		return numberSuperpixels;
 	}
 
 	public double getDownsizeFactor() {

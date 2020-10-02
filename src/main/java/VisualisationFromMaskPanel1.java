@@ -135,7 +135,7 @@ public class VisualisationFromMaskPanel1 extends JPanel {
 						selecter.setVisible(true);
 						selecter.tracksList(VisualisationFromMaskParameters.getWorkspace(),
 								Globals.getProjectList(workspacePath),
-								"Select for each project the motion track you want to plot.");
+								"Select for each project the motion track you want to plot.", false);
 
 						selecter.importButton.addActionListener(new ActionListener() {
 							public void actionPerformed(ActionEvent e) {

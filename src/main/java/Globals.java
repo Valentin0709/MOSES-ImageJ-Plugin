@@ -280,6 +280,19 @@ public class Globals {
 		}
 	}
 
+	public static void writeTXT(File f, List<String> row) {
+		try {
+			FileWriter csvWriter = new FileWriter(f, true);
+
+			csvWriter.append(String.join(" ", row));
+			csvWriter.append("\n");
+			csvWriter.flush();
+			csvWriter.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public static String getFormattedDate() {
 		SimpleDateFormat formatter = new SimpleDateFormat("dd'-'MM'-'yyyy'_T'HH'-'mm");
 		return formatter.format(new Date(System.currentTimeMillis()));

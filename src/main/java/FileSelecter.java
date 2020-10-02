@@ -250,7 +250,7 @@ public class FileSelecter extends JFrame {
 		trackListSwingWorker.execute();
 	}
 
-	public void tracksList(String workspacePath, List<String> projectNames, String instruction) {
+	public void tracksList(String workspacePath, List<String> projectNames, String instruction, boolean onlyOne) {
 		instructionLabel.setText("<html>" + instruction + "</html>");
 		progressBar.setVisible(true);
 		checkBoxPanel.setVisible(false);
@@ -291,11 +291,18 @@ public class FileSelecter extends JFrame {
 								checkBox.addActionListener(new ActionListener() {
 									public void actionPerformed(ActionEvent e) {
 										if (checkBox.isSelected()) {
-											for (Pair<String, JCheckBox> cb : checkBoxList)
-												if (checkBox != cb.getR() && Globals
+											for (Pair<String, JCheckBox> cb : checkBoxList) {
+												if (onlyOne) {
+													if (checkBox != cb.getR()) {
+														cb.getR().setSelected(false);
+													}
+
+												} else if (checkBox != cb.getR() && Globals
 														.getParentProject(tracksFile.getAbsolutePath(), workspacePath)
-														.equals(Globals.getParentProject(cb.getL(), workspacePath)))
+														.equals(Globals.getParentProject(cb.getL(), workspacePath))) {
 													cb.getR().setSelected(false);
+												}
+											}
 										}
 									}
 								});

@@ -1,6 +1,8 @@
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -22,6 +24,8 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import ij.IJ;
+import ij.ImagePlus;
+import ij.plugin.RGBStackMerge;
 
 public class MenuPanel extends JPanel {
 	public MainFrame parentFrame;
@@ -161,7 +165,7 @@ public class MenuPanel extends JPanel {
 		titleLabel3.setVerticalTextPosition(SwingConstants.CENTER);
 		titleLabel3.setHorizontalTextPosition(SwingConstants.CENTER);
 		titleLabel3.setFont(new Font("Arial Black", Font.BOLD, 20));
-		titleLabel3.setBounds(-12, 210, 500, 29);
+		titleLabel3.setBounds(0, 210, 500, 29);
 		add(titleLabel3);
 
 		JButton CreateAnnotationButton = new JButton("New annotation");
@@ -183,9 +187,16 @@ public class MenuPanel extends JPanel {
 				if (n == 1) {
 					String importedFilePath = Globals.openFile(parentFrame.ui, validExtensions, true);
 
-					if (importedFilePath != null)
+					if (importedFilePath != null) {
+						ImagePlus[] imageList = { Globals.lastImage, Globals.lastImage, Globals.lastImage };
+						ImagePlus newImage = RGBStackMerge.mergeChannels(imageList, true);
+						newImage.setTitle(Globals.lastImage.getTitle());
+						Globals.lastImage.flush();
+						newImage.show();
+						Globals.lastImage = newImage;
+
 						newAnnotation();
-					else {
+					} else {
 
 						// display error dialog box
 
@@ -205,11 +216,13 @@ public class MenuPanel extends JPanel {
 		CreateAnnotationButton.setForeground(Color.WHITE);
 		CreateAnnotationButton.setFont(new Font("Arial", Font.BOLD, 20));
 		CreateAnnotationButton.setBackground(new Color(13, 59, 102));
-		CreateAnnotationButton.setBounds(10, 245, 230, 43);
+		CreateAnnotationButton.setBounds(10, 247, 230, 43);
 
 		add(CreateAnnotationButton);
 
-		JButton customVisualisationButton = new JButton("<html>Custom visualisation</html>");
+		JButton customVisualisationButton = new JButton("<html>Annotated tracks\r\n visualisation</html>");
+		customVisualisationButton.setAlignmentY(Component.TOP_ALIGNMENT);
+		customVisualisationButton.setMargin(new Insets(0, 0, 0, 0));
 		customVisualisationButton.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent e) {
@@ -223,19 +236,48 @@ public class MenuPanel extends JPanel {
 		});
 		customVisualisationButton.setHorizontalTextPosition(SwingConstants.CENTER);
 		customVisualisationButton.setForeground(Color.WHITE);
-		customVisualisationButton.setFont(new Font("Arial", Font.BOLD, 17));
+		customVisualisationButton.setFont(new Font("Arial", Font.BOLD, 20));
 		customVisualisationButton.setBackground(new Color(13, 59, 102));
-		customVisualisationButton.setBounds(260, 245, 230, 43);
+		customVisualisationButton.setBounds(20, 308, 460, 43);
 		add(customVisualisationButton);
 
 		JLabel lblCreateANew = new JLabel(
 				"<html> Create a new annotation and visualise MOSES motion tracks using your selected regions of interest<html>");
+		lblCreateANew.setVerticalAlignment(SwingConstants.TOP);
 		lblCreateANew.setHorizontalTextPosition(SwingConstants.CENTER);
 		lblCreateANew.setHorizontalAlignment(SwingConstants.CENTER);
-		lblCreateANew.setFont(new Font("Roboto", Font.PLAIN, 15));
-		lblCreateANew.setBounds(12, 286, 476, 43);
+		lblCreateANew.setFont(new Font("Roboto", Font.PLAIN, 13));
+		lblCreateANew.setBounds(246, 243, 254, 51);
 
 		add(lblCreateANew);
+
+		JButton boundaryButton = new JButton("<html>Boundary visualisation</html>");
+		boundaryButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				parentFrame.empty();
+				parentFrame.boundaryPanel = new BoundaryPanel(parentFrame);
+				parentFrame.getContentPane().add(parentFrame.boundaryPanel);
+				parentFrame.validate();
+			}
+		});
+		boundaryButton.setMargin(new Insets(0, 0, 0, 0));
+		boundaryButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		boundaryButton.setForeground(Color.WHITE);
+		boundaryButton.setFont(new Font("Arial", Font.BOLD, 20));
+		boundaryButton.setBackground(new Color(13, 59, 102));
+		boundaryButton.setAlignmentY(0.0f);
+		boundaryButton.setBounds(20, 359, 460, 43);
+		add(boundaryButton);
+
+		JButton btnToolbox = new JButton("Training toolbox");
+		btnToolbox.setMargin(new Insets(0, 0, 0, 0));
+		btnToolbox.setHorizontalTextPosition(SwingConstants.CENTER);
+		btnToolbox.setForeground(Color.WHITE);
+		btnToolbox.setFont(new Font("Arial", Font.BOLD, 20));
+		btnToolbox.setBackground(new Color(13, 59, 102));
+		btnToolbox.setAlignmentY(0.0f);
+		btnToolbox.setBounds(157, 414, 186, 43);
+		add(btnToolbox);
 
 	}
 

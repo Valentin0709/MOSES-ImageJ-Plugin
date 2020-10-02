@@ -222,11 +222,12 @@ class ComputeTracks extends SwingWorker<String, String> {
 			saveList.add(new Pair<>("forward_tracks_" + (channelIndex + 1), "forward_tracks_" + (channelIndex + 1)));
 		}
 		// metadata
-		saveList.add(new Pair<>("metadata", "np.array([[parameters.get('fileName'), [rows, columns], ["
+		saveList.add(new Pair<>("metadata", "np.array([[parameters.get('fileName'), [rows, columns, frames], ["
 				+ String.join(",", Globals.convertStringList(ComputeTracksParameters.getSelectedChannels())) + "], "
 				+ ComputeTracksParameters.getDownsizeFactor() + ",'tracks'], ['forward', '"
-				+ ComputeTracksParameters.getDenseForwardTracks()
-				+ "', parameters.get('n_spixels'), parameters.get('pyr_scale'), parameters.get('levels'), parameters.get('winsize'), parameters.get('iterations'), parameters.get('poly_n'), parameters.get('poly_sigma'), parameters.get('flags')]])"));
+				+ ComputeTracksParameters.getDenseForwardTracks() + "', forward_tracks_"
+				+ (ComputeTracksParameters.getSelectedChannels(0) + 1)
+				+ ".shape[0], parameters.get('pyr_scale'), parameters.get('levels'), parameters.get('winsize'), parameters.get('iterations'), parameters.get('poly_n'), parameters.get('poly_sigma'), parameters.get('flags')]])"));
 
 		script.addScript(PythonScript.callFunction("spio.savemat",
 				Arrays.asList("saveLocation", PythonScript.makeSaveList(saveList))));
@@ -358,11 +359,12 @@ class ComputeTracks extends SwingWorker<String, String> {
 			saveList.add(new Pair<>("backward_tracks_" + (channelIndex + 1), "backward_tracks_" + (channelIndex + 1)));
 		}
 		// metadata
-		saveList.add(new Pair<>("metadata", "np.array([[parameters.get('fileName'), [rows, columns], ["
+		saveList.add(new Pair<>("metadata", "np.array([[parameters.get('fileName'), [rows, columns, frames], ["
 				+ String.join(",", Globals.convertStringList(ComputeTracksParameters.getSelectedChannels())) + "], "
 				+ ComputeTracksParameters.getDownsizeFactor() + ",'tracks'], ['backward', '"
-				+ ComputeTracksParameters.getDenseForwardTracks()
-				+ "', parameters.get('n_spixels'), parameters.get('pyr_scale'), parameters.get('levels'), parameters.get('winsize'), parameters.get('iterations'), parameters.get('poly_n'), parameters.get('poly_sigma'), parameters.get('flags')]])"));
+				+ ComputeTracksParameters.getDenseForwardTracks() + "', backward_tracks_"
+				+ (ComputeTracksParameters.getSelectedChannels(0) + 1)
+				+ ".shape[0], parameters.get('pyr_scale'), parameters.get('levels'), parameters.get('winsize'), parameters.get('iterations'), parameters.get('poly_n'), parameters.get('poly_sigma'), parameters.get('flags')]])"));
 
 		script.addScript(PythonScript.callFunction("spio.savemat",
 				Arrays.asList("saveLocation", PythonScript.makeSaveList(saveList))));
@@ -476,7 +478,7 @@ class ComputeTracks extends SwingWorker<String, String> {
 				saveList.add(new Pair<>("optflow_" + (channelIndex + 1), "optflow_" + (channelIndex + 1)));
 			}
 			// metadata
-			saveList.add(new Pair<>("metadata", "np.array([[parameters.get('fileName'), [rows, columns], ["
+			saveList.add(new Pair<>("metadata", "np.array([[parameters.get('fileName'), [rows, columns, frames], ["
 					+ String.join(",", Globals.convertStringList(ComputeTracksParameters.getSelectedChannels())) + "], "
 					+ ComputeTracksParameters.getDownsizeFactor()
 					+ ", 'motion_field'], ['forward', 'false', parameters.get('n_spixels'), parameters.get('pyr_scale'), parameters.get('levels'), parameters.get('winsize'), parameters.get('iterations'), parameters.get('poly_n'), parameters.get('poly_sigma'), parameters.get('flags')]])"));
@@ -637,7 +639,7 @@ class ComputeTracks extends SwingWorker<String, String> {
 					"MOSES_mesh_strain_time_" + (channelIndex + 1)));
 		}
 		// metadata
-		saveList.add(new Pair<>("metadata", "np.array([[parameters.get('fileName'), [rows, columns], ["
+		saveList.add(new Pair<>("metadata", "np.array([[parameters.get('fileName'), [rows, columns, frames], ["
 				+ String.join(",", Globals.convertStringList(ComputeTracksParameters.getSelectedChannels())) + "], "
 				+ ComputeTracksParameters.getDownsizeFactor() + ", 'MOSES_mesh'], ['" + track
 				+ "', 'false', parameters.get('n_spixels'), parameters.get('pyr_scale'), parameters.get('levels'), parameters.get('winsize'), parameters.get('iterations'), parameters.get('poly_n'), parameters.get('poly_sigma'),  parameters.get('flags')], [parameters.get('MOSES_mesh_distance_threshold')]])"));
@@ -986,7 +988,7 @@ class ComputeTracks extends SwingWorker<String, String> {
 					"radial_mesh_strain_time_" + (channelIndex + 1)));
 		}
 		// metadata
-		saveList.add(new Pair<>("metadata", "np.array([[parameters.get('fileName'), [rows, columns], ["
+		saveList.add(new Pair<>("metadata", "np.array([[parameters.get('fileName'), [rows, columns, frames], ["
 				+ String.join(",", Globals.convertStringList(ComputeTracksParameters.getSelectedChannels())) + "],"
 				+ ComputeTracksParameters.getDownsizeFactor() + ", 'radial_mesh'], ['" + track
 				+ "', 'false', parameters.get('n_spixels'), parameters.get('pyr_scale'), parameters.get('levels'), parameters.get('winsize'), parameters.get('iterations'), parameters.get('poly_n'), parameters.get('poly_sigma'),  parameters.get('flags')], [parameters.get('radial_mesh_distance_threshold')]])"));
@@ -1342,7 +1344,7 @@ class ComputeTracks extends SwingWorker<String, String> {
 					"neighbor_mesh_strain_time_" + (channelIndex + 1)));
 		}
 		// metadata
-		saveList.add(new Pair<>("metadata", "np.array([[parameters.get('fileName'), [rows, columns], ["
+		saveList.add(new Pair<>("metadata", "np.array([[parameters.get('fileName'), [rows, columns, frames], ["
 				+ String.join(",", Globals.convertStringList(ComputeTracksParameters.getSelectedChannels())) + "], "
 				+ ComputeTracksParameters.getDownsizeFactor() + ", 'neighbor_mesh'], ['" + track
 				+ "', 'false', parameters.get('n_spixels'), parameters.get('pyr_scale'), parameters.get('levels'), parameters.get('winsize'), parameters.get('iterations'), parameters.get('poly_n'), parameters.get('poly_sigma'),  parameters.get('flags')], [parameters.get('neighbors')]])"));

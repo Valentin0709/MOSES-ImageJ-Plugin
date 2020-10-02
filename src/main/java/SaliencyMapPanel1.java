@@ -137,7 +137,8 @@ public class SaliencyMapPanel1 extends JLayeredPane {
 						selecter.setSelectAllButton(false);
 						selecter.setVisible(true);
 						selecter.tracksList(SaliencyMapParameters.getWorkspace(), Globals.getProjectList(workspacePath),
-								"Select the motion tracks you want to use for generating the motion saliency maps.");
+								"Select the motion tracks you want to use for generating the motion saliency maps.",
+								false);
 
 						selecter.importButton.addActionListener(new ActionListener() {
 							public void actionPerformed(ActionEvent e) {
