@@ -200,7 +200,7 @@ public class SaliencyMap extends SwingWorker<String, String> {
 			if (trackMetadata.getTrackType().equals("forward"))
 				script.addScript(PythonScript.setValue("frame_img", "vidstack[0]"));
 			else
-				script.addScript(PythonScript.setValue("frame_img", "vidstack[-1]"));
+				script.addScript(PythonScript.setValue("frame_img", "vidstack[0]")); // or -1
 		}
 
 		if (channels.size() == 1) {

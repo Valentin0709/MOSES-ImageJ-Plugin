@@ -642,7 +642,8 @@ class ComputeTracks extends SwingWorker<String, String> {
 		saveList.add(new Pair<>("metadata", "np.array([[parameters.get('fileName'), [rows, columns, frames], ["
 				+ String.join(",", Globals.convertStringList(ComputeTracksParameters.getSelectedChannels())) + "], "
 				+ ComputeTracksParameters.getDownsizeFactor() + ", 'MOSES_mesh'], ['" + track
-				+ "', 'false', parameters.get('n_spixels'), parameters.get('pyr_scale'), parameters.get('levels'), parameters.get('winsize'), parameters.get('iterations'), parameters.get('poly_n'), parameters.get('poly_sigma'),  parameters.get('flags')], [parameters.get('MOSES_mesh_distance_threshold')]])"));
+				+ "', 'false', forward_tracks_" + (ComputeTracksParameters.getSelectedChannels(0) + 1)
+				+ ".shape[0], parameters.get('pyr_scale'), parameters.get('levels'), parameters.get('winsize'), parameters.get('iterations'), parameters.get('poly_n'), parameters.get('poly_sigma'),  parameters.get('flags')], [parameters.get('MOSES_mesh_distance_threshold')]])"));
 
 		script.addScript(PythonScript.callFunction("spio.savemat",
 				Arrays.asList("saveLocation", PythonScript.makeSaveList(saveList))));
@@ -1951,8 +1952,8 @@ class ComputeTracks extends SwingWorker<String, String> {
 			Thread.yield();
 
 			ImagePlus imp = FolderOpener.open(folder.getAbsolutePath(), "");
-			IJ.run(imp, "AVI... ", "compression=JPEG frame=7 save=" + subImageFolder.getAbsolutePath() + "/"
-					+ Globals.getNameWithoutExtension(currentFilePath) + "_" + outputName + ".avi");
+			IJ.run(imp, "AVI... ", "compression=JPEG frame=7 save=[" + subImageFolder.getAbsolutePath() + "/"
+					+ Globals.getNameWithoutExtension(currentFilePath) + "_" + outputName + ".avi]");
 		}
 
 		// delete image sequence folder

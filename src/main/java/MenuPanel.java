@@ -161,15 +161,15 @@ public class MenuPanel extends JPanel {
 		meshStrainCurveButton.setBounds(260, 158, 230, 43);
 		add(meshStrainCurveButton);
 
-		JLabel titleLabel3 = new JLabel("Annotations", SwingConstants.CENTER);
+		JLabel titleLabel3 = new JLabel("Create selections", SwingConstants.CENTER);
 		titleLabel3.setVerticalTextPosition(SwingConstants.CENTER);
 		titleLabel3.setHorizontalTextPosition(SwingConstants.CENTER);
 		titleLabel3.setFont(new Font("Arial Black", Font.BOLD, 20));
 		titleLabel3.setBounds(0, 210, 500, 29);
 		add(titleLabel3);
 
-		JButton CreateAnnotationButton = new JButton("New annotation");
-		CreateAnnotationButton.addActionListener(new ActionListener() {
+		JButton AnnotationButton = new JButton("Annotation");
+		AnnotationButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				ArrayList<String> validExtensions = new ArrayList<String>();
 				validExtensions.addAll(Arrays.asList(".tif", ".tiff", ".png", ".jpeg"));
@@ -212,13 +212,13 @@ public class MenuPanel extends JPanel {
 			}
 
 		});
-		CreateAnnotationButton.setHorizontalTextPosition(SwingConstants.CENTER);
-		CreateAnnotationButton.setForeground(Color.WHITE);
-		CreateAnnotationButton.setFont(new Font("Arial", Font.BOLD, 20));
-		CreateAnnotationButton.setBackground(new Color(13, 59, 102));
-		CreateAnnotationButton.setBounds(10, 247, 230, 43);
+		AnnotationButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		AnnotationButton.setForeground(Color.WHITE);
+		AnnotationButton.setFont(new Font("Arial", Font.BOLD, 20));
+		AnnotationButton.setBackground(new Color(13, 59, 102));
+		AnnotationButton.setBounds(10, 250, 230, 43);
 
-		add(CreateAnnotationButton);
+		add(AnnotationButton);
 
 		JButton customVisualisationButton = new JButton("<html>Annotated tracks\r\n visualisation</html>");
 		customVisualisationButton.setAlignmentY(Component.TOP_ALIGNMENT);
@@ -238,18 +238,8 @@ public class MenuPanel extends JPanel {
 		customVisualisationButton.setForeground(Color.WHITE);
 		customVisualisationButton.setFont(new Font("Arial", Font.BOLD, 20));
 		customVisualisationButton.setBackground(new Color(13, 59, 102));
-		customVisualisationButton.setBounds(20, 308, 460, 43);
+		customVisualisationButton.setBounds(20, 340, 460, 43);
 		add(customVisualisationButton);
-
-		JLabel lblCreateANew = new JLabel(
-				"<html> Create a new annotation and visualise MOSES motion tracks using your selected regions of interest<html>");
-		lblCreateANew.setVerticalAlignment(SwingConstants.TOP);
-		lblCreateANew.setHorizontalTextPosition(SwingConstants.CENTER);
-		lblCreateANew.setHorizontalAlignment(SwingConstants.CENTER);
-		lblCreateANew.setFont(new Font("Roboto", Font.PLAIN, 13));
-		lblCreateANew.setBounds(246, 243, 254, 51);
-
-		add(lblCreateANew);
 
 		JButton boundaryButton = new JButton("<html>Boundary visualisation</html>");
 		boundaryButton.addActionListener(new ActionListener() {
@@ -266,18 +256,71 @@ public class MenuPanel extends JPanel {
 		boundaryButton.setFont(new Font("Arial", Font.BOLD, 20));
 		boundaryButton.setBackground(new Color(13, 59, 102));
 		boundaryButton.setAlignmentY(0.0f);
-		boundaryButton.setBounds(20, 359, 460, 43);
+		boundaryButton.setBounds(20, 390, 460, 43);
 		add(boundaryButton);
 
-		JButton btnToolbox = new JButton("Training toolbox");
-		btnToolbox.setMargin(new Insets(0, 0, 0, 0));
-		btnToolbox.setHorizontalTextPosition(SwingConstants.CENTER);
-		btnToolbox.setForeground(Color.WHITE);
-		btnToolbox.setFont(new Font("Arial", Font.BOLD, 20));
-		btnToolbox.setBackground(new Color(13, 59, 102));
-		btnToolbox.setAlignmentY(0.0f);
-		btnToolbox.setBounds(157, 414, 186, 43);
-		add(btnToolbox);
+		JButton AutoSegmentationButton = new JButton("Auto-segmentation");
+		AutoSegmentationButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				List<String> validExtensions = new ArrayList<String>();
+				validExtensions.addAll(Arrays.asList(".tif", ".tiff"));
+
+				JFrame dialog = new JFrame();
+				Object[] options = { "Ok" };
+				int n = JOptionPane.showOptionDialog(dialog,
+						"Please select the folder which contains the images you wish to analyse.", "MOSES",
+						JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+
+				if (n == 0) {
+					String saveDirectory = IJ.getDirectory("Choose saving directory");
+
+					if (saveDirectory != null) {
+						FileSelecter selecter = new FileSelecter();
+						selecter.listFiles(saveDirectory, validExtensions, false,
+								"Select the images you wish to work with from the list below");
+						selecter.setVisible(true);
+						selecter.importButton.addActionListener(new ActionListener() {
+							public void actionPerformed(ActionEvent e) {
+								filePaths = selecter.getSelected();
+								selecter.dispose();
+
+								if (filePaths.size() > 0) {
+									if (filePaths.size() > 1) {
+										JFrame dialog = new JFrame();
+										Object[] options = { "Ok" };
+										JOptionPane.showOptionDialog(dialog,
+												"Multiple files were selected. Please input your preffered settings for the first image and MOSES will automatically run the same computation for all the other files.",
+												"MOSES", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null,
+												options, options[0]);
+									}
+
+									BoundingBoxAndMaskGenerationParameters.initialise();
+									BoundingBoxAndMaskGenerationParameters.setFiles(filePaths);
+
+									parentFrame.empty();
+									parentFrame.autoSegmentationPanel = new AutoSegmentationPanel(parentFrame);
+									parentFrame.getContentPane().add(parentFrame.autoSegmentationPanel);
+									parentFrame.validate();
+								}
+							}
+						});
+					}
+				}
+			}
+		});
+		AutoSegmentationButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		AutoSegmentationButton.setForeground(Color.WHITE);
+		AutoSegmentationButton.setFont(new Font("Arial", Font.BOLD, 20));
+		AutoSegmentationButton.setBackground(new Color(13, 59, 102));
+		AutoSegmentationButton.setBounds(260, 250, 230, 43);
+		add(AutoSegmentationButton);
+
+		JLabel titleLabel4 = new JLabel("Visualizations", SwingConstants.CENTER);
+		titleLabel4.setVerticalTextPosition(SwingConstants.CENTER);
+		titleLabel4.setHorizontalTextPosition(SwingConstants.CENTER);
+		titleLabel4.setFont(new Font("Arial Black", Font.BOLD, 20));
+		titleLabel4.setBounds(0, 300, 500, 29);
+		add(titleLabel4);
 
 	}
 

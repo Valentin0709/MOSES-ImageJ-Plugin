@@ -28,6 +28,7 @@ public class Globals {
 	public static int frameHight = 500, frameWidth = 500;
 	public static int installStatus;
 	public static ImagePlus lastImage;
+	public static List<String> selectedFiles;
 
 	// method that returns file extension from file path
 

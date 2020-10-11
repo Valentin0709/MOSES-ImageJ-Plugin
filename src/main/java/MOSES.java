@@ -30,6 +30,10 @@ public class MOSES implements Command {
 	@Override
 	public void run() {
 
+//		Yolo.run("C:\\Users\\Vali\\Desktop\\MOSES saves\\bb test\\vid.tif",
+//				"C:\\Users\\Vali\\Desktop\\MOSES saves\\bb test\\output",
+//				"C:\\Users\\Vali\\Desktop\\MOSES saves\\bb test\\output2");
+
 		// set services
 
 		mainFrame.setServices(ui, imageDisplayService);

@@ -30,6 +30,7 @@ public class MainFrame extends JFrame {
 	public VisualisationFromMaskPanel2 visualisationFromMaskPanel2;
 	public VisualisationFromMaskPanel3 visualisationFromMaskPanel3;
 	public BoundaryPanel boundaryPanel;
+	public AutoSegmentationPanel autoSegmentationPanel;
 
 	public MainFrame() {
 

@@ -77,6 +77,7 @@ public class FileSelecter extends JFrame {
 		getContentPane().add(importButton);
 
 		scrollPane = new JScrollPane();
+		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		scrollPane.setBounds(10, 60, 580, 210);
 		scrollPane.setViewportBorder(null);
 		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -339,6 +340,7 @@ public class FileSelecter extends JFrame {
 				}
 
 				checkBoxPanel.setPreferredSize(new Dimension(0, y + 10));
+				Globals.updatePanelSize(checkBoxPanel);
 
 				return "Done.";
 			}
