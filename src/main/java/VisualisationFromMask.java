@@ -25,7 +25,7 @@ public class VisualisationFromMask extends SwingWorker<String, String> {
 	private Process process;
 	private String annotationPath, trackPath, projectName, resizedImagePath, timestamp;
 	private MatlabMetadata trackMetadata;
-	private File imageSequenceFolder, saveFolder;
+	private File imageSequenceFolder, saveFolder, longestTracksCoordinatesCSVFile;
 
 	public VisualisationFromMask(ProgressPanel p) {
 		progress = p;
@@ -370,6 +370,11 @@ public class VisualisationFromMask extends SwingWorker<String, String> {
 				script.addScript("text.set_path_effects([PathEffects.withStroke(linewidth= 1, foreground='w')])");
 			}
 
+			if (VisualisationFromMaskParameters.isOutput("longest_track_csv")) {
+				script.addScript(
+						PythonScript.print("\".\" + polygonNames[i], \",\", *polygonPaths[i].vertices[:, 0:2]"));
+			}
+
 		}
 		script.stopFor();
 		script.newLine();
@@ -543,6 +548,21 @@ public class VisualisationFromMask extends SwingWorker<String, String> {
 			imageSequenceFolder.mkdirs();
 		}
 
+		if (VisualisationFromMaskParameters.isOutput("longest_track_csv")) {
+			File saveFolder2 = new File(VisualisationFromMaskParameters.getWorkspace() + "/" + projectName
+					+ "/data_analysis/CSV_files/" + timestamp);
+			saveFolder2.mkdirs();
+
+			String longestTracksCSVFilePath = saveFolder2.getAbsolutePath() + "/" + projectName
+					+ "_longest_tracks_coordinates.csv";
+			longestTracksCoordinatesCSVFile = new File(longestTracksCSVFilePath);
+			try {
+				longestTracksCoordinatesCSVFile.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
 	}
 
 	@Override
@@ -596,6 +616,13 @@ public class VisualisationFromMask extends SwingWorker<String, String> {
 					allTracksVisualisation();
 					runScript();
 				}
+
+				if (VisualisationFromMaskParameters.isOutput("all_tracks") && !this.isCancelled()) {
+					script = new PythonScript("All tracks visualisation");
+					allTracksVisualisation();
+					runScript();
+				}
+
 			}
 
 			fileNumber++;
@@ -725,6 +752,10 @@ public class VisualisationFromMask extends SwingWorker<String, String> {
 				JDialog dialog = pane.createDialog(null, "MOSES");
 				dialog.setModal(false);
 				dialog.show();
+			}
+			if (messageScope == '.') {
+				validMessage = false;
+				Globals.writeCSV(longestTracksCoordinatesCSVFile, Arrays.asList(m));
 			}
 
 			if (validMessage) {

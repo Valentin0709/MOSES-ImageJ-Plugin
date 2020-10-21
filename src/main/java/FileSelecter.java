@@ -4,6 +4,7 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -143,15 +144,73 @@ public class FileSelecter extends JFrame {
 		}
 	}
 
+	public void listFolders(String path, String name, String instruction) {
+		List<File> subfolders = new ArrayList<File>();
+		Globals.listFolders(path, subfolders);
+
+		instructionLabel.setText("<html>" + instruction + "</html>");
+
+		int y = 5;
+		boolean ok = false;
+		checkBoxList = new ArrayList<Pair<String, JCheckBox>>();
+		for (File file : subfolders) {
+			SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+
+			if (Globals.getName(file.getAbsolutePath()).equals(name)) {
+				ok = true;
+				String fileName = Globals.getName(file.getAbsolutePath());
+
+				JCheckBox checkBox = new JCheckBox(
+						Globals.getName(file.getAbsolutePath()) + " - " + sdf.format(file.lastModified()));
+				checkBox.setFont(new Font("Roboto", Font.PLAIN, 14));
+				checkBox.setBackground(new Color(252, 252, 252));
+				checkBox.setVerticalAlignment(SwingConstants.CENTER);
+				checkBox.setBounds(10, y, 300, 20);
+				checkBoxList.add(new Pair<>(file.getAbsolutePath(), checkBox));
+				checkBoxPanel.add(checkBox);
+				y += 20;
+
+				checkBox.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						if (checkBox.isSelected()) {
+							for (Pair<String, JCheckBox> cb : checkBoxList)
+								if (checkBox != cb.getR())
+									cb.getR().setSelected(false);
+						} else {
+							for (Pair<String, JCheckBox> cb : checkBoxList) {
+								cb.getR().setSelected(true);
+								break;
+							}
+						}
+					}
+				});
+			}
+		}
+
+		checkBoxPanel.setPreferredSize(new Dimension(0, y + 10));
+
+		if (!ok) {
+			JLabel errorLabel = new JLabel("No folders with the correct file format were found.");
+			errorLabel.setFont(new Font("Roboto", Font.PLAIN, 14));
+			errorLabel.setBackground(new Color(252, 252, 252));
+			errorLabel.setForeground(new Color(252, 0, 0));
+			errorLabel.setVerticalAlignment(SwingConstants.CENTER);
+			errorLabel.setBounds(10, 5, 400, 20);
+			checkBoxPanel.add(errorLabel);
+		}
+	}
+
 	public void annotationList(String workspacePath, List<String> projectNames, String instruction) {
 		instructionLabel.setText("<html>" + instruction + "</html>");
 		progressBar.setVisible(true);
 		checkBoxPanel.setVisible(false);
 
 		class TrackListSwingWorker extends SwingWorker<String, String> {
+			int y;
+
 			protected String doInBackground() throws Exception {
-				int y = 5;
 				checkBoxList = new ArrayList<Pair<String, JCheckBox>>();
+				y = 5;
 				for (String projectName : projectNames) {
 
 					JLabel fileNameLabel = new JLabel(projectName);
@@ -186,14 +245,14 @@ public class FileSelecter extends JFrame {
 									public void actionPerformed(ActionEvent e) {
 										if (checkBox.isSelected()) {
 											for (Pair<String, JCheckBox> cb : checkBoxList)
-												if (checkBox != cb.getR()
-														&& Globals.getName(annotationFile.getAbsolutePath())
-																.equals(Globals.getName(cb.getL())))
+												if (checkBox != cb.getR() && Globals
+														.getName(annotationFile.getAbsolutePath()).split("_")[0]
+																.equals(Globals.getName(cb.getL()).split("_")[0]))
 													cb.getR().setSelected(false);
 										} else {
 											for (Pair<String, JCheckBox> cb : checkBoxList)
-												if (Globals.getName(annotationFile.getAbsolutePath())
-														.equals(Globals.getName(cb.getL()))) {
+												if (Globals.getName(annotationFile.getAbsolutePath()).split("_")[0]
+														.equals(Globals.getName(cb.getL()).split("_")[0])) {
 													cb.getR().setSelected(true);
 													break;
 												}
@@ -237,13 +296,119 @@ public class FileSelecter extends JFrame {
 					y += 10;
 				}
 
-				checkBoxPanel.setPreferredSize(new Dimension(0, y + 10));
+				return "Done.";
+			}
+
+			protected void done() {
+				progressBar.setVisible(false);
+
+				checkBoxPanel.setPreferredSize(new Dimension(0, y + 100));
+				checkBoxPanel.setVisible(true);
+			}
+		}
+		TrackListSwingWorker trackListSwingWorker = new TrackListSwingWorker();
+		trackListSwingWorker.execute();
+	}
+
+	public void maskList(String workspacePath, List<String> projectNames, String instruction) {
+		instructionLabel.setText("<html>" + instruction + "</html>");
+		progressBar.setVisible(true);
+		checkBoxPanel.setVisible(false);
+
+		class TrackListSwingWorker extends SwingWorker<String, String> {
+			int y;
+
+			protected String doInBackground() throws Exception {
+				checkBoxList = new ArrayList<Pair<String, JCheckBox>>();
+				for (String projectName : projectNames) {
+
+					y = 5;
+					JLabel fileNameLabel = new JLabel(projectName);
+					fileNameLabel.setFont(new Font("Roboto", Font.BOLD, 14));
+					fileNameLabel.setBackground(new Color(252, 252, 252));
+					fileNameLabel.setVerticalAlignment(SwingConstants.CENTER);
+					fileNameLabel.setBounds(5, y, 300, 20);
+					checkBoxPanel.add(fileNameLabel);
+					y += 20;
+
+					String annotationFolderPath = workspacePath + "/" + projectName + "/annotations";
+					File annotationFolder = new File(annotationFolderPath);
+
+					List<File> annotationFiles = new ArrayList<File>();
+					boolean first = true;
+					if (annotationFolder.exists()) {
+						annotationFiles = Globals.getFiles(annotationFolder.listFiles(), Arrays.asList(".tif"), true);
+
+						for (File annotationFile : annotationFiles) {
+
+							if (Globals.getNameWithoutExtension(annotationFile.getAbsolutePath())
+									.contains("mask_binary")) {
+
+								JCheckBox checkBox = new JCheckBox(Globals.getName(annotationFile.getAbsolutePath()));
+								checkBox.setFont(new Font("Roboto", Font.PLAIN, 14));
+								checkBox.setBackground(new Color(252, 252, 252));
+								checkBox.setVerticalAlignment(SwingConstants.CENTER);
+								checkBox.setBounds(10, y, 560, 20);
+
+								checkBox.addActionListener(new ActionListener() {
+									public void actionPerformed(ActionEvent e) {
+										if (checkBox.isSelected()) {
+											for (Pair<String, JCheckBox> cb : checkBoxList)
+												if (checkBox != cb.getR())
+													cb.getR().setSelected(false);
+										} else {
+											for (Pair<String, JCheckBox> cb : checkBoxList) {
+												cb.getR().setSelected(true);
+												break;
+											}
+										}
+									}
+								});
+
+								if (first) {
+									checkBox.setSelected(true);
+									first = false;
+								}
+
+								checkBoxList.add(new Pair<>(annotationFile.getAbsolutePath(), checkBox));
+								checkBoxPanel.add(checkBox);
+								y += 20;
+
+								SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+								JLabel metadataInfoLabel = new JLabel("<html>"
+										+ String.join(", ", sdf.format(annotationFile.lastModified()) + "</html>"));
+								metadataInfoLabel.setFont(new Font("Roboto", Font.PLAIN, 12));
+								metadataInfoLabel.setBackground(new Color(252, 252, 252));
+								metadataInfoLabel.setVerticalAlignment(SwingConstants.CENTER);
+								metadataInfoLabel.setBounds(15, y, 560, 15);
+								checkBoxPanel.add(metadataInfoLabel);
+								y += 20;
+
+							}
+						}
+					}
+
+					if (annotationFiles.size() == 0) {
+						JLabel errorLabel = new JLabel("No matching files were found.");
+						errorLabel.setFont(new Font("Roboto", Font.PLAIN, 14));
+						errorLabel.setBackground(new Color(252, 252, 252));
+						errorLabel.setForeground(new Color(252, 0, 0));
+						errorLabel.setVerticalAlignment(SwingConstants.CENTER);
+						errorLabel.setBounds(10, y, 400, 20);
+						checkBoxPanel.add(errorLabel);
+						y += 20;
+					}
+
+					y += 10;
+				}
 
 				return "Done.";
 			}
 
 			protected void done() {
 				progressBar.setVisible(false);
+
+				checkBoxPanel.setPreferredSize(new Dimension(0, y + 100));
 				checkBoxPanel.setVisible(true);
 			}
 		}
@@ -257,8 +422,10 @@ public class FileSelecter extends JFrame {
 		checkBoxPanel.setVisible(false);
 
 		class TrackListSwingWorker extends SwingWorker<String, String> {
+			int y;
+
 			protected String doInBackground() throws Exception {
-				int y = 5;
+				y = 5;
 				checkBoxList = new ArrayList<Pair<String, JCheckBox>>();
 				for (String projectName : projectNames) {
 
@@ -339,14 +506,14 @@ public class FileSelecter extends JFrame {
 					y += 10;
 				}
 
-				checkBoxPanel.setPreferredSize(new Dimension(0, y + 10));
-				Globals.updatePanelSize(checkBoxPanel);
-
 				return "Done.";
 			}
 
 			protected void done() {
 				progressBar.setVisible(false);
+
+				checkBoxPanel.setPreferredSize(new Dimension(0, y + 100));
+				// Globals.updatePanelSize(checkBoxPanel);
 				checkBoxPanel.setVisible(true);
 			}
 		}
@@ -469,7 +636,7 @@ public class FileSelecter extends JFrame {
 
 				}
 
-				checkBoxPanel.setPreferredSize(new Dimension(0, y + 10));
+				checkBoxPanel.setPreferredSize(new Dimension(0, y + 100));
 
 				return "Done.";
 			}
@@ -482,6 +649,132 @@ public class FileSelecter extends JFrame {
 
 		TracksAndMeshList tracksAndMeshListSwingWorker = new TracksAndMeshList();
 		tracksAndMeshListSwingWorker.execute();
+
+	}
+
+	public void tracksFwBkwList(String workspacePath, List<String> projectNames, String instruction) {
+		instructionLabel.setText("<html>" + instruction + "</html>");
+		progressBar.setVisible(true);
+		checkBoxPanel.setVisible(false);
+
+		class TracksList extends SwingWorker<String, String> {
+			protected String doInBackground() throws Exception {
+				int y = 5;
+				checkBoxList = new ArrayList<Pair<String, JCheckBox>>();
+				for (String projectName : projectNames) {
+
+					JLabel fileNameLabel = new JLabel(projectName);
+					fileNameLabel.setFont(new Font("Roboto", Font.BOLD, 14));
+					fileNameLabel.setBackground(new Color(252, 252, 252));
+					fileNameLabel.setVerticalAlignment(SwingConstants.CENTER);
+					fileNameLabel.setBounds(5, y, 300, 20);
+					checkBoxPanel.add(fileNameLabel);
+					y += 20;
+
+					String matlabFolderPath = workspacePath + "/" + projectName + "/data_analysis/matlab_files";
+					File matlabFolder = new File(matlabFolderPath);
+
+					List<File> matlabFiles = new ArrayList<File>();
+					List<File> fwtrackFiles = new ArrayList<File>();
+					List<File> bkwtrackFiles = new ArrayList<File>();
+					if (matlabFolder.exists()) {
+						matlabFiles = Globals.getFiles(matlabFolder.listFiles(), Arrays.asList(".mat"), true);
+
+						for (File matlabFile : matlabFiles) {
+							MatlabMetadata matlabMetadata = new MatlabMetadata(matlabFile.getAbsolutePath());
+
+							if (matlabMetadata.getParentFile().equals(projectName)
+									&& matlabMetadata.getFileType().equals("tracks")
+									&& matlabMetadata.getTrackType().equals("forward")) {
+								fwtrackFiles.add(matlabFile);
+							}
+
+							if (matlabMetadata.getParentFile().equals(projectName)
+									&& matlabMetadata.getFileType().equals("tracks")
+									&& matlabMetadata.getTrackType().equals("backward")) {
+								bkwtrackFiles.add(matlabFile);
+							}
+						}
+
+						boolean ok = false;
+						for (File bkwtrackFile : bkwtrackFiles) {
+							MatlabMetadata bkwtrackFileMetadata = new MatlabMetadata(bkwtrackFile.getAbsolutePath());
+							for (File fwtrackFile : fwtrackFiles) {
+								MatlabMetadata fwtrackFileMetadata = new MatlabMetadata(fwtrackFile.getAbsolutePath());
+
+								if (bkwtrackFileMetadata.opticalFlowParametersList()
+										.equals(fwtrackFileMetadata.opticalFlowParametersList())) {
+									ok = true;
+
+									JCheckBox checkBox = new JCheckBox(
+											"<html>" + Globals.getName(bkwtrackFile.getAbsolutePath()) + "<br>"
+													+ Globals.getName(fwtrackFile.getAbsolutePath()) + "</html>");
+									checkBox.setFont(new Font("Roboto", Font.PLAIN, 14));
+									checkBox.setBackground(new Color(252, 252, 252));
+									checkBox.setVerticalAlignment(SwingConstants.CENTER);
+									checkBox.setBounds(10, y, 560, 40);
+
+									checkBox.addActionListener(new ActionListener() {
+										public void actionPerformed(ActionEvent e) {
+											if (checkBox.isSelected()) {
+												for (Pair<String, JCheckBox> cb : checkBoxList)
+													if (checkBox != cb.getR())
+														cb.getR().setSelected(false);
+											}
+										}
+									});
+
+									checkBoxList.add(new Pair<>(
+											bkwtrackFile.getAbsolutePath() + "," + fwtrackFile.getAbsolutePath(),
+											checkBox));
+									checkBoxPanel.add(checkBox);
+									y += 40;
+
+									JLabel metadataInfoLabel = new JLabel(
+											"<html>" + String.join(", ", fwtrackFileMetadata.tracksParametersList())
+													+ "</html>");
+									metadataInfoLabel.setFont(new Font("Roboto", Font.PLAIN, 12));
+									metadataInfoLabel.setBackground(new Color(252, 252, 252));
+									metadataInfoLabel.setVerticalAlignment(SwingConstants.CENTER);
+									metadataInfoLabel.setBounds(15, y, 560, 45);
+									checkBoxPanel.add(metadataInfoLabel);
+									y += 45;
+
+									break;
+								}
+							}
+						}
+
+						if (!ok) {
+							JLabel errorLabel = new JLabel(
+									"No compatible forward - backward tracks pairs were found for this project.");
+							errorLabel.setFont(new Font("Roboto", Font.PLAIN, 14));
+							errorLabel.setBackground(new Color(252, 252, 252));
+							errorLabel.setForeground(new Color(252, 0, 0));
+							errorLabel.setVerticalAlignment(SwingConstants.CENTER);
+							errorLabel.setBounds(10, y, 560, 20);
+							checkBoxPanel.add(errorLabel);
+							y += 20;
+						}
+
+						y += 10;
+					}
+
+				}
+
+				checkBoxPanel.setPreferredSize(new Dimension(0, y + 100));
+
+				return "Done.";
+			}
+
+			protected void done() {
+				progressBar.setVisible(false);
+				checkBoxPanel.setVisible(true);
+			}
+		}
+
+		TracksList tracksListSwingWorker = new TracksList();
+		tracksListSwingWorker.execute();
 
 	}
 

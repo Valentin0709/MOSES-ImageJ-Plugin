@@ -23,7 +23,7 @@ public class VisualisationFromMaskPanel3 extends JLayeredPane {
 	private MainFrame parentFrame;
 	private VisualisationFromMaskPanel3 self = this;
 
-	JCheckBox saveCheckBox1, saveCheckBox2, saveCheckBox3;
+	JCheckBox saveCheckBox1, saveCheckBox2, saveCheckBox3, saveCheckBox4;
 	JPanel optionPanel1, bigPanel;
 	SaveOption saveOption;
 	JFormattedTextField temporalSegmentField;
@@ -88,7 +88,8 @@ public class VisualisationFromMaskPanel3 extends JLayeredPane {
 		JButton finishButton = new JButton("Finish");
 		finishButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (saveCheckBox1.isSelected() || saveCheckBox2.isSelected() || saveCheckBox3.isSelected()) {
+				if (saveCheckBox1.isSelected() || saveCheckBox2.isSelected() || saveCheckBox3.isSelected()
+						|| saveCheckBox4.isSelected()) {
 
 					if (saveCheckBox1.isSelected()) {
 						VisualisationFromMaskParameters.setOutput("complete_visualisation");
@@ -102,6 +103,9 @@ public class VisualisationFromMaskPanel3 extends JLayeredPane {
 
 					if (saveCheckBox3.isSelected())
 						VisualisationFromMaskParameters.setOutput("all_tracks");
+
+					if (saveCheckBox4.isSelected())
+						VisualisationFromMaskParameters.setOutput("longest_track_csv");
 
 					// loading bar panel
 					ProgressPanel progress = new ProgressPanel(self, 40, 200);
@@ -250,6 +254,11 @@ public class VisualisationFromMaskPanel3 extends JLayeredPane {
 		instructionLabel1.setVerticalAlignment(SwingConstants.TOP);
 		instructionLabel1.setFont(new Font("Roboto", Font.PLAIN, 15));
 
+		saveCheckBox4 = new JCheckBox("Save longest tracks (.csv)");
+		saveCheckBox4.setFont(new Font("Roboto", Font.PLAIN, 15));
+		saveCheckBox4.setBounds(0, 0, 400, 24);
+		saveCheckBox4.setBackground(new Color(252, 252, 252));
+
 		bigPanel = new JPanel();
 		bigPanel.setBounds(10, 52, 460, 309);
 		step5Panel.add(bigPanel);
@@ -261,7 +270,9 @@ public class VisualisationFromMaskPanel3 extends JLayeredPane {
 		checkBoxList.addCheckBox(saveCheckBox1);
 		checkBoxList.addPanelChild(saveCheckBox1, optionPanel1);
 		checkBoxList.addCheckBox(saveCheckBox2);
+		checkBoxList.addCheckBoxChild(saveCheckBox2, saveCheckBox4);
 		checkBoxList.addCheckBox(saveCheckBox3);
+
 		checkBoxList.show(5, 5);
 	}
 }

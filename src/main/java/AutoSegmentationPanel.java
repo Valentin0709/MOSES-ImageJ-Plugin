@@ -189,9 +189,6 @@ public class AutoSegmentationPanel extends JLayeredPane {
 		optionPanel1.setBounds(27, 99, 450, 35);
 		optionPanel1.setLayout(null);
 
-//		saveOption1 = new SaveOption(Arrays.asList(".mat", ".tif"));
-//		saveOption6.show(optionPanel3, 5, 0, false);
-
 		JLabel instructionLabel1 = new JLabel("Set confidence treshold:");
 		instructionLabel1.setVisible(false);
 		instructionLabel1.setFont(new Font("Roboto", Font.PLAIN, 14));

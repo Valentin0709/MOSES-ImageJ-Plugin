@@ -41,12 +41,22 @@ public class BoundingBoxAndMaskGeneration extends SwingWorker<String, String> {
 	public BoundingBoxAndMaskGeneration(ProgressPanel p) {
 		progress = p;
 
-		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+		// File dll = new File(System.getProperty("user.dir") +
+		// "/opencv/windows/x64/opencv_java3411.dll");
+		File dll = new File(System.getProperty("user.dir") + "/plugins/MOSES/opencv/windows/x64/opencv_java3411.dll");
+		File modelWeights = new File(
+				System.getProperty("user.dir") + "/plugins/MOSES/Weights/yolov3-organoid_rescale_16500.weights");
+		File modelConfiguration = new File(
+				System.getProperty("user.dir") + "/plugins/MOSES/Weights/yolov3-organoid_rescale.cfg");
 
-		String modelWeights = "C:\\Users\\Vali\\Desktop\\MOSES saves\\Bbox_YOLOv3_Detection_Training\\Bbox_YOLOv3_Code\\CNN_YOLO_detector\\model_weights\\yolov3-organoid_rescale_16500.weights";
-		String modelConfiguration = "C:\\Users\\Vali\\Desktop\\MOSES saves\\Bbox_YOLOv3_Detection_Training\\Bbox_YOLOv3_Code\\CNN_YOLO_detector\\config\\yolov3-organoid_rescale.cfg";
+		try {
+			System.load(dll.getAbsolutePath());
+		} catch (UnsatisfiedLinkError e) {
 
-		net = Dnn.readNetFromDarknet(modelConfiguration, modelWeights);
+			IJ.log("Native code library failed to load.\n" + e);
+		}
+
+		net = Dnn.readNetFromDarknet(modelConfiguration.getAbsolutePath(), modelWeights.getAbsolutePath());
 	}
 
 	private static List<String> getOutputNames(Net net) {
@@ -150,6 +160,15 @@ public class BoundingBoxAndMaskGeneration extends SwingWorker<String, String> {
 		}
 
 		if (rects.size() != 0) {
+			File bbTextFile = new File(bboxFolderPath + "/" + Globals.getNameWithoutExtension(currentFilePath)
+					+ "_bounding_box_f" + tiffStack.getZ() + ".txt");
+
+			try {
+				bbTextFile.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
 			// Apply non-maximum suppression procedure.
 			float nmsThresh = 0.1f;
 			MatOfFloat confidences = new MatOfFloat(Converters.vector_float_to_Mat(confs));
@@ -163,23 +182,26 @@ public class BoundingBoxAndMaskGeneration extends SwingWorker<String, String> {
 				int idx = ind[i];
 				Rect2d box = boxesArray[idx];
 
-				File bbTextFile = new File(bboxFolderPath + "/" + Globals.getNameWithoutExtension(currentFilePath)
-						+ "_bounding_box_f" + tiffStack.getZ() + ".txt");
 				Globals.writeTXT(bbTextFile,
-						Arrays.asList("organoid", String.valueOf(confs.get(idx)), String.valueOf(box.x + box.width / 2),
-								String.valueOf(box.y + box.height / 2), String.valueOf(box.width),
-								String.valueOf(box.height)));
+						Arrays.asList("organoid", String.valueOf(confs.get(idx)),
+								String.valueOf(Math.round(box.x + box.width / 2)),
+								String.valueOf(Math.round(box.y + box.height / 2)),
+								String.valueOf(Math.round(box.width)), String.valueOf(Math.round(box.height))));
 
 				if (BoundingBoxAndMaskGenerationParameters.isOutput("bounding_box_vis")) {
 					Imgproc.rectangle(image, box.tl(), box.br(), new Scalar(0, 0, 255), 2);
-					Imgcodecs.imwrite(bboxFolderVisPath + "/" + Globals.getNameWithoutExtension(currentFilePath) + "_f"
-							+ tiffStack.getZ() + ".png", image);
 				}
 			}
 		}
+
+		Imgcodecs.imwrite(bboxFolderVisPath + "/" + Globals.getNameWithoutExtension(currentFilePath) + "_f"
+				+ tiffStack.getZ() + ".png", image);
 	}
 
 	private void generateMask() {
+		File weights = new File(
+				System.getProperty("user.dir") + "/plugins/MOSES/Weights/organoid-seg-unet-master-v1.h5");
+
 		String script = "import os  \r\n" + "import sys\r\n" + "import skimage.transform as sktform\r\n"
 				+ "import numpy as np\r\n" + "from keras.optimizers import Adam\r\n"
 				+ "from keras.models import Model, load_model\r\n"
@@ -187,7 +209,7 @@ public class BoundingBoxAndMaskGeneration extends SwingWorker<String, String> {
 				+ "from tensorflow.keras.layers import Conv2DTranspose\r\n"
 				+ "from skimage.exposure import rescale_intensity\r\n" + "import glob \r\n"
 				+ "import skimage.io as skio \r\n" + "\r\n"
-				+ "parameters = dict(imagePath = str(sys.argv[1]), savePath = str(sys.argv[2]), name = str(sys.argv[3]))\r\n"
+				+ "parameters = dict(imagePath = str(sys.argv[1]), weightsPath = str(sys.argv[2]), savePath = str(sys.argv[3]), name = str(sys.argv[4]))\r\n"
 				+ "\r\n" + "input_img = Input(shape=(512,512,3))\r\n" + "test_size = (512, 512)\r\n" + "\r\n"
 				+ "L1 = Conv2D(32, (3, 3), activation=\"relu\", data_format=\"channels_last\", kernel_initializer=\"normal\", padding=\"same\", name='L1_1')(input_img)   # 32     128                   # 128\r\n"
 				+ "L1 = Conv2D(32, (3, 3), activation=\"relu\", data_format=\"channels_last\", kernel_initializer=\"normal\", padding=\"same\", name='L1_2')(L1)   \r\n"
@@ -231,8 +253,8 @@ public class BoundingBoxAndMaskGeneration extends SwingWorker<String, String> {
 				+ "final_model = Model(inputs = [input_img], outputs = [U3])\r\n" + "\r\n"
 				+ "opt = Adam(lr=1e-4, beta_1=0.5, beta_2=0.999, epsilon=1e-08)\r\n" + "\r\n"
 				+ "final_model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])\r\n"
-				+ "final_model.load_weights('C:/Users/Vali/Desktop/MOSES saves/Training_Scripts/organoid-seg-unet-master-v1.h5')\r\n"
-				+ "\r\n" + "    \r\n" + "  \r\n" + "image = skio.imread(parameters.get('imagePath'))\r\n" + "\r\n"
+				+ "final_model.load_weights(parameters.get('weightsPath'))\r\n" + "\r\n" + "    \r\n" + "  \r\n"
+				+ "image = skio.imread(parameters.get('imagePath'))\r\n" + "\r\n"
 				+ "im = sktform.resize(rescale_intensity(image), test_size, preserve_range=True)/255.\r\n"
 				+ "                    \r\n" + "im = np.dstack([im, im, im])\r\n" + "im = im.astype(np.float32)\r\n"
 				+ "\r\n" + "im_out = final_model.predict(im[None,:])\r\n" + "im_out = im_out[...,1][0]\r\n" + "\r\n"
@@ -262,6 +284,7 @@ public class BoundingBoxAndMaskGeneration extends SwingWorker<String, String> {
 		command.add("python");
 		command.add(scriptPath);
 		command.add(temporarySlicePath);
+		command.add(weights.getAbsolutePath());
 		command.add(maskFolderPath);
 		command.add("mask_f" + tiffStack.getZ());
 

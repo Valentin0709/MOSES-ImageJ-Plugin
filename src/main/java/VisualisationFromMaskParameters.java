@@ -22,7 +22,7 @@ public class VisualisationFromMaskParameters {
 		files = new ArrayList<ProjectImageAnnotationTracks>();
 
 		outputNames = new ArrayList<String>();
-		outputNames.addAll(Arrays.asList("complete_visualisation", "longest_track", "all_tracks"));
+		outputNames.addAll(Arrays.asList("complete_visualisation", "longest_track", "all_tracks", "longest_track_csv"));
 
 		for (String outputName : outputNames)
 			outputs.put(outputName, false);

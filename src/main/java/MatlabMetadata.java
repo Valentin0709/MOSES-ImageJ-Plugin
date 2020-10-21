@@ -160,4 +160,22 @@ public class MatlabMetadata {
 
 		return result;
 	}
+
+	public List<String> opticalFlowParametersList() {
+		List<String> result = new ArrayList<String>();
+
+		result.add("channels = [" + String.join(";", Globals.convertStringList(channels)) + "]");
+		result.add("downsize factor = " + downsizeFactor);
+		result.add("dense tracking = " + denseTracking);
+		result.add("number of superpixels = " + numberSuperpixels);
+		result.add("scale factor = " + pyrScale);
+		result.add("levels = " + levels);
+		result.add("window size = " + winSize);
+		result.add("iterations = " + iterations);
+		result.add("poly n = " + polyN);
+		result.add("poly sigma = " + polySigma);
+		result.add("flags = " + flags);
+
+		return result;
+	}
 }

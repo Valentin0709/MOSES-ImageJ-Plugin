@@ -31,7 +31,11 @@ public class MenuPanel extends JPanel {
 	public MainFrame parentFrame;
 	List<String> filePaths;
 
+	public InstallWindow installWindow;
+
 	public MenuPanel(MainFrame parentFrame) {
+
+		installWindow = new InstallWindow(parentFrame);
 
 		// set look and feel
 
@@ -220,7 +224,7 @@ public class MenuPanel extends JPanel {
 
 		add(AnnotationButton);
 
-		JButton customVisualisationButton = new JButton("<html>Annotated tracks\r\n visualisation</html>");
+		JButton customVisualisationButton = new JButton("<html>Annotated tracks visualization</html>");
 		customVisualisationButton.setAlignmentY(Component.TOP_ALIGNMENT);
 		customVisualisationButton.setMargin(new Insets(0, 0, 0, 0));
 		customVisualisationButton.addActionListener(new ActionListener() {
@@ -241,7 +245,7 @@ public class MenuPanel extends JPanel {
 		customVisualisationButton.setBounds(20, 340, 460, 43);
 		add(customVisualisationButton);
 
-		JButton boundaryButton = new JButton("<html>Boundary visualisation</html>");
+		JButton boundaryButton = new JButton("<html>Boundary tracking</html>");
 		boundaryButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				parentFrame.empty();
@@ -315,12 +319,25 @@ public class MenuPanel extends JPanel {
 		AutoSegmentationButton.setBounds(260, 250, 230, 43);
 		add(AutoSegmentationButton);
 
-		JLabel titleLabel4 = new JLabel("Visualizations", SwingConstants.CENTER);
+		JLabel titleLabel4 = new JLabel("Advanced motion analysis", SwingConstants.CENTER);
 		titleLabel4.setVerticalTextPosition(SwingConstants.CENTER);
 		titleLabel4.setHorizontalTextPosition(SwingConstants.CENTER);
 		titleLabel4.setFont(new Font("Arial Black", Font.BOLD, 20));
 		titleLabel4.setBounds(0, 300, 500, 29);
 		add(titleLabel4);
+
+		JButton reinstallButtton = new JButton("R");
+		reinstallButtton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				installWindow.display();
+			}
+		});
+		reinstallButtton.setHorizontalTextPosition(SwingConstants.CENTER);
+		reinstallButtton.setForeground(Color.WHITE);
+		reinstallButtton.setFont(new Font("Arial", Font.BOLD, 16));
+		reinstallButtton.setBackground(new Color(13, 59, 102));
+		reinstallButtton.setBounds(0, 440, 72, 24);
+		add(reinstallButtton);
 
 	}
 

@@ -348,4 +348,20 @@ public class Globals {
 
 		return pathSection.substring(0, pathSection.indexOf("\\"));
 	}
+
+	public static void listFolders(String directoryName, List<File> files) {
+		File directory = new File(directoryName);
+
+		// Get all files from a directory.
+		File[] fList = directory.listFiles();
+		if (fList != null)
+			for (File file : fList) {
+				if (file.isFile()) {
+				} else if (file.isDirectory()) {
+					files.add(file);
+					listFolders(file.getAbsolutePath(), files);
+				}
+			}
+	}
+
 }
